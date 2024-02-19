@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Sign Up{% endblock %}
+{% block links %}
+<link rel="stylesheet" href="static/css/index.css">
+<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"> -->
+{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="login-signup-container">
+        <div class="form-container">
+            <!-- <form id="signup-form" method="post">
+                <h2>Sign Up</h2>
+                <input type="text" placeholder="Username" name="username" required>
+                <input type="email" placeholder="Email" name="email" required>
+                <input type="password" placeholder="Password" name="password" required>
+                <button type="submit">Sign Up</button>
+                <p>Already have an account? <a href="login">Login</a></p>
+            </form> -->
+            <form method="POST" action="{{ url_for('signup') }}">
+                {{ form.hidden_tag() }}
+                <div>{{ form.name.label }} {{ form.name(size=50) }}</div>
+                <div>{{ form.last_name.label }} {{ form.last_name(size=50) }}</div>
+                <div>{{ form.email.label }} {{ form.email(size=50) }}</div>
+                <div>{{ form.password.label }} {{ form.password(size=50) }}</div>
+                <div>{{ form.confirm_password.label }} {{ form.confirm_password(size=50) }}</div>
+                <div>{{ form.submit() }}</div>
+                <p>Already have an account? <a href="login">Login</a></p>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

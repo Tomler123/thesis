@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h1>Edit Loan</h1>
+    <form method="post" action="{{ url_for('edit_loan', loan_id=loan.LoanID) }}">
+        <label for="lender_name">Lender Name:</label>
+        <input type="text" id="lender_name" name="lender_name" value="{{ loan.LenderName }}" required>
+        <label for="loan_amount">Loan Amount:</label>
+        <input type="number" min="0" id="loan_amount" name="loan_amount" value="{{ loan.LoanAmount }}" required>
+        <label for="interest_rate">Interest Rate:</label>
+        <input type="number" min="0" id="interest_rate" name="interest_rate" value="{{ loan.InterestRate }}" required>
+        <label for="monthly_payment">Monthly Payment:</label>
+        <input type="number" min="0" id="monthly_payment" name="monthly_payment" value="{{ loan.MonthlyPayment }}" required>
+        <label for="start_date">Start Date:</label>
+        <input type="date" id="start_date" name="start_date" value="{{ loan.StartDate }}" required>
+        <label for="due_date">Due Date:</label>
+        <input type="date" id="due_date" name="due_date" value="{{ loan.DueDate }}" required>
+        <label for="loan_term">Loan term:</label>
+        <input type="number" min="0" id="loan_term" name="loan_term" value="{{ loan.LoanTerm }}" required>
+        <label for="remaining_balance">Remaining Balance:</label>
+        <input type="number" min="0" id="remaining_balance" name="remaining_balance" value="{{ loan.RemainingBalance }}" required>
+        <label for="is_borrower">Are you borrower:</label>
+        <select id="is_borrower" name="is_borrower" required>
+            <option value="1" {{ 'selected' if loan.IsBorrower else '' }}>Yes</option>
+            <option value="0" {{ 'selected' if not loan.IsBorrower else '' }}>No</option>
+        </select>
+        <label for="notes">Other:</label>
+        <input type="text" id="notes" name="notes" value="{{ loan.Notes }}" required>
+        <button type="submit">Update</button>
+    </form>
+</div>
+{% endblock %}

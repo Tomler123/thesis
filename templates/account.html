@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}WalletBuddyAI.com{% endblock %}
+{% block links %}
+<!-- <link rel="stylesheet" href="static/css/index.css"> -->
+<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"> -->
+{% endblock %}
+{% block content %}
+
+<div class="container">
+    <section>
+        <h2>Data</h2>
+        <table>
+            <tr>
+                <th>Name</th>
+                <th>Last Name</th>
+                <th>Email</th>
+            </tr>
+            {% for d in data %}
+            <tr>
+                <td>{{ d.Name }}</td>
+                <td>{{ d.LastName }}</td>
+                <td>{{ d.Email }}</td>
+            </tr>
+            {% endfor %}
+    </table>
+    </section>
+    <h1>My Loans</h1>
+    <!-- Form to Add a New Loan -->
+    <form method="post" action="{{ url_for('borrower_loans') }}">
+        <h2>Add a New Loan</h2>
+        <!-- Add form fields for loan details -->
+        <!-- ... -->
+        <button type="submit" name="action" value="add">Add Loan</button>
+    </form>
+    
+    <!-- List Existing Loans -->
+    <h2>Existing Loans</h2>
+    <table>
+        <tr>
+            <th>Lender Name</th>
+            <th>Loan Amount</th>
+            <!-- ... other loan details ... -->
+            <th>Actions</th>
+        </tr>
+        {% for loan in borrower_loans %}
+        <tr>
+            <td>{{ loan.lender_name }}</td>
+            <td>{{ loan.amount }}</td>
+            <!-- ... other loan details ... -->
+            <td>
+                <!-- Buttons or links for Edit and Delete actions -->
+                <button form="editLoanForm_{{ loan.id }}" type="submit">Edit</button>
+                <button form="deleteLoanForm_{{ loan.id }}" type="submit">Delete</button>
+                
+                <!-- Hidden forms to handle Edit and Delete actions -->
+                <form id="editLoanForm_{{ loan.id }}" action="{{ url_for('edit_loan', loan_id=loan.id) }}" method="post"></form>
+                <form id="deleteLoanForm_{{ loan.id }}" action="{{ url_for('delete_loan', loan_id=loan.id) }}" method="post"></form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}

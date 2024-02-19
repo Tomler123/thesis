@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>Add New Loan</h1>
+    <form method="post" action="{{ url_for('add_loan') }}">
+        <div>
+            <label for="lenderName">Lender/Borrower Name:</label>
+            <input type="text" id="lenderName" name="lender_name" required>
+        </div>
+        <div>
+            <label for="loanAmount">Loan Amount:</label>
+            <input type="number" id="loanAmount" name="loan_amount" step="0.01" required>
+        </div>
+        <div>
+            <label for="interestRate">Interest Rate (%):</label>
+            <input type="number" id="interestRate" name="interest_rate" step="0.01" required>
+        </div>
+        <div>
+            <label for="monthlyPayment">Monthly Payment:</label>
+            <input type="number" id="monthlyPayment" name="monthly_payment" step="0.01" required>
+        </div>
+        <div>
+            <label for="startDate">Start Date:</label>
+            <input type="date" id="startDate" name="start_date" required>
+        </div>
+        <div>
+            <label for="dueDate">Due Date:</label>
+            <input type="date" id="dueDate" name="due_date" required>
+        </div>
+        <div>
+            <label for="loanTerm">Loan Term (in months):</label>
+            <input type="number" id="loanTerm" name="loan_term" required>
+        </div>
+        <div>
+            <label for="remainingBalance">Remaining Balance:</label>
+            <input type="number" id="remainingBalance" name="remaining_balance" required>
+        </div>
+        <div>
+            <label for="isBorrower">Are you the borrower?</label>
+            <select id="isBorrower" name="is_borrower">
+                <option value="1">Yes</option>
+                <option value="0">No</option>
+            </select>
+        </div>
+        <div>
+            <label for="notes">Notes:</label>
+            <textarea id="notes" name="notes"></textarea>
+        </div>
+        <button type="submit">Add Loan</button>
+    </form>
+</div>
+{% endblock %}

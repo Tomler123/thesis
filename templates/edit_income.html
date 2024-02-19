@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h1>Edit Income</h1>
+    <form method="post" action="{{ url_for('edit_income') }}">
+        <label for="salary">Salary/Wages:</label>
+        <input type="number" min="0" id="salary" name="salary" value="{{ income.SalaryWages }}" required>
+        <label for="bonuses">Bonuses/Commissions:</label>
+        <input type="number" min="0" id="bonuses" name="bonuses" value="{{ income.BonusesCommisions }}" required>
+        <label for="passive_income">Passive Income:</label>
+        <input type="number" min="0" id="passive_income" name="passive_income" value="{{ income.PassiveIncome }}" required>
+        <label for="business_income">Business Income:</label>
+        <input type="number" min="0" id="business_income" name="business_income" value="{{ income.BusinessIncome }}" required>
+        <label for="investment_income">Investment Income:</label>
+        <input type="number" min="0" id="investment_income" name="investment_income" value="{{ income.InvestmentIncome }}" required>
+        <label for="other">Other:</label>
+        <input type="number" min="0" id="other" name="other" value="{{ income.Other }}" required>
+        <button type="submit">Update</button>
+    </form>
+</div>
+{% endblock %}

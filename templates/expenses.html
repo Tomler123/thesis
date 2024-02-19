@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Expenses{% endblock %}
+{% block links %}
+<link rel="stylesheet" href="static/css/index.css">
+<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"> -->
+{% endblock %}
+{% block content %}
+
+<div class="container">
+    <h1>Record Your Expenses</h1>
+    <form method="post" action="{{ url_for('expenses') }}">
+        <p>
+            <label for="fixed">Fixed:</label>
+            <input type="number" id="fixed" name="fixed" required>
+        </p>
+        <p>
+            <label for="variable">Variable:</label>
+            <input type="number" id="variable" name="variable" required>
+        </p>
+        <p>
+            <label for="discretionary">Discretionary:</label>
+            <input type="number" id="discretionary" name="discretionary" required>
+        </p>
+        <p>
+            <label for="annual">Annual/Periodic:</label>
+            <input type="number" id="annual" name="annual" required>
+        </p>
+        <p>
+            <label for="rent">Rent:</label>
+            <input type="number" id="rent" name="rent" required>
+        </p>
+        <p>
+            <label for="utilities">Utilities:</label>
+            <input type="number" id="utilities" name="utilities" required>
+        </p>
+        <p>
+            <label for="insurance">Insurance:</label>
+            <input type="number" id="insurance" name="insurance" required>
+        </p>
+        <p>
+            <label for="groceries">Groceries:</label>
+            <input type="number" id="groceries" name="groceries" required>
+        </p>
+        <p>
+            <label for="transport">Transport:</label>
+            <input type="number" id="transport" name="transport" required>
+        </p>
+        <p>
+            <label for="health">Health:</label>
+            <input type="number" id="health" name="health" required>
+        </p>
+        <p>
+            <label for="subscriptions">Subscriptions:</label>
+            <input type="number" id="subscriptions" name="subscriptions" required>
+        </p>
+        <p>
+            <label for="other">Others:</label>
+            <input type="number" id="other" name="other" required>
+        </p>
+        <p>
+            <button type="submit">Submit</button>
+        </p>
+    </form>
+</div>
+
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h1>Edit Expenses</h1>
+    <form method="post" action="{{ url_for('edit_expenses') }}">
+        <label for="fixed">Fixed:</label>
+        <input type="number" min="0" id="fixed" name="fixed" value="{{ expenses.Fixed }}" required>
+        <label for="variable">Variable:</label>
+        <input type="number" min="0" id="variable" name="variable" value="{{ expenses.Variable }}" required>
+        <label for="discretionary">Discretionary:</label>
+        <input type="number" min="0" id="discretionary" name="discretionary" value="{{ expenses.Discretionary }}" required>
+        <label for="annualPeriodic">Annual/Periodic:</label>
+        <input type="number" min="0" id="annualPeriodic" name="annualPeriodic" value="{{ expenses.AnnualPeriodic }}" required>
+        <label for="rentMortrage">Rent/Mortrage:</label>
+        <input type="number" min="0" id="rentMortrage" name="rentMortrage" value="{{ expenses.RentMortrage }}" required>
+        <label for="utilities">Utilities:</label>
+        <input type="number" min="0" id="utilities" name="utilities" value="{{ expenses.Utilities }}" required>
+        <label for="insurance">Insurance:</label>
+        <input type="number" min="0" id="insurance" name="insurance" value="{{ expenses.Insurance }}" required>
+        <label for="groceries">Groceries:</label>
+        <input type="number" min="0" id="groceries" name="groceries" value="{{ expenses.Groceries }}" required>
+        <label for="transport">Transport:</label>
+        <input type="number" min="0" id="transport" name="transport" value="{{ expenses.Transport }}" required>
+        <label for="healthCare">Health Care:</label>
+        <input type="number" min="0" id="healthCare" name="healthCare" value="{{ expenses.HealthCare }}" required>
+        <label for="subscriptions">Subscriptions:</label>
+        <input type="number" min="0" id="subscriptions" name="subscriptions" value="{{ expenses.Subscriptions }}" required>
+        <label for="other">Other:</label>
+        <input type="number" min="0" id="other" name="other" value="{{ expenses.Other }}" required>
+        <button type="submit">Update</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h1>Edit Saving</h1>
+    <form method="post" action="{{ url_for('edit_saving') }}">
+        <label for="emergency">Emergency:</label>
+        <input type="number" min="0" id="emergency" name="emergency" value="{{ saving.Emergency }}" required>
+        <label for="retirement">Retirement:</label>
+        <input type="number" min="0" id="retirement" name="retirement" value="{{ saving.Retirement }}" required>
+        <label for="education">Education:</label>
+        <input type="number" min="0" id="education" name="education" value="{{ saving.Education }}" required>
+        <label for="goalSpecific">Goal Specific:</label>
+        <input type="number" min="0" id="goalSpecific" name="goalSpecific" value="{{ saving.GoalSpecific }}" required>
+        <label for="health">Health:</label>
+        <input type="number" min="0" id="health" name="health" value="{{ saving.Health }}" required>
+        <label for="other">Other:</label>
+        <input type="number" min="0" id="other" name="other" value="{{ saving.Other }}" required>
+        <button type="submit">Update</button>
+    </form>
+</div>
+{% endblock %}

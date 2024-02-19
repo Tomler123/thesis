@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Savings{% endblock %}
+{% block links %}
+<link rel="stylesheet" href="static/css/index.css">
+<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"> -->
+{% endblock %}
+{% block content %}
+
+<div class="container">
+    <h1>Record Your Savings</h1>
+    <form method="post" action="{{ url_for('saving') }}">
+        <p>
+            <label for="emergency">Emergency:</label>
+            <input type="number" id="emergency" name="emergency" required>
+        </p>
+        <p>
+            <label for="retirement">Retirement:</label>
+            <input type="number" id="retirement" name="retirement" required>
+        </p>
+        <p>
+            <label for="education">Education:</label>
+            <input type="number" id="education" name="education" required>
+        </p>
+        <p>
+            <label for="goal">Goal Specific:</label>
+            <input type="number" id="goal" name="goal" required>
+        </p>
+        <p>
+            <label for="health">Health:</label>
+            <input type="number" id="health" name="health" required>
+        </p>
+        <p>
+            <label for="other">Others:</label>
+            <input type="number" id="other" name="other" required>
+        </p>
+        <p>
+            <button type="submit">Submit</button>
+        </p>
+    </form>
+</div>
+
+{% endblock %}

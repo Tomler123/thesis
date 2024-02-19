@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}WalletBuddyAI.com{% endblock %}
+{% block links %}
+<link rel="stylesheet" href="static/css/index.css">
+<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"> -->
+{% endblock %}
+{% block content %}
+    
+<footer class="container">
+    <h2>Contact Us</h2>
+    <form id="contact-form">
+        <input type="text" placeholder="Name" name="name" required>
+        <input type="email" placeholder="Email" name="email" required>
+        <textarea placeholder="Your Message" name="message" required></textarea>
+        <button type="submit">Send</button>
+    </form>        
+</footer>
+
+{% endblock %}
