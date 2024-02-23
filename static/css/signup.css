@@ -1,0 +1,68 @@
+/* signup.css */
+
+.login-signup-container {
+    max-width: 400px;
+    margin: auto;
+    padding-top: 50px;
+    padding-bottom: 5em;
+}
+
+.form-container h2{
+    margin-top: 1em;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.form-container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    width: 90%;
+    padding-left: 5%;
+}
+
+form > div {
+    margin-bottom: 15px;
+}
+
+input[type="email"],
+input[type="password"],
+input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box; /* Add the box-sizing */
+}
+
+.form-container form div input[type="submit"] {
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    font-size: 16px;
+    width: 100%;
+}
+
+.form-container form div input[type="submit"]:hover {
+    background: #0056b3;
+}
+
+form a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+form a:hover {
+    text-decoration: underline;
+}

@@ -46,6 +46,8 @@ body, html {
 }
 
 body {
+  display: flex; /* Set body display to flex */
+  flex-direction: column; /* Stack children elements vertically */
   font-family: var(--body-font);
   font-size: var(--normal-font-size);
   background-color: var(--body-color);
@@ -59,6 +61,9 @@ body {
 
 .content-wrap {
     flex: 1;
+    margin-top: var(--header-height);
+    padding-top: var(--header-height);
+
 }
 
 ul {

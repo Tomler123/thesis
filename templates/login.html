@@ -3,19 +3,18 @@
 {% block links %}
 <!-- <link rel="stylesheet" href="static/css/index.css"> -->
 <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"> -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
 {% endblock %}
 {% block content %}
-<div class="container">
-    <div class="login-signup-container">
-        <div class="form-container">
-            <form id="login-form" method="post" action="{{ url_for('login') }}">
-                <h2>Log In</h2>
-                <input type="email" placeholder="Email" name="email" required>
-                <input type="password" placeholder="Password" name="password" required>
-                <button type="submit">Log In</button>
-                <p>Don't have an account? <a href="{{ url_for('signup') }}">Sign up</a></p>
-            </form>
-        </div>
+<div class="login-signup-container">
+    <div class="form-container">
+        <form id="login-form" method="post" action="{{ url_for('login') }}">
+            <h2>Log In</h2>
+            <input type="email" placeholder="Email" name="email" required>
+            <input type="password" placeholder="Password" name="password" required>
+            <button type="submit">Log In</button>
+            <p>Don't have an account? <a href="{{ url_for('signup') }}">Sign up</a></p>
+        </form>
     </div>
 </div>
 {% endblock %}

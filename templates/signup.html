@@ -3,30 +3,22 @@
 {% block links %}
 <!-- <link rel="stylesheet" href="static/css/index.css"> -->
 <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"> -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/signup.css') }}">
 {% endblock %}
 {% block content %}
-<div class="container">
-    <div class="login-signup-container">
-        <div class="form-container">
-            <!-- <form id="signup-form" method="post">
-                <h2>Sign Up</h2>
-                <input type="text" placeholder="Username" name="username" required>
-                <input type="email" placeholder="Email" name="email" required>
-                <input type="password" placeholder="Password" name="password" required>
-                <button type="submit">Sign Up</button>
-                <p>Already have an account? <a href="login">Login</a></p>
-            </form> -->
-            <form method="POST" action="{{ url_for('signup') }}">
-                {{ form.hidden_tag() }}
-                <div>{{ form.name.label }} {{ form.name(size=50) }}</div>
-                <div>{{ form.last_name.label }} {{ form.last_name(size=50) }}</div>
-                <div>{{ form.email.label }} {{ form.email(size=50) }}</div>
-                <div>{{ form.password.label }} {{ form.password(size=50) }}</div>
-                <div>{{ form.confirm_password.label }} {{ form.confirm_password(size=50) }}</div>
-                <div>{{ form.submit() }}</div>
-                <p>Already have an account? <a href="login">Login</a></p>
-            </form>
-        </div>
-    </div>
+<div class="login-signup-container">
+    <div class="form-container">   
+       <form method="POST" action="{{ url_for('signup') }}">
+            <h2>Sign Up</h2>
+            {{ form.hidden_tag() }}
+            <div>{{ form.name.label }} {{ form.name(size=50) }}</div>
+            <div>{{ form.last_name.label }} {{ form.last_name(size=50) }}</div>
+            <div>{{ form.email.label }} {{ form.email(size=50) }}</div>
+            <div>{{ form.password.label }} {{ form.password(size=50) }}</div>
+            <div>{{ form.confirm_password.label }} {{ form.confirm_password(size=50) }}</div>
+            <div>{{ form.submit(class_='my-submit-button') }}</div>
+            <p>Already have an account? <a href="login">Login</a></p>
+       </form>
+   </div>
 </div>
 {% endblock %}
