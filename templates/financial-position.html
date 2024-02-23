@@ -5,54 +5,41 @@
 <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"> -->
 {% endblock %}
 {% block content %}
-<div class="container">
-    <h1>WalletBuddyAI.com</h1>
-    <img src="https://unsplash.com/photos/tvPvROBv0F4/download?ixid=M3w1Mjk3MTB8MHwxfHJhbmRvbXx8fHx8fHx8fDE3MDU5NjQwMjl8" alt="Bakery Image" style="width: 100%; height: auto;">
-    <br>
-    <section>
-        <h1>Financial Position</h1>
-        <form action="/financial_position" method="post">
+<h1>WalletBuddyAI.com</h1>
+<img src="https://unsplash.com/photos/tvPvROBv0F4/download?ixid=M3w1Mjk3MTB8MHwxfHJhbmRvbXx8fHx8fHx8fDE3MDU5NjQwMjl8" alt="Bakery Image" style="width: 100%; height: auto;">
+<br>
+<section>
+    <h1>Financial Position</h1>
+    <form action="/financial_position" method="post">
             
-            <!-- Auto Generated ID-->
-            <!-- <label for="dataID" >DataID:</label>
-            <input type="text" id="dataID" name="dataID" required> -->
-    
-            <!-- Self Explanatory (Backend) -->
-            <!-- <label for="userID">UserID:</label>
-            <input type="text" id="userID" name="userID" required> -->
-    
-            <label for="type">Type:</label>
-            <select id="type" name="type">
-                <option value="salary">Salary</option>
-                <option value="saving">Saving</option>
-                <option value="expense">Expense</option>
-                <option value="debt">Debt</option>
-            </select>
-    
-            <label for="amount">Amount:</label>
-            <input type="number" id="amount" name="amount" min="0" required>
-    
-            <label for="date">Date:</label>
-            <input type="date" id="date" name="date" required>
-    
-            <!-- (Optional) For expenses and savings, a category (e.g., groceries, utilities, rent). -->
-            <label for="category">Category:</label>
-            <!-- <input type="text" id="category" name="category"> -->
-            <select id="type" name="type">
-                <option value="groceries">Groceries</option>
-                <option value="utilities">Utilities</option>
-                <option value="rent">Rent</option>
-                <option value="other">Other</option>
-            </select>
+        <label for="type">Type:</label>
+        <select id="type" name="type">
+            <option value="salary">Salary</option>
+            <option value="saving">Saving</option>
+            <option value="expense">Expense</option>
+            <option value="debt">Debt</option>
+        </select>
 
-            <label for="description">Description:</label>
-            <textarea id="description" name="description"></textarea>
-    
-            <input type="submit" value="Submit Data">
-        </form>
+        <label for="amount">Amount:</label>
+        <input type="number" id="amount" name="amount" min="0" required>
 
+        <label for="date">Date:</label>
+        <input type="date" id="date" name="date" required>
 
-    </section>
-</div>
+        <!-- (Optional) For expenses and savings, a category (e.g., groceries, utilities, rent). -->
+        <label for="category">Category:</label>
+        <!-- <input type="text" id="category" name="category"> -->
+        <select id="type" name="type">
+            <option value="groceries">Groceries</option>
+            <option value="utilities">Utilities</option>
+            <option value="rent">Rent</option>
+            <option value="other">Other</option>
+        </select>
+        <label for="description">Description:</label>
+        <textarea id="description" name="description"></textarea>
+
+        <input type="submit" value="Submit Data">
+    </form>
+</section>
 
 {% endblock %}

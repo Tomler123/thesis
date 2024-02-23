@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container">
     <h1>Edit Expenses</h1>
     <form method="post" action="{{ url_for('edit_expenses') }}">
         <label for="fixed">Fixed:</label>
@@ -29,5 +28,4 @@
         <input type="number" min="0" id="other" name="other" value="{{ expenses.Other }}" required>
         <button type="submit">Update</button>
     </form>
-</div>
 {% endblock %}

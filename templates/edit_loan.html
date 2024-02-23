@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container">
     <h1>Edit Loan</h1>
     <form method="post" action="{{ url_for('edit_loan', loan_id=loan.LoanID) }}">
         <label for="lender_name">Lender Name:</label>
@@ -28,5 +27,4 @@
         <input type="text" id="notes" name="notes" value="{{ loan.Notes }}" required>
         <button type="submit">Update</button>
     </form>
-</div>
 {% endblock %}

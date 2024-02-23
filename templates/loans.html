@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
     <h1>Loans Overview</h1>
     <a href="{{ url_for('add_loan') }}" class="btn btn-primary">Add Loan</a>
     <br><br>
@@ -21,7 +20,7 @@
         <p>No lent loans.</p>
         {% endfor %}
     </ul>
-</div>
+
 {% block script %}
 <script>
 function deleteLoan(loanId) {
