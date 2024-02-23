@@ -1,78 +1,126 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/menu_footer.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--=============== REMIXICONS ===============-->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.2.0/fonts/remixicon.css" rel="stylesheet">
+    <!--=============== CSS ===============-->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% block links %}{% endblock %}
     <title>{% block title %}{% endblock %}</title>
 </head>
 <body>
-<div class="navbar">
-    <a href="home">Home</a>
-    <div class="dropdown">
-        <button class="dropbtn">Money Management
-            <i class="fa fa-caret-down"></i>
-        </button>
-        <div class="dropdown-content">
-            <a href="financial-position">Understanding Financial Position</a>
-            <!-- <a href="budgeting">Budgeting and Expense Tracking</a>
-            <a href="debt-management">Debt and Loan Management</a>
-            <a href="cost-analysis">Cost Analysis and Financial Planning</a> -->
+<div class="page-container">
+    <!--=============== HEADER ===============-->
+<header class="header">
+    <nav class="nav container">
+        <div class="nav__data">
+            <a href="home" class="nav__logo"><i class="ri-planet-line"></i> WalletBuddyAI</a>
+            <div class="nav__toggle" id="nav-toggle">
+                <i class="ri-menu-line nav__burger"></i>
+                <i class="ri-close-line nav__close"></i>
+            </div>
         </div>
-    </div>
-    <div class="dropdown">
-        <button class="dropbtn">Investment Assistance
-            <i class="fa fa-caret-down"></i>
-        </button>
-        <div class="dropdown-content">
-            <!-- <a href="investment-guidance">Basic Investment Guidance</a>
-            <a href="educational-resources">Educational Resources</a> -->
-            <a href="predict">Investment Prediction</a>
-        </div>
-    </div>
-    <div class="dropdown">
-        <button class="dropbtn">Money Management
-            <i class="fa fa-caret-down"></i>
-        </button>
-        <div class="dropdown-content">
-            <a href="income">Income</a>
-            <a href="saving">Savings</a>
-            <a href="expenses">Expenses</a>
-        </div>
-    </div>
-    <div class="dropdown">
-        <button class="dropbtn">Edit
-            <i class="fa fa-caret-down"></i>
-        </button>
-        <div class="dropdown-content">
-            <a href="edit_income">Edit Incomes</a>
-            <a href="edit_saving">Edit Savings</a>
-            <a href="edit_expenses">Edit Expenses</a>
-        </div>
-    </div>
-    <a href="stock-crypto-prediction">Stock and Crypto Prediction</a>
-    <a href="view_finances">Finances</a>
-    <a href="about">About Us</a>
-    <a href="contact">Contact Us</a>
-    <!-- <a href="login">Log In/Sign Up</a> -->
-    {% if 'user_id' in session %}
-        <a href="{{ url_for('logout') }}">Log Out</a>
-    {% else %}
-        <a href="{{ url_for('login') }}">Log In/Sign Up</a>
-    {% endif %}
-</div>
-<nav class="container-fluid">
-    <ul>
-        <li><strong>WalletBuddyAI.com</strong></li>
-    </ul>
-    <ul>
-        <li onclick="toggleTheme()" style="cursor: pointer;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 20 20"><path fill="currentColor" d="M10 3.5a6.5 6.5 0 1 1 0 13v-13ZM10 2a8 8 0 1 0 0 16a8 8 0 0 0 0-16Z"/></svg>
-        </li>
-    </ul>
-</nav>
+        <!--=============== NAV MENU ===============-->
+        <div class="nav__menu" id="nav-menu">
+            <ul class="nav__list">
+            <li><a href="home" class="nav__link">Home</a></li>
+            <li><a href="about" class="nav__link">Company</a></li>
+            <!--=============== DROPDOWN 1 ===============-->
+                <li class="dropdown__item">
+                    <div class="nav__link">
+                        Finances <i class="ri-arrow-down-s-line dropdown__arrow"></i>
+                    </div>
 
-{% block content %}{% endblock %}
+                    <ul class="dropdown__menu">
+                        <li>
+                            <a href="income" class="dropdown__link">
+                            <i class="ri-pie-chart-line"></i> Income
+                            </a>                          
+                        </li>
+
+                        <li>
+                            <a href="saving" class="dropdown__link">
+                            <i class="ri-arrow-up-down-line"></i> Savings
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="expenses" class="dropdown__link">
+                            <i class="ri-arrow-up-down-line"></i> Expenses
+                            </a>
+                        </li>
+                        <!--=============== DROPDOWN SUBMENU ===============-->
+                        <li class="dropdown__subitem">
+                            <div class="dropdown__link">
+                            <i class="ri-bar-chart-line"></i> Edit <i class="ri-add-line dropdown__add"></i>
+                            </div>
+
+                            <ul class="dropdown__submenu">
+                            <li>
+                                <a href="edit_income" class="dropdown__sublink">
+                                <i class="ri-file-list-line"></i> Edit Income
+                                </a>
+                            </li>
+      
+                            <li>
+                                <a href="edit_saving" class="dropdown__sublink">
+                                <i class="ri-cash-line"></i> Edit Savings
+                                </a>
+                            </li>
+      
+                            <li>
+                                <a href="edit_expenses" class="dropdown__sublink">
+                                <i class="ri-refund-2-line"></i> Edit Expenses
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    </ul>
+                </li>
+                  
+                <li><a href="view_finances" class="nav__link">View Finances</a></li>
+
+                <!--=============== DROPDOWN 2 ===============-->
+                <li class="dropdown__item">
+                    <div class="nav__link">
+                        Predictions <i class="ri-arrow-down-s-line dropdown__arrow"></i>
+                    </div>
+
+                    <ul class="dropdown__menu">
+                        <li>
+                            <a href="stock-crypto-prediction" class="dropdown__link">
+                            <i class="ri-user-line"></i> Stock Crypto Prediction
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="stock-crypto-prediction" class="dropdown__link">
+                            <i class="ri-lock-line"></i> Stock Crypto Prediction
+                            </a>
+                        </li>
+
+                    </ul>
+                </li>
+
+                <li><a href="contact" class="nav__link">Contact</a></li>
+                
+                <li>
+                {% if 'user_id' in session %}
+                    <!-- <a href="{{ url_for('logout') }}">Log Out</a> -->
+                    <a href="{{url_for('logout')}}" class="nav__link">Profile</a>
+                {% else %}
+                    <!-- <a href="{{ url_for('login') }}">Log In/Sign Up</a> -->
+                    <a href="{{url_for('login')}}" class="nav__link">Log In/Sign Up</a>
+                {% endif %}
+                </li>
+            </ul>
+        </div>
+    </nav>
+</header>
+
+<div class="content-wrap">{% block content %}{% endblock %}</div>
 
 <div class="footer">
     <div class="footer-content">
@@ -100,7 +148,8 @@
         <p>&copy; 2024 Personal Finance Advisor | Disclaimer</p>
     </div>
 </div>
-{% block scripts %}{% endblock %}
-<script src="static/js/index.js"></script>
+</div>
+    <!--=============== MAIN JS ===============-->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/menu_footer.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    {% block links %}{% endblock %}
+    <title>{% block title %}{% endblock %}</title>
+</head>
+<body>
+<div class="navbar">
+    <a href="home">Home</a>
+    <div class="dropdown">
+        <button class="dropbtn">Money Management
+            <i class="fa fa-caret-down"></i>
+        </button>
+        <div class="dropdown-content">
+            <a href="financial-position">Understanding Financial Position</a>
+            <!-- <a href="budgeting">Budgeting and Expense Tracking</a>
+            <a href="debt-management">Debt and Loan Management</a>
+            <a href="cost-analysis">Cost Analysis and Financial Planning</a> -->
+        </div>
+    </div>
+    <div class="dropdown">
+        <button class="dropbtn">Investment Assistance
+            <i class="fa fa-caret-down"></i>
+        </button>
+        <div class="dropdown-content">
+            <!-- <a href="investment-guidance">Basic Investment Guidance</a>
+            <a href="educational-resources">Educational Resources</a> -->
+            <a href="predict">Investment Prediction</a>
+        </div>
+    </div>
+    <div class="dropdown">
+        <button class="dropbtn">Money Management
+            <i class="fa fa-caret-down"></i>
+        </button>
+        <div class="dropdown-content">
+            <a href="income">Income</a>
+            <a href="saving">Savings</a>
+            <a href="expenses">Expenses</a>
+        </div>
+    </div>
+    <div class="dropdown">
+        <button class="dropbtn">Edit
+            <i class="fa fa-caret-down"></i>
+        </button>
+        <div class="dropdown-content">
+            <a href="edit_income">Edit Incomes</a>
+            <a href="edit_saving">Edit Savings</a>
+            <a href="edit_expenses">Edit Expenses</a>
+        </div>
+    </div>
+    <a href="stock-crypto-prediction">Stock and Crypto Prediction</a>
+    <a href="view_finances">Finances</a>
+    <a href="about">About Us</a>
+    <a href="contact">Contact Us</a>
+    <!-- <a href="login">Log In/Sign Up</a> -->
+    {% if 'user_id' in session %}
+        <a href="{{ url_for('logout') }}">Log Out</a>
+    {% else %}
+        <a href="{{ url_for('login') }}">Log In/Sign Up</a>
+    {% endif %}
+</div>
+<nav class="container-fluid">
+    <ul>
+        <li><strong>WalletBuddyAI.com</strong></li>
+    </ul>
+    <ul>
+        <li onclick="toggleTheme()" style="cursor: pointer;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 20 20"><path fill="currentColor" d="M10 3.5a6.5 6.5 0 1 1 0 13v-13ZM10 2a8 8 0 1 0 0 16a8 8 0 0 0 0-16Z"/></svg>
+        </li>
+    </ul>
+</nav>
+
+{% block content %}{% endblock %}
+
+<div class="footer">
+    <div class="footer-content">
+        <div class="footer-section quick-links">
+            <h3>Quick Links</h3>
+            <ul>
+                <li><a href="#home">Home</a></li>
+                <li><a href="#about">About Us</a></li>
+                <li><a href="#contact">Contact Us</a></li>
+            </ul>
+        </div>
+        <div class="footer-section contact-info">
+            <h3>Contact Information</h3>
+            <ul>
+                <li>Phone: 123-456-7890</li>
+                <li>Email: info@example.com</li>
+            </ul>
+        </div>
+        <div class="footer-section social-media">
+            <h3>Follow us</h3>
+            <!-- Add icons for social media with links -->
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2024 Personal Finance Advisor | Disclaimer</p>
+    </div>
+</div>
+{% block scripts %}{% endblock %}
+<script src="static/js/index.js"></script>
+</body>
+</html>
