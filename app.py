@@ -155,20 +155,73 @@ def login():
 def account():
     if 'user_id' in session:
         user_id = session['user_id']
-        # Fetch user details from the database using user_id
-        # Render the account page with user details
-        # return render_template('account.html', user_details=user_details)
+        
+        # Connect to the database
         conn = pyodbc.connect(conn_str)
         cursor = conn.cursor()
-    
-        cursor.execute("SELECT * FROM users WHERE UserID = ?", user_id)
-        data = cursor.fetchall()
 
-        # Close the database connection
-        cursor.close()
-        conn.close()
-        
-        return render_template('account.html', data=data)
+        # Fetch user details
+        cursor.execute("SELECT * FROM users WHERE UserID = ?", user_id)
+        user_details = cursor.fetchone()
+
+        # Check if user details were found
+        if user_details:
+            cursor.execute(f"SELECT * FROM income WHERE UserID = {user_id}")
+            columns = [column[0] for column in cursor.description if column[0] != 'UserID']
+            # Construct the SUM query string
+            sum_columns = ' + '.join(columns)
+            query = f"SELECT SUM({sum_columns}) AS total_income FROM income WHERE UserID = ?"
+            # Execute the query
+            cursor.execute(query, (user_id,))
+            result = cursor.fetchone()
+            total_income = result.total_income if isinstance(result.total_income, int) else 0
+
+            # Same for other tables
+            # Saving
+            cursor.execute(f"SELECT * FROM saving WHERE UserID = {user_id}")
+            columns = [column[0] for column in cursor.description if column[0] != 'UserID']
+            sum_columns = ' + '.join(columns)
+            query = f"SELECT SUM({sum_columns}) AS total_saving FROM saving WHERE UserID = ?"
+            cursor.execute(query, (user_id,))
+            result = cursor.fetchone()
+            total_saving = result.total_saving if isinstance(result.total_saving, int) else 0
+
+            # Expenses
+            cursor.execute(f"SELECT * FROM expenses WHERE UserID = {user_id}")
+            columns = [column[0] for column in cursor.description if column[0] != 'UserID']
+            sum_columns = ' + '.join(columns)
+            query = f"SELECT SUM({sum_columns}) AS total_expenses FROM expenses WHERE UserID = ?"
+            cursor.execute(query, (user_id,))
+            result = cursor.fetchone()
+            total_expenses = result.total_expenses if isinstance(result.total_expenses, int) else 0
+
+            # Loan
+            cursor.execute("""
+            SELECT SUM(LoanAmount) AS total_borrowed 
+            FROM loans 
+            WHERE UserID = ? AND IsBorrower = 1
+            """, (user_id,))
+            total_borrowed = cursor.fetchone()[0] or 0
+
+            cursor.execute("""
+            SELECT SUM(LoanAmount) AS total_lent 
+            FROM loans 
+            WHERE UserID = ? AND IsBorrower = 0
+            """, (user_id,))
+            total_lent = cursor.fetchone()[0] or 0
+            # Close the database connection
+            cursor.close()
+            conn.close()
+
+            # Pass the user details to the template
+            return render_template('account.html', user=user_details, total_saving=total_saving, total_income=total_income, total_expenses=total_expenses, total_borrowed=total_borrowed, total_lent=total_lent)
+        else:
+            # Close the database connection
+            cursor.close()
+            conn.close()
+
+            flash('User not found.')
+            return redirect(url_for('login'))
     else:
         flash('You must be logged in to view the account page')
         return redirect(url_for('login'))

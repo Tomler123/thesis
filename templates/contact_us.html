@@ -1,17 +1,28 @@
 {% extends "base.html" %}
 {% block title %}WalletBuddyAI.com{% endblock %}
 {% block links %}
-<!-- <link rel="stylesheet" href="static/css/index.css"> -->
-<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"> -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/contact_us.css') }}">
 {% endblock %}
 {% block content %}
-    
-    <h2>Contact Us</h2>
-    <form id="contact-form">
-        <input type="text" placeholder="Name" name="name" required>
-        <input type="email" placeholder="Email" name="email" required>
-        <textarea placeholder="Your Message" name="message" required></textarea>
-        <button type="submit">Send</button>
-    </form>        
+<div class="container">
+    <div class="contact-container">
+        <!-- Contact Info -->
+        <div class="contact-info_page">
+            <h2>Contact us</h2>
+            <p>Need to get in touch with us? Either fill out the form with your inquiry or find the department email you'd like to contact below.</p>
+            <!-- Add any more contact information or social media links here -->
+        </div>
 
+        <!-- Contact Form -->
+        <div class="contact-form">
+            <form id="contact-form">
+                <input type="text" placeholder="First Name*" name="first_name" required>
+                <input type="text" placeholder="Last Name" name="last_name">
+                <input type="email" placeholder="Email*" name="email" required>
+                <textarea placeholder="What can we help you with?" name="message" required></textarea>
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

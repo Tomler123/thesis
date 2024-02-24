@@ -1,0 +1,91 @@
+/* account.css */
+
+/* General styles for the account page */
+.account-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+}
+
+/* Style for the user info section */
+.user-info {
+    background-color: #007bff; /* Replace with your preferred color */
+    color: white;
+    border-radius: 10px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    width: 100%;
+    max-width: 600px; /* Adjust the width as necessary */
+}
+
+.user-info h2 {
+    margin-bottom: 1rem;
+}
+
+/* Style for the icon in the user info section */
+.user-icon {
+    background-color: white;
+    border-radius: 50%;
+    padding: 1rem;
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+
+/* Grid layout for the links */
+.links-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    width: 100%;
+    max-width: 800px; /* Adjust the width as necessary */
+}
+
+/* Style for each link in the grid */
+.link-item {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.link-item h3 {
+    margin-bottom: 0.5rem;
+}
+
+.link-item a {
+    text-decoration: none;
+    color: #007bff;
+    font-weight: bold;
+}
+
+/* Table styles if necessary */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2rem;
+}
+
+.data-table th, .data-table td {
+    border: 1px solid #ddd;
+    padding: 0.5rem;
+    text-align: left;
+}
+
+.data-table th {
+    background-color: #f7f7f7;
+}
+
+.dotted{
+    margin-left: 15%;
+    margin-right: 15%;
+    width: auto;
+    border-top: 1px dashed hsl(221, 64%, 24%);
+}
+.separator{
+    border-top: 2px dashed hsl(221, 64%, 24%);
+    margin-bottom: 1.5em;
+    width: 50%;
+}
