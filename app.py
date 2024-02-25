@@ -92,6 +92,7 @@ class SignUpForm(FlaskForm):
         EqualTo('password', message='Passwords must match.')
     ])
     submit = SubmitField('Sign Up')
+
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     form = SignUpForm()
@@ -110,12 +111,33 @@ def signup():
             VALUES (?, ?, ?, ?)
         """, name, last_name, email, hashed_password)
 
+        # Fetch the new user's ID
+        cursor.execute("SELECT UserID FROM users WHERE Email = ?", email)
+        user_id = cursor.fetchone()[0]
+
+        # Insert initial income record with zeros
+        cursor.execute("""
+            INSERT INTO income (UserID, SalaryWages, BonusesCommisions, PassiveIncome, BusinessIncome, InvestmentIncome, Other)
+            VALUES (?, 0, 0, 0, 0, 0, 0)
+            """, user_id)
+
+        cursor.execute("""
+            INSERT INTO expenses (UserID, Fixed, Variable, Discretionary, AnnualPeriodic, RentMortrage, Utilities, Insurance, Groceries, Transport, HealthCare, Subscriptions, Other)
+            VALUES (?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            """, user_id)
+        
+
+        cursor.execute("""
+            INSERT INTO saving (UserID, Emergency, retirement, Education, GoalSpecific, Health, Other)
+            VALUES (?, 0, 0, 0, 0, 0, 0)
+            """, user_id)
+        
         conn.commit()
         cursor.close()
         conn.close()
 
         flash('You have successfully signed up!', 'success')
-        return redirect(url_for('login'))
+        return redirect(url_for('account'))
 
     return render_template('signup.html', form=form)
 

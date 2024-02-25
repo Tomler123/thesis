@@ -6,7 +6,7 @@
 {% endblock %}
 {% block content %}
 
-    <h1>Record Your Income</h1>
+    <h1>Income Data</h1>
     <form method="post" action="{{ url_for('income') }}">
         <p>
             <label for="salary">Salary/Wages:</label>
@@ -32,9 +32,9 @@
             <label for="other">Others:</label>
             <input type="number" id="other" name="other" required>
         </p>
-        <p>
+        <!-- <p>
             <button type="submit">Submit</button>
-        </p>
+        </p> -->
     </form>
 
 {% endblock %}

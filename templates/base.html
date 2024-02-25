@@ -30,7 +30,6 @@
         <!--=============== NAV MENU ===============-->
         <div class="nav__menu" id="nav-menu">
             <ul class="nav__list">
-            <li><a href="{{url_for('home')}}" class="nav__link">Home</a></li>
             <li><a href="{{url_for('about')}}" class="nav__link">Company</a></li>
             <!--=============== DROPDOWN 1 ===============-->
                 <li class="dropdown__item">
@@ -40,24 +39,31 @@
 
                     <ul class="dropdown__menu">
                         <li>
-                            <a href="{{ url_for('income') }}" class="dropdown__link">
+                            <a href="{{ url_for('edit_income') }}" class="dropdown__link">
                             <i class="ri-pie-chart-line"></i> Income
                             </a>                          
                         </li>
                     
                         <li>
-                            <a href="{{ url_for('saving') }}" class="dropdown__link">
+                            <a href="{{ url_for('edit_saving') }}" class="dropdown__link">
                             <i class="ri-arrow-up-down-line"></i> Savings
                             </a>
                         </li>
                     
                         <li>
-                            <a href="{{ url_for('expenses') }}" class="dropdown__link">
+                            <a href="{{ url_for('edit_expenses') }}" class="dropdown__link">
                             <i class="ri-arrow-up-down-line"></i> Expenses
                             </a>
                         </li>
+
+                        <li>
+                            <a href="{{ url_for('loans') }}" class="dropdown__link">
+                            <i class="ri-arrow-up-down-line"></i> Loans
+                            </a>
+                        </li>
+                        
                         <!--=============== DROPDOWN SUBMENU ===============-->
-                        <li class="dropdown__subitem">
+                        <!-- <li class="dropdown__subitem">
                             <div class="dropdown__link">
                             <i class="ri-bar-chart-line"></i> Edit <i class="ri-add-line dropdown__add"></i>
                             </div>
@@ -80,8 +86,8 @@
                                 <i class="ri-refund-2-line"></i> Edit Expenses
                                 </a>
                             </li>
-                        </ul>
-                    </li>
+                            </ul>
+                        </li> -->
                     </ul>
                 </li>
                   
@@ -111,15 +117,19 @@
 
                 <li><a href="{{url_for('contact')}}" class="nav__link">Contact</a></li>
                 
-                <li>
                 {% if 'user_id' in session %}
-                    <!-- <a href="{{ url_for('logout') }}">Log Out</a> -->
-                    <a href="{{url_for('logout')}}" class="nav__link">Profile</a>
-                {% else %}
-                    <!-- <a href="{{ url_for('login') }}">Log In/Sign Up</a> -->
-                    <a href="{{url_for('login')}}" class="nav__link">Log In/Sign Up</a>
-                {% endif %}
+                <li>
+                    <a href="{{ url_for('logout') }}" class="nav__link">Log Out</a>
                 </li>
+                <li>
+                    <a href="{{url_for('account')}}" class="nav__link">Profile</a>
+                </li>
+                {% else %}
+                <li>
+                    <!-- <a href="{{ url_for('logout') }}">Log Out</a> -->
+                    <a href="{{url_for('login')}}" class="nav__link">Log In/Sign Up</a>
+                </li>    <!-- <a href="{{ url_for('login') }}">Log In/Sign Up</a> -->
+                {% endif %}
             </ul>
         </div>
     </nav>
