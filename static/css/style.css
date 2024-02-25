@@ -142,9 +142,11 @@ h1, h2, h3, h4, h5, h6 {
   /*-webkit-tap-highlight-color: transparent;*/
 }
 
-.nav__logo i {
-  font-weight: initial;
-  font-size: 1.25rem;
+.nav__logo .nav__icon {
+  height: 40px; /* Adjust as necessary */
+  width: auto;
+  margin-right: 10px; /* Space between icon and text */
+  vertical-align: middle; /* Aligns the icon vertically with the text */
 }
 
 .nav__toggle {
