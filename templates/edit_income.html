@@ -1,5 +1,10 @@
 {% extends "base.html" %}
+{% block links %}
+<link rel="stylesheet" href="static/css/edit.css">
+{% endblock %}
 {% block content %}
+<div class="edit-container">
+    <div class="form-side">
     <h1>Edit Income</h1>
     <form method="post" action="{{ url_for('edit_income') }}">
         <label for="salary">Salary/Wages:</label>
@@ -16,4 +21,25 @@
         <input type="number" min="0" id="other" name="other" value="{{ income.Other }}" required>
         <button type="submit">Update</button>
     </form>
+    </div>
+    <div class="total-sum">
+        <h2 class="total">Total Income: {{ total_sum }}</h2>
+    </div>
+    <div class="chart-side">
+        <div class="chart-placeholder">
+            <img src="data:image/png;base64,{{ chart_url }}" alt="Income Pie Chart" />
+        </div>
+        <div class="chart-legend">
+            <ul>
+                <li><span class="color-box" style="background-color: #4e79a7;"></span> Salary/Wages</li>
+                <li><span class="color-box" style="background-color: #f28e2b;"></span> Bonuses/Commissions</li>
+                <li><span class="color-box" style="background-color: #e15759;"></span> Passive Income</li>
+                <li><span class="color-box" style="background-color: #76b7b2;"></span> Business Income</li>
+                <li><span class="color-box" style="background-color: #59a14f;"></span> Investment Income</li>
+                <li><span class="color-box" style="background-color: #edc948;"></span> Others</li>
+            </ul>
+        </div>
+    </div>
+
+</div>
 {% endblock %}

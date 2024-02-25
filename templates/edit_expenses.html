@@ -1,5 +1,10 @@
 {% extends "base.html" %}
+{% block links %}
+<link rel="stylesheet" href="static/css/edit.css">
+{% endblock %}
 {% block content %}
+<div class="edit-container">
+    <div class="form-side">
     <h1>Edit Expenses</h1>
     <form method="post" action="{{ url_for('edit_expenses') }}">
         <label for="fixed">Fixed:</label>
@@ -28,4 +33,31 @@
         <input type="number" min="0" id="other" name="other" value="{{ expenses.Other }}" required>
         <button type="submit">Update</button>
     </form>
+    </div>
+    <div class="total-sum">
+        <h2 class="total">Total Income: {{ total_sum }}</h2>
+    </div>
+    <div class="chart-side">
+        <div class="chart-placeholder">
+            <img src="data:image/png;base64,{{ chart_url }}" alt="Income Pie Chart" />
+        </div>
+        <div class="chart-legend">
+            <ul>
+                <li><span class="color-box" style="background-color: #4e79a7;"></span> Fixed</li>
+                <li><span class="color-box" style="background-color: #f28e2b;"></span> Variable</li>
+                <li><span class="color-box" style="background-color: #e15759;"></span> Discretionary</li>
+                <li><span class="color-box" style="background-color: #76b7b2;"></span> Annual/Periodic</li>
+                <li><span class="color-box" style="background-color: #59a14f;"></span> Rent/Mortrage</li>
+                <li><span class="color-box" style="background-color: #4e79a7;"></span> Utilities</li>
+                <li><span class="color-box" style="background-color: #f28e2b;"></span> Insurance</li>
+                <li><span class="color-box" style="background-color: #e15759;"></span> Groceries</li>
+                <li><span class="color-box" style="background-color: #76b7b2;"></span> Transport</li>
+                <li><span class="color-box" style="background-color: #59a14f;"></span> Health Care</li>
+                <li><span class="color-box" style="background-color: #4e79a7;"></span> Subscriptions</li>                
+                <li><span class="color-box" style="background-color: #edc948;"></span> Others</li>
+            </ul>
+        </div>
+    </div>
+
+</div>
 {% endblock %}

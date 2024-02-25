@@ -1,14 +1,17 @@
 from flask import Flask, jsonify, redirect, request, render_template, url_for, session, flash, session
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
 from flask_sqlalchemy import SQLAlchemy
 import io
+from io import BytesIO
 import base64
 import pyodbc
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, validators
 from wtforms.validators import DataRequired, Email, Length, EqualTo, Regexp
-
+import math
 
 app = Flask(__name__)
 app.secret_key = 'tomler123'  # Needed for session management
@@ -106,6 +109,13 @@ def signup():
         conn = pyodbc.connect(conn_str)
         cursor = conn.cursor()
 
+        # Check if email already exists
+        cursor.execute("SELECT * FROM users WHERE Email = ?", email)
+        if cursor.fetchone():
+            flash('Email already registered. Please login or use a different email.', 'error')
+            return redirect(url_for('signup'))
+
+        # If email does not exist, proceed with registration
         cursor.execute("""
             INSERT INTO users (Name, LastName, Email, Password)
             VALUES (?, ?, ?, ?)
@@ -415,6 +425,28 @@ def view_finances():
     
     return render_template('view_finances.html', incomes=incomes, savings=savings, expenses=expenses)
 ################################################################
+# Create pie chart for saved data
+def income_pie_chart(income_data):
+    # Replacing NaN with 0
+    for key, value in income_data.items():
+        if math.isnan(value):
+            income_data[key] = 0
+    
+    # Check if all values are zero
+    if all(value == 0 for value in income_data.values()):
+        # Handle this case by creating a placeholder chart or message
+        # For example, return a specific image or a message indicating no data
+        pass
+    else:
+        fig = Figure()
+        axis = fig.add_subplot(1, 1, 1)
+        # Assuming 'income_data' is a dictionary with your data
+        axis.pie(
+            [income_data['SalaryWages'], income_data['BonusesCommisions'], income_data['PassiveIncome'], income_data['BusinessIncome'], income_data['InvestmentIncome'], income_data['Other']],
+            autopct='%1.1f%%'
+        )
+        return fig
+    
 # Edit income outcome
 @app.route('/edit_income', methods=['GET', 'POST'])
 def edit_income():
@@ -451,8 +483,57 @@ def edit_income():
         return redirect(url_for('view_finances'))
     else:
         cursor.execute("SELECT * FROM income WHERE UserID = ?", user_id)
-        income = cursor.fetchone()
-        return render_template('edit_income.html', income=income)
+        income_data = cursor.fetchone()
+
+        # Check if income_data is not None
+        if income_data:
+            # Convert fetched data to a dictionary
+            income_dict = {
+                'SalaryWages': income_data[1],  # Assuming salary is at index 1
+                'BonusesCommisions': income_data[2],  # And so on...
+                'PassiveIncome': income_data[3],
+                'BusinessIncome': income_data[4],
+                'InvestmentIncome': income_data[5],
+                'Other': income_data[6],
+            }
+            # Calculate total sum
+            total_sum = sum([
+                income_dict['SalaryWages'],
+                income_dict['BonusesCommisions'],
+                income_dict['PassiveIncome'],
+                income_dict['BusinessIncome'],
+                income_dict['InvestmentIncome'],
+                income_dict['Other']
+            ])
+
+            # Create pie chart
+            pie_chart = income_pie_chart(income_dict)
+            # Convert to base64
+            png_output = BytesIO()
+            FigureCanvas(pie_chart).print_png(png_output)
+            png_output.seek(0)
+            chart_url = base64.b64encode(png_output.getvalue()).decode('ascii')
+
+            return render_template('edit_income.html', income=income_dict, chart_url=chart_url, total_sum=total_sum)
+        else:
+            # Handle the case where no income data is found
+            flash('No income data found.')
+            return redirect(url_for('account'))
+
+def saving_pie_chart(saving_data):
+    for key, value in saving_data.items():
+        if math.isnan(value):
+            saving_data[key] = 0    
+    if all(value == 0 for value in saving_data.values()):
+        pass
+    else:
+        fig = Figure()
+        axis = fig.add_subplot(1, 1, 1)
+        axis.pie(
+            [saving_data['Emergency'], saving_data['Retirement'], saving_data['Education'], saving_data['GoalSpecific'], saving_data['Health'], saving_data['Other']],
+            autopct='%1.1f%%'
+        )
+        return fig
 
 @app.route('/edit_saving', methods=['GET', 'POST'])
 def edit_saving():
@@ -476,7 +557,7 @@ def edit_saving():
         cursor.execute("""
             UPDATE saving SET
             Emergency = ?,
-            retirement = ?,
+            Retirement = ?,
             Education = ?,
             GoalSpecific = ?,
             Health = ?,
@@ -489,8 +570,56 @@ def edit_saving():
         return redirect(url_for('view_finances'))
     else:
         cursor.execute("SELECT * FROM saving WHERE UserID = ?", user_id)
-        saving = cursor.fetchone()
-        return render_template('edit_saving.html', saving=saving)
+        saving_data = cursor.fetchone()
+        
+        if saving_data:
+            saving_dict = {
+                'Emergency' : saving_data[1],
+                'Retirement' : saving_data[2],
+                'Education' : saving_data[3],
+                'GoalSpecific' : saving_data[4],
+                'Health' : saving_data[5],
+                'Other' : saving_data[6]
+            }
+
+            total_sum = sum([
+                saving_dict['Emergency'],
+                saving_dict['Retirement'],
+                saving_dict['Education'],
+                saving_dict['GoalSpecific'],
+                saving_dict['Health'],
+                saving_dict['Other']
+            ])
+            
+            pie_chart = saving_pie_chart(saving_dict)
+            png_output = BytesIO()
+            FigureCanvas(pie_chart).print_png(png_output)
+            png_output.seek(0)
+            chart_url = base64.b64encode(png_output.getvalue()).decode('ascii')
+
+            return render_template('edit_saving.html', saving=saving_dict, chart_url=chart_url, total_sum=total_sum)
+        else:
+            # Handle the case where no income data is found
+            flash('No income data found.')
+            return redirect(url_for('account'))
+
+def expenses_pie_chart(expenses_data):
+    for key, value in expenses_data.items():
+        if math.isnan(value):
+            expenses_data[key] = 0    
+    if all(value == 0 for value in expenses_data.values()):
+        pass
+    else:
+        fig = Figure()
+        axis = fig.add_subplot(1, 1, 1)
+        axis.pie(
+            [expenses_data['Fixed'], expenses_data['Variable'], expenses_data['Discretionary'], expenses_data['AnnualPeriodic'], expenses_data['RentMortrage'], 
+            expenses_data['Utilities'], expenses_data['Insurance'], expenses_data['Groceries'], expenses_data['Transport'], expenses_data['HealthCare'],
+            expenses_data['Subscriptions'], expenses_data['Other']],
+            autopct='%1.1f%%'
+        )
+        return fig
+
 
 @app.route('/edit_expenses', methods=['GET', 'POST'])
 def edit_expenses():
@@ -539,9 +668,51 @@ def edit_expenses():
         return redirect(url_for('view_finances'))
     else:
         cursor.execute("SELECT * FROM expenses WHERE UserID = ?", user_id)
-        expenses = cursor.fetchone()
-        return render_template('edit_expenses.html', expenses=expenses)
+        expenses_data = cursor.fetchone()
 
+        if expenses_data:
+            expenses_dict = {
+                'Fixed' : expenses_data[1],
+                'Variable' : expenses_data[2],
+                'Discretionary' : expenses_data[3],
+                'AnnualPeriodic' : expenses_data[4],
+                'RentMortrage' : expenses_data[5],
+                'Utilities' : expenses_data[6],
+                'Insurance' : expenses_data[7],
+                'Groceries' : expenses_data[8],
+                'Transport' : expenses_data[9],
+                'HealthCare' : expenses_data[10],
+                'Subscriptions' : expenses_data[11],
+                'Other' : expenses_data[12]
+            }
+
+            total_sum = sum([
+                expenses_dict['Fixed'],
+                expenses_dict['Variable'],
+                expenses_dict['Discretionary'],
+                expenses_dict['AnnualPeriodic'],
+                expenses_dict['RentMortrage'],
+                expenses_dict['Utilities'],
+                expenses_dict['Insurance'],
+                expenses_dict['Groceries'],
+                expenses_dict['Transport'],
+                expenses_dict['HealthCare'],
+                expenses_dict['Subscriptions'],
+                expenses_dict[ 'Other']
+            ])
+
+            pie_chart = expenses_pie_chart(expenses_dict)
+            png_output = BytesIO()
+            FigureCanvas(pie_chart).print_png(png_output)
+            png_output.seek(0)
+            chart_url = base64.b64encode(png_output.getvalue()).decode('ascii')
+
+            return render_template('edit_expenses.html', expenses=expenses_dict, chart_url=chart_url, total_sum=total_sum)
+        else:
+            # Handle the case where no income data is found
+            flash('No income data found.')
+            return redirect(url_for('account'))
+        
 ################################################################
 # Loans
 @app.route('/loans')
