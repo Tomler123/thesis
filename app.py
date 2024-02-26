@@ -35,10 +35,6 @@ conn = pyodbc.connect(conn_str)
 def home():
     return render_template('home.html')
 
-@app.route('/about')
-def about():
-    return render_template('about_us.html')
-
 ################################################################
 # SAMPLE TO DEMONSTRATE GRAPH
 @app.route('/money_management_features', methods=['GET', 'POST'])
