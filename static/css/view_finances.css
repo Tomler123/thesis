@@ -1,0 +1,46 @@
+/* Add general styles, mobile-first */
+.section-container {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .graph-container,
+  .table-container {
+    margin-bottom: 20px;
+  }
+  
+  /* Use media queries for larger screens to place items side by side */
+  @media (min-width: 768px) {
+    .section-container {
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+  
+    .graph-container,
+    .table-container {
+      width: 48%; /* Adjust the percentage as needed */
+      margin-bottom: 0;
+    }
+  }
+  
+  /* Styles for the graph */
+  .graph-container {
+    /* Your graph container styles */
+  }
+  
+  /* Styles for the tables */
+  .table-container table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .table-container th,
+  .table-container td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+  
+  /* Add more styles for headers, rows, and responsive design as needed */
+  

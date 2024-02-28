@@ -1,5 +1,7 @@
 {% extends "base.html" %}
-
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/add_loan.css') }}">
+{% endblock %}
 {% block content %}
     <h1>Add New Loan</h1>
     <form method="post" action="{{ url_for('add_loan') }}">

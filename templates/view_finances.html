@@ -2,11 +2,19 @@
 {% block title %}View Finances{% endblock %}
 {% block links %}
 <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"> -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/view_finances.css') }}">
 {% endblock %}
 {% block content %}
     <h1>Financial Overview</h1>
     
-    <section>
+<section class="section-container">
+    <div class="graph-container">
+        <!-- Placeholder for graph; you'll replace this with your actual graph -->
+        <img src="data:image/png;base64,{{ income_graph }}" alt="Income Graph">
+
+
+    </div>
+    <div class="table-container">
         <h2>Income</h2>
         <table>
             <!-- Table Headers -->
@@ -32,9 +40,16 @@
             </tr>
             {% endfor %}
         </table>
-    </section>
-
-    <section>
+    </div>
+</section>
+<br>
+<hr>
+<br>
+<section class="section-container">
+    <div class="graph-container">
+        <img src="data:image/png;base64,{{ saving_graph }}" alt="Saving Graph">
+    </div>
+    <div class="table-container">
         <h2>Savings</h2>
         <table>
             <tr>
@@ -55,10 +70,17 @@
                 <td>{{ saving.Other }}</td>
             </tr>
             {% endfor %}
-    </table>
-    </section>
-
-    <section>
+        </table>
+    </div>
+</section>
+<br>
+<hr>
+<br>
+<section class="section-container">
+    <div class="graph-container">
+        <img src="data:image/png;base64,{{ expenses_graph }}" alt="Expenses Graph">
+    </div>
+    <div class="table-container">
         <h2>Expenses</h2>
         <table>
             <tr>
@@ -80,6 +102,7 @@
             </tr>
             {% endfor %}
         </table>
+        <br>
         <table>
             <tr>
                 <th>Insurance</th>
@@ -100,6 +123,10 @@
             </tr>
             {% endfor %}
         </table>
-    </section>
+    </div>
+</section>
 
+
+{% block script %}    
+{% endblock %}
 {% endblock %}

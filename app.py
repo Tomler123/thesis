@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, redirect, request, render_template, url_for, session, flash, session
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 from flask_sqlalchemy import SQLAlchemy
 import io
@@ -391,6 +392,16 @@ def saving():
 
     return render_template('saving.html')
 
+
+def create_bar_chart(data, categories):
+    fig = Figure()
+    axis = fig.add_subplot(1, 1, 1)
+    axis.bar(categories, data)
+    axis.set_xticklabels(categories, rotation=22)  # Rotate x-axis labels to prevent overlap
+    buf = io.BytesIO()
+    FigureCanvas(fig).print_png(buf)
+    return base64.b64encode(buf.getvalue()).decode('utf-8')
+
 @app.route('/view_finances')
 def view_finances():
     if 'user_id' not in session:
@@ -415,11 +426,42 @@ def view_finances():
     cursor.execute("SELECT * FROM expenses WHERE UserID = ?", user_id)
     expenses = cursor.fetchall()
 
-    # Close the database connection
+    # Fetch the income data
+    cursor.execute("SELECT * FROM income WHERE UserID = ?", user_id)
+    income_data = cursor.fetchone()
+
+    if income_data:
+        categories = ['Salary/Wages', 'Bonuses/Commissions', 'Passive Income', 'Business Income', 'Investment Income', 'Others']
+        amounts = [income_data.SalaryWages, income_data.BonusesCommisions, income_data.PassiveIncome, income_data.BusinessIncome, income_data.InvestmentIncome, income_data.Other]
+        income_graph = create_bar_chart(amounts, categories)
+    
+    cursor.execute("SELECT * FROM saving WHERE UserID = ?", user_id)
+    saving_data = cursor.fetchone()
+
+    if saving_data:
+        categories = ['Emergency', 'Retirement', 'Education', 'GoalSpecific', 'Health', 'Others']
+        amounts = [saving_data.Emergency, saving_data.Retirement, saving_data.Education, saving_data.GoalSpecific, saving_data.Health, saving_data.Other]
+        saving_graph = create_bar_chart(amounts, categories)
+    
+    cursor.execute("SELECT * FROM expenses WHERE UserID = ?", user_id)
+    expenses_data = cursor.fetchone()
+
+    if expenses_data:
+        categories = ['Fixed', 'Variable', 'Discretionary', 'AnnualPeriodic', 'RentMortrage', 
+            'Utilities', 'Insurance', 'Groceries', 'Transport', 'HealthCare',
+            'Subscriptions', 'Other']
+        amounts = [expenses_data.Fixed, expenses_data.Variable, expenses_data.Discretionary, expenses_data.AnnualPeriodic, expenses_data.RentMortrage, 
+            expenses_data.Utilities, expenses_data.Insurance, expenses_data.Groceries, expenses_data.Transport, expenses_data.HealthCare,
+            expenses_data.Subscriptions, expenses_data.Other]
+        expenses_graph = create_bar_chart(amounts, categories)
+        
+
+
     cursor.close()
     conn.close()
     
-    return render_template('view_finances.html', incomes=incomes, savings=savings, expenses=expenses)
+    return render_template('view_finances.html', incomes=incomes, savings=savings, expenses=expenses, income_graph=income_graph, saving_graph=saving_graph, expenses_graph=expenses_graph)
+
 ################################################################
 # Create pie chart for saved data
 def income_pie_chart(income_data):
