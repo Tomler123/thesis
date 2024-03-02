@@ -1,94 +1,112 @@
-# Import necessary libraries
-import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
+import pandas as pd
 import matplotlib.pyplot as plt
-from pandas_datareader import data as pdr
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Dropout
 import yfinance as yf
 import sys
-import subprocess
-def main(stock,type):
 
+def main(stock):
+    # Define the stock symbol and time range
+    symbol = 'AAPL'  # Example: Apple Inc.
+    start_date = '2023-01-01'
+    end_date = '2024-01-01'
 
+    # Fetch stock data
+    stock_data = fetch_stock_data(stock, start_date, end_date)
 
+    # Extend the end date by 10 days for predictions
+    extended_end_date = pd.to_datetime(end_date) + pd.Timedelta(days=10)
 
-    # Download data from Yahoo Finance
+    # Define hyperparameters and sequence length
+    seq_length = 30
+    epochs = 100
+    batch_size = 64
 
-    
-   
-    yf.pdr_override()
-    stock_symbol = stock
+    # Preprocess the data   
+    prices = stock_data['Close'].values.reshape(-1, 1)
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    scaled_prices = scaler.fit_transform(prices)
 
-    if type=='long' :
-        #Dates for long term investment
-        start_date = '2023-01-01'
-        end_date = '2024-01-01'
-    else:
-        #Dates for short term investment
-        start_date = '2024-01-01'
-        end_date = '2024-01-22' 
-  
-    df = pdr.get_data_yahoo(stock_symbol, start=start_date, end=end_date)
-
-    
-
-    # Define inputs and columns
-    df['Date'] = pd.to_datetime(df.index)
-    df['Year'] = df['Date'].dt.year
-    df['Month'] = df['Date'].dt.month
-    df['Day'] = df['Date'].dt.day
-
-    target_column = 'Close'
-    features = ['Year', 'Month', 'Day']
+    # Create sequences and labels
+    X, y = create_sequences(scaled_prices, seq_length)
 
     # Split the data into training and testing sets
-    train_size = int(len(df) * 0.8)
-    train_data, test_data = df[:train_size], df[train_size:]
+    split = int(0.8 * len(X))
+    X_train, X_test = X[:split], X[split:]
+    y_train, y_test = y[:split], y[split:]
 
-    X_train, y_train = train_data[features], train_data[target_column]
-    X_test, y_test = test_data[features], test_data[target_column]
+    # Build the LSTM model
+    model = Sequential([
+        LSTM(units=50, return_sequences=True, input_shape=(seq_length, 1)),
+        Dropout(0.2),
+        LSTM(units=50, return_sequences=False),
+        Dropout(0.2),
+        Dense(units=1)
+    ])
 
-    # Train a Linear Regression model
-    model = LinearRegression()
-    model.fit(X_train, y_train)
+    # Compile the model
+    model.compile(optimizer='adam', loss='mean_squared_error')
 
+    # Train the model
+    history = model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(X_test, y_test))
 
-#     command = [
-#     'python3 ',
-#     './ml.py ',
-#     X_train,
-#     ' ',
-#     y_train
-#     ]
-#   #  print(X_train)
-#    # print(y_train[:,1])
-#     str1=""
-#     str1=str1.join(command)
-    #predictions2=subprocess.getoutput(str1)
-    #print(predictions2)
-
-    # Make predictions on the test set
+    # Predictions
     predictions = model.predict(X_test)
-    
-    print(predictions)
+    predictions = scaler.inverse_transform(predictions)
+    y_test = scaler.inverse_transform(y_test)
 
-    # Evaluate the model
-    mse = mean_squared_error(y_test, predictions)
-    print(f'Mean Squared Error: {mse}')
-
-    # Plot the results
-    plt.figure(figsize=(12, 6))
-    plt.plot(test_data['Date'], y_test, label='Actual Prices')
-    plt.plot(test_data['Date'], predictions, label='Predicted Prices')
-    plt.xlabel('Date')
-    plt.ylabel('Stock Price')
-    plt.title('Stock Price Prediction')
+    plt.plot(history.history['loss'], label='Training Loss')
+    plt.plot(history.history['val_loss'], label='Validation Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
     plt.legend()
-    plt.show()
+    plt.savefig('loss_plot.png')  # Save the plot as an image
+    plt.close()
+
+    # Predictions
+    plt.plot(y_test, label='Actual Prices')
+    plt.plot(predictions, label='Predicted Prices')
+    plt.xlabel('Time')
+    plt.ylabel('Price')
+    plt.legend()
+    plt.savefig('predictions_plot.png')  # Save the plot as an image
+    plt.close()
+
+    # Predict beyond the end date by 10 days
+    last_sequence = scaled_prices[-seq_length:]
+    extended_predictions = []
+    for _ in range(10):
+        prediction = model.predict(last_sequence.reshape(1, seq_length, 1))
+        extended_predictions.append(prediction[0, 0])
+        last_sequence = np.append(last_sequence[1:], prediction, axis=0)
+
+    # Inverse transform the predicted prices
+    extended_predictions = scaler.inverse_transform(np.array(extended_predictions).reshape(-1, 1))
+
+    # Plot the extended predictions
+    plt.plot(extended_predictions, label='Extended Predictions')
+    plt.xlabel('Time')
+    plt.ylabel('Price')
+    plt.legend()
+    plt.savefig('extended_predictions_plot.png')  # Save the plot as an image
+    plt.close()
 
 
-if __name__=="__main__":
-    if(len(sys.argv)==3):
-        main(sys.argv[1],sys.argv[2])
+# Define function to create input sequences and labels
+def create_sequences(data, seq_length):
+    X, y = [], []
+    for i in range(len(data) - seq_length):
+        X.append(data[i:i+seq_length])
+        y.append(data[i+seq_length])
+    return np.array(X), np.array(y)
+
+# Function to fetch stock data from Yahoo Finance
+def fetch_stock_data(symbol, start_date, end_date):
+    stock = yf.download(symbol, start=start_date, end=end_date)
+    return stock
+
+if __name__ == "__main__":
+    if(len(sys.argv) == 2):
+        main(sys.argv[1])
