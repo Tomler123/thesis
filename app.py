@@ -13,6 +13,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, validators
 from wtforms.validators import DataRequired, Email, Length, EqualTo, Regexp
 import math
+import algo
 
 app = Flask(__name__)
 app.secret_key = 'tomler123'  # Needed for session management
@@ -37,44 +38,40 @@ def home():
     return render_template('home.html')
 
 ################################################################
-# SAMPLE TO DEMONSTRATE GRAPH
-@app.route('/money_management_features', methods=['GET', 'POST'])
-def money_management_features():
-    image_base64 = None
-    if request.method == 'POST':
-        # Get the stock name from the form
-        stock_name = request.form['stock_name']
-
-        # Perform your calculation here
-        # This is where you'd include your actual data fetching and graph generation logic
-        plt.figure()
-        plt.plot([1, 2, 3], [4, 5, 6]) # Replace with actual data
-        plt.title(f'Stock Data for {stock_name}')
-
-        # Save it to a bytes buffer
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png')
-        buf.seek(0)
-
-        # Encode the image in base64 and remove the bytestring header
-        image_base64 = base64.b64encode(buf.read()).decode('utf-8')
-        buf.close()
-
-    # Render the same page with the form and possibly the graph
-    return render_template('money_management_features.html', image_base64=image_base64)
 
 ################################################################
 # ??????????????????????
+
 @app.route('/financial-position')
 def financial_position():    
     return render_template('financial-position.html')
 
 ################################################################
 # ??????????????????????
-@app.route('/stock-crypto-prediction')
+@app.route('/stock_crypto_prediction', methods=['GET', 'POST'])
 def stock_crypto_prediction():
-    return render_template('stock_and_crypto_prediction.html')
+    if request.method == 'POST':
+        # Get the stock name from the form
+        stock_name = request.form.get('stock_name')
+        
+        # Call the main function from algo.py with stock_name
+        # It should save the images in the static/images/ directory
+        algo.main(stock_name)
 
+        # Construct paths to the images
+        loss_plot_path = 'images/loss_plot.png'
+        predictions_plot_path = 'images/predictions_plot.png'
+        extended_predictions_plot_path = 'images/extended_predictions_plot.png'
+        
+        # Render the template with the paths to the generated images
+        return render_template('stock_crypto_prediction.html',
+                               stock_name=stock_name,
+                               loss_plot_path=loss_plot_path,
+                               predictions_plot_path=predictions_plot_path,
+                               extended_predictions_plot_path=extended_predictions_plot_path)
+    else:
+        # GET request, just render the form
+        return render_template('stock_crypto_prediction.html')
 ################################################################
 # Login Signup
 

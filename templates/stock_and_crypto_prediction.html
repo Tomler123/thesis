@@ -8,14 +8,19 @@
 {% block content %}
     <h1>WalletBuddyAI.com</h1>
     <!-- Input form for stock graph -->
-    <form action="/money_management_features" method="post">
+    <form action="{{ url_for('stock_crypto_prediction') }}" method="post">
         <label for="stock_name">Enter Stock Name:</label>
         <input type="text" id="stock_name" name="stock_name" required>
         <input type="submit" value="Get Graph">
     </form>
     <!-- Conditionally display the graph if it exists -->
-    {% if image_base64 %}
-        <h2>Graph for {{ request.form['stock_name'] }}</h2>
+    {% if stock_name %}
+        <div>
+            <h2>Graph for {{ stock_name }}</h2>
+            <img src="{{ url_for('static', filename=loss_plot_path) }}" alt="Loss Plot">
+            <img src="{{ url_for('static', filename=predictions_plot_path) }}" alt="Predictions Plot">
+            <img src="{{ url_for('static', filename=extended_predictions_plot_path) }}" alt="Extended Predictions Plot">
+        </div>
     {% endif %}
     <br>
     <section>
