@@ -1,0 +1,119 @@
+/* recommendations.css */
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.form-group input[type="number"],
+.form-group select {
+    /* width: 100%; */
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.button:hover {
+    background-color: #0056b3;
+}
+
+table {
+    margin-top: 20px;
+    background-color: #f9f9f9;
+    width: 60%; /* Set the table width to occupy 60% of the page */
+    margin: auto; /* Center the table on the page */
+    border-collapse: collapse;
+    margin-left: 0;
+  }
+  
+  th, td {
+    text-align: left;
+    padding: 8px;
+    border: 1px solid #ddd;
+  }
+  
+  th {
+    background-color: #4CAF50;
+    color: white;
+  }
+  
+  tr:nth-child(even){background-color: #f2f2f2}
+  
+  /* Adding rounded corners to the first and last th for aesthetics */
+  th:first-child {
+    border-top-left-radius: 10px;
+  }
+  
+  th:last-child {
+    border-top-right-radius: 10px;
+  }
+  
+  /* Styling for the table rows */
+  tr:hover {background-color: #ddd;}
+  
+  /* Styling for the table data cells */
+  td {
+    border-right: 1px solid #ddd;
+    border-left: 1px solid #ddd;
+  }
+  
+  td:first-child {
+    border-left: none;
+  }
+  
+  td:last-child {
+    border-right: none;
+  }
+  
+  th:first-child, td:first-child {
+    width: 40%;
+  }
+  
+  th:not(:first-child), td:not(:first-child) {
+    width: 20%;
+  }
+  
+  tr:nth-child(even) {background-color: #f2f2f2}
+  
+  tr:hover {background-color: #ddd;}
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        width: 95%;
+        padding: 10px;
+    }
+}
+
+/* Additional styles for legend, charts, etc. */
+.legend {
+    list-style: none;
+    padding: 0;
+}
+
+.legend li {
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+}
+
+.legend .color-box {
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    margin-right: 10px;
+}

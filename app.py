@@ -866,9 +866,53 @@ def delete_loan(loan_id):
         return jsonify({'message': 'An error occurred while deleting the loan.'}), 500
 ################################################################
 
+@app.route('/recommendations', methods=['GET', 'POST'])
+def recommendations():
+    if 'user_id' not in session:
+        flash('Please log in to access recommendations.')
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        user_id = session['user_id']
+        savings_goal_percentage = float(request.form.get('savings_goal'))
+        
+        # Assume we have a function to get the user's total income
+        # total_income = get_total_income(user_id)
+        total_income1 = 2000
+        total_income = round((total_income1 - fixed) * savings_goal_percentage/100,2)
+        # savings_amount = (savings_goal_percentage / 100) * total_income
+        # daily_spending_limit = (total_income - savings_amount) / 30  # Assuming 30 days in a month
+
+        fixed = 480
+        daily_spending_limit = round((total_income - fixed)/30,2)
+
+        # Calculate recommendations for spending
+        recommendations = {
+            'groceries': round(daily_spending_limit * 0.15, 2), 
+            'healthcare': round(daily_spending_limit * 0.05, 2), 
+            'transportation': round(daily_spending_limit * 0.1, 2), 
+            'personal': round(daily_spending_limit * 0.05, 2), 
+            'pets': round(daily_spending_limit * 0.03, 2), 
+            'entertainment': round(daily_spending_limit * 0.05, 2), 
+        }
+        recommendations2 = {
+            'housing': 200, 
+            'utilities': 80, 
+            'debt': 75, 
+            'education': 100, 
+            'subscriptions': 25, 
+        }
+
+        return render_template('recommendations.html', recommendations=recommendations, daily=daily_spending_limit, monthly=round(daily_spending_limit*30,2), fixed_rec=recommendations2, difference=total_income-fixed, total_income=total_income1, fixed=fixed)
+    else:
+        # GET request, just render the form
+        return render_template('recommendations.html')
+################################################################
+
+
 @app.route('/contact')
 def contact():
     return render_template('contact_us.html')
 
 if __name__ == '__main__':
-    app.run(debug=True, port=8000)
+    app.run(debug=True, host='0.0.0.0', port=8000)

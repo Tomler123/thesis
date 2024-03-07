@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Financial Recommendations{% endblock %}
+{% block links %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/recommendations.css') }}">
+{% endblock %}
+{% block content %}
+    <h1>Financial Recommendations</h1>
+    <p>Based on your monthly income, we provide personalized savings and spending recommendations to help you manage your finances effectively.</p>
+
+    <form class="form-group" action="{{ url_for('recommendations') }}" method="post">
+        <label for="savings_goal">How much of your income would you like to save each month?</label>
+        <input type="number" id="savings_goal" name="savings_goal" min="0" max="100" step="1" required>%
+        <input class="button" type="submit" value="Get Recommendations">
+    </form>
+    
+    {% if recommendations %}
+    {% if difference < 0 %}
+    <h2>The fixed expenses amount({{fixed}}) is greates than total income({{total_income}}), thus we can not recommend spending plan</h2>
+    {% else %}
+    <br>
+    <p>Excluding fixed expenses, you can spend:<br>Daily : <strong>${{ daily }}</strong><br>Monthly : <strong>${{ monthly }}</strong></p>
+    <section id="recommendations-section">
+        <h2>Your Custom Financial Plan</h2>
+        <h3>Not Fixed</h3>
+        
+        <table>
+            <tr>
+                <th>Expense Category</th>
+                <th>Daily</th>
+                <th>Monthly</th>
+                
+            </tr>
+            {% for category, amount in recommendations.items() %}
+            <tr>
+                <td>{{ category.capitalize() }}</td>
+                <td>${{ amount }}</td>
+                <td>${{ "{:0.2f}".format(amount*30) }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <h3>Fixed</h3>
+        <table>
+            <tr>
+                <th>Expense Category</th>
+                <th>Monthly</th>
+            </tr>
+            {% for category, amount in fixed_rec.items() %}
+            <tr>
+                <td>{{ category.capitalize() }}</td>
+                <td>${{ "{:0.2f}".format(amount) }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </section>
+    {% endif %}
+    {% endif %}
+{% endblock %}
