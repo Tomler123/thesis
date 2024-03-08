@@ -874,36 +874,93 @@ def recommendations():
     
     if request.method == 'POST':
         user_id = session['user_id']
-        savings_goal_percentage = float(request.form.get('savings_goal'))
         
-        # Assume we have a function to get the user's total income
-        # total_income = get_total_income(user_id)
-        total_income1 = 2000
-        total_income = round((total_income1 - fixed) * savings_goal_percentage/100,2)
-        # savings_amount = (savings_goal_percentage / 100) * total_income
-        # daily_spending_limit = (total_income - savings_amount) / 30  # Assuming 30 days in a month
+        # Connect to the database
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
 
-        fixed = 480
-        daily_spending_limit = round((total_income - fixed)/30,2)
-
-        # Calculate recommendations for spending
-        recommendations = {
-            'groceries': round(daily_spending_limit * 0.15, 2), 
-            'healthcare': round(daily_spending_limit * 0.05, 2), 
-            'transportation': round(daily_spending_limit * 0.1, 2), 
-            'personal': round(daily_spending_limit * 0.05, 2), 
-            'pets': round(daily_spending_limit * 0.03, 2), 
-            'entertainment': round(daily_spending_limit * 0.05, 2), 
+        # Calculating total monthly debt
+        cursor.execute("SELECT sum(MonthlyPayment) FROM loans WHERE UserID = ? and IsBorrower = 1", user_id)
+        total_monthly_debt_data = cursor.fetchone()[0]
+        if total_monthly_debt_data is not None:
+            total_monthly_debt = float(total_monthly_debt_data)
+        else:
+            total_monthly_debt = 0
+        
+        cursor.execute("SELECT sum(MonthlyPayment) FROM loans WHERE UserID = ? and IsBorrower = 0", user_id)
+        total_expected_loan_data = cursor.fetchone()[0]
+        if total_expected_loan_data is not None:
+            total_expected_loan = float(total_expected_loan_data)
+        else:
+            total_expected_loan = 0
+        
+        # Calculating total fixed expenses
+        cursor.execute("SELECT * FROM expenses WHERE UserID = ?", user_id)
+        expenses_data = cursor.fetchone()
+        fixed_expenses = {
+            "Housing" : round(expenses_data.RentMortrage,2),
+            "Utilities" : round(expenses_data.Utilities,2),
+            "Debt" : round(total_monthly_debt,2), # PROCESS LOAN TABLE
+            "Education" : round(expenses_data.Other,2), # OTHER, CHANGE TO EDUCATION LATER IN TABLE
+            "Subscriptions" : round(expenses_data.Subscriptions,2),
         }
-        recommendations2 = {
-            'housing': 200, 
-            'utilities': 80, 
-            'debt': 75, 
-            'education': 100, 
-            'subscriptions': 25, 
-        }
 
-        return render_template('recommendations.html', recommendations=recommendations, daily=daily_spending_limit, monthly=round(daily_spending_limit*30,2), fixed_rec=recommendations2, difference=total_income-fixed, total_income=total_income1, fixed=fixed)
+        fixed_total = sum([b for (a,b) in fixed_expenses.items()])
+        savings_goal_percentage = float(request.form.get('savings_goal'))        
+
+        # Calculating total income
+        
+        cursor.execute(f"SELECT * FROM income WHERE UserID = {user_id}")
+        columns = [column[0] for column in cursor.description if column[0] != 'UserID']
+        sum_columns = ' + '.join(columns)
+        query = f"SELECT SUM({sum_columns}) AS total_income FROM income WHERE UserID = ?"
+        # Execute the query
+        cursor.execute(query, (user_id,))
+        result = cursor.fetchone()
+        total_income = result.total_income if isinstance(result.total_income, int) else 0
+
+        if total_income <= 0:
+            cursor.close()
+            conn.close()
+            return render_template('recommendations.html', error = "You have not entered income details. Please fill in all the necessary data. You can find link through 'Navigation Menu'=>'Finances'=>'Edit Income'")
+        elif fixed_total > total_income:
+            cursor.close()
+            conn.close()
+            return render_template('recommendations.html', error = f"Total income ({total_income}) is less than total fixed expenses ({fixed_total})")
+        elif total_income*(1-(savings_goal_percentage/100)) - fixed_total < 0:
+            cursor.close()
+            conn.close()
+            return render_template('recommendations.html', error = f"Can't save {savings_goal_percentage}%, because of high amount of total fixed expenses ({fixed_total}) compared to total income ({total_income})")
+        else:
+            savings_amount = total_income*(1-(savings_goal_percentage/100)) - fixed_total
+            daily_spending_limit = round(savings_amount/30,2)
+
+            
+            # Calculate recommendations for spending
+            recommendations = {
+                'groceries': round(daily_spending_limit * 0.15, 2), 
+                'healthcare': round(daily_spending_limit * 0.05, 2), 
+                'transportation': round(daily_spending_limit * 0.1, 2), 
+                'personal': round(daily_spending_limit * 0.05, 2), 
+                'pets': round(daily_spending_limit * 0.03, 2), 
+                'entertainment': round(daily_spending_limit * 0.05, 2), 
+            }
+            # Just expenses table
+            # Fixed
+            # Variable
+            # Discretionary
+            # AnnualPeriodic
+            # RentMortrage
+            # Utilities
+            # Insurance
+            # Groceries
+            # Transport
+            # HealthCare
+            # Subscriptions
+            # Other
+            cursor.close()
+            conn.close()
+            return render_template('recommendations.html', fixed_expenses=fixed_expenses, recommendations=recommendations, fixed=fixed_total, daily=daily_spending_limit, monthly=savings_amount, total_expected_loan=total_expected_loan)
     else:
         # GET request, just render the form
         return render_template('recommendations.html')

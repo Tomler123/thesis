@@ -13,12 +13,15 @@
         <input class="button" type="submit" value="Get Recommendations">
     </form>
     
-    {% if recommendations %}
-    {% if difference < 0 %}
-    <h2>The fixed expenses amount({{fixed}}) is greates than total income({{total_income}}), thus we can not recommend spending plan</h2>
+    {% if error %}
+    <h2>{{ error }}</h2>
     {% else %}
-    <br>
+    {% if recommendations %}
     <p>Excluding fixed expenses, you can spend:<br>Daily : <strong>${{ daily }}</strong><br>Monthly : <strong>${{ monthly }}</strong></p>
+    {% if total_expected_loan > 0 %}
+    <p>You are expected to get <strong>{{ total_expected_loan }}</strong> loan this month as income.<br>Go to the<i><strong> 'Navigation Bar'=>'View Finances'=>'Loans' </strong></i>for more information about loans.</p>
+    {% endif %}
+    <p></p>
     <section id="recommendations-section">
         <h2>Your Custom Financial Plan</h2>
         <h3>Not Fixed</h3>
@@ -33,10 +36,15 @@
             {% for category, amount in recommendations.items() %}
             <tr>
                 <td>{{ category.capitalize() }}</td>
-                <td>${{ amount }}</td>
+                <td>${{ "{:0.2f}".format(amount) }}</td>
                 <td>${{ "{:0.2f}".format(amount*30) }}</td>
             </tr>
             {% endfor %}
+            <tr>
+                <td><strong>Total</strong></td>
+                <td><strong>${{ "{:0.2f}".format(daily) }}</strong></td>
+                <td><strong>${{ "{:0.2f}".format(monthly) }}</strong></td>
+            </tr>
         </table>
 
         <h3>Fixed</h3>
@@ -45,12 +53,16 @@
                 <th>Expense Category</th>
                 <th>Monthly</th>
             </tr>
-            {% for category, amount in fixed_rec.items() %}
+            {% for category, amount in fixed_expenses.items() %}
             <tr>
                 <td>{{ category.capitalize() }}</td>
                 <td>${{ "{:0.2f}".format(amount) }}</td>
             </tr>
             {% endfor %}
+            <tr>
+                <td><strong>Total</strong></td>
+                <td><strong>${{ "{:0.2f}".format(fixed) }}</strong></td>
+            </tr>
         </table>
     </section>
     {% endif %}
