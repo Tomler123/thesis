@@ -8,6 +8,7 @@ import io
 from io import BytesIO
 import base64
 import pyodbc
+import urllib3
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, validators
@@ -15,22 +16,37 @@ from wtforms.validators import DataRequired, Email, Length, EqualTo, Regexp
 import math
 import algo
 
-app = Flask(__name__)
-app.secret_key = 'tomler123'  # Needed for session management
-
-server = 'TOMLER'  # If a local instance, typically 'localhost\\SQLEXPRESS'
-database = 'thesis'  # Your database name
-# username = 'your_username'  # Your SQL Server username, if using SQL Server authentication
-# password = 'your_password'  # Your SQL Server password, if using SQL Server authentication
+# server = 'TOMLER'  # If a local instance, typically 'localhost\\SQLEXPRESS'
+# database = 'thesis'  # Your database name
 
 # For Windows Authentication
-conn_str = f'DRIVER={{SQL Server}};SERVER={server};DATABASE={database};TRUSTED_CONNECTION=yes'
-
-# Example of creating a connection
-conn = pyodbc.connect(conn_str)
+# conn_str = f'DRIVER={{SQL Server}};SERVER={server};DATABASE={database};TRUSTED_CONNECTION=yes'
 
 # Tomleras database route
 # C:\Program Files (x86)\Microsoft SQL Server Management Studio 19
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'your_secret_key_here'
+
+# Configure Database URI: 
+server = 'walletbuddyai.database.windows.net'
+database = 'walletbuddyai'
+username = 'toma_sulava_sulaberidze'
+password = 'Tomler123,./'
+driver= '{ODBC Driver 17 for SQL Server}'
+
+conn_str = f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}'
+params = urllib3.parse.quote_plus(
+    "DRIVER={ODBC Driver 17 for SQL Server};"
+    "SERVER=walletbuddyai.database.windows.net;"
+    "DATABASE=walletbuddyai;"
+    "UID=toma_sulava_sulaberidze;"
+    "PWD=Tomler123,./;"
+)
+app.config['SQLALCHEMY_DATABASE_URI'] = "mssql+pyodbc:///?odbc_connect={params}"
+
+conn = pyodbc.connect(conn_str)
+cursor = conn.cursor()
 
 @app.route('/')
 @app.route('/home')
