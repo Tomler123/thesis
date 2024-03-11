@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-
 {% block content %}
     <h1>Loans Overview</h1>
     <a href="{{ url_for('add_loan') }}" class="btn btn-primary">Add Loan</a>
@@ -42,6 +41,9 @@ function deleteLoan(loanId) {
             console.error('Error:', error);
         });
     }
+}
+function editLoan(loanID) {
+    window.location.href = '/edit_loan/' + loanID;
 }
 </script>
     

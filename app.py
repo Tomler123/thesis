@@ -797,38 +797,45 @@ def edit_loan(loan_id):
     # Connect to your database
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
+    try:
+        if request.method == 'POST':
+            # Retrieve form data
+            lender_name = request.form['lender_name']
+            loan_amount = request.form['loan_amount']
+            interest_rate = request.form['interest_rate']
+            monthly_payment = request.form['monthly_payment']
+            start_date = request.form['start_date']
+            due_date = request.form['due_date']
+            remaining_balance = request.form['remaining_balance']
+            is_borrower = request.form['is_borrower']
+            notes = request.form['notes']
+            
+            # Update the loan details in the database
+            update_query = """UPDATE loans SET LenderName=?, LoanAmount=?, InterestRate=?, MonthlyPayment=?,StartDate=?, DueDate=?, RemainingBalance=?, IsBorrower=?, Notes=? WHERE LoanID=?"""
+            cursor.execute(update_query, (lender_name, loan_amount, interest_rate, monthly_payment, start_date, due_date, remaining_balance, is_borrower, notes, loan_id))
+            conn.commit()
 
-    if request.method == 'POST':
-        # Retrieve form data
-        lender_name = request.form['lender_name']
-        loan_amount = request.form['loan_amount']
-        interest_rate = request.form['interest_rate']
-        monthly_payment = request.form['monthly_payment']
-        start_date = request.form['start_date']
-        due_date = request.form['due_date']
-        remaining_balance = request.form['remaining_balance']
-        is_borrower = request.form['is_borrower']
-        notes = request.form['notes']
-        
-        # Update the loan details in the database
-        update_query = """UPDATE loans SET LenderName=?, LoanAmount=?, InterestRate=?, MonthlyPayment=?,StartDate=?, DueDate=?, RemainingBalance=?, IsBorrower=?, Notes=? WHERE LoanID=?"""
-        cursor.execute(update_query, (lender_name, loan_amount, interest_rate, monthly_payment, start_date, due_date, remaining_balance, is_borrower, notes, loan_id))
-        conn.commit()
+            # Redirect to a confirmation page or back to the loan list
+            return redirect(url_for('loans'))
 
-        # Redirect to a confirmation page or back to the loan list
-        return redirect(url_for('loans'))
+        else:
+            # For a GET request, fetch the loan's current details to prefill the form
+            cursor.execute("SELECT * FROM loans WHERE LoanID=?", (loan_id,))
+            loan = cursor.fetchone()
 
-    else:
-        # For a GET request, fetch the loan's current details to prefill the form
-        cursor.execute("SELECT * FROM loans WHERE LoanID=?", (loan_id,))
-        loan = cursor.fetchone()
-
-        # Close database connection
+            # Render the edit page template with the loan details
+            return render_template('edit_loan.html', loan=loan)
+ 
+    except Exception as e:
+        flash(f'An error occurred: {e}')
+    finally:
+        # Now we only close the cursor and connection once we are sure they have been used.
         cursor.close()
         conn.close()
 
-        # Render the edit page template with the loan details
-        return render_template('edit_loan.html', loan=loan)
+    # This will not execute if a redirect is returned above
+    return render_template('edit_loan.html')
+
 
 @app.route('/delete_loan/<int:loan_id>', methods=['POST'])
 def delete_loan(loan_id):
@@ -893,37 +900,36 @@ def add_subscription():
 
 @app.route('/edit_subscription/<int:subscription_id>', methods=['GET', 'POST'])
 def edit_subscription(subscription_id):
-    # Check if user is logged in
     if not session.get('user_id'):
         return redirect(url_for('login'))
 
-    # Connect to your database
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
 
-    if request.method == 'POST':
-        # Retrieve form data
-        name = request.form['name']
-        cost = request.form['cost']
-        # Update the subscription details in the database
-        update_query = """UPDATE subscriptions SET Name=?, Cost=? WHERE SubscriptionID=?"""
-        cursor.execute(update_query, (name, cost, subscription_id))
-        conn.commit()
-
-        # Redirect to a confirmation page or back to the subscription list
-        return redirect(url_for('subscriptions'))
-
-    else:
-        # For a GET request, fetch the subscription's current details to prefill the form
-        cursor.execute("SELECT * FROM subscriptions WHERE SubscriptionID=?", (subscription_id,))
-        subscription = cursor.fetchone()
-
-        # Close database connection
+    try:
+        if request.method == 'POST':
+            name = request.form['name']
+            cost = request.form['cost']
+            
+            update_query = """UPDATE subscriptions SET Name=?, Cost=? WHERE SubscriptionID=?"""
+            cursor.execute(update_query, (name, cost, subscription_id))
+            conn.commit()
+            flash('Subscription updated successfully!')
+            return redirect(url_for('subscriptions'))
+        else:
+            cursor.execute("SELECT * FROM subscriptions WHERE SubscriptionID=?", (subscription_id,))
+            subscription = cursor.fetchone()
+            return render_template('edit_subscription.html', subscription=subscription)
+    except Exception as e:
+        flash(f'An error occurred: {e}')
+    finally:
+        # Now we only close the cursor and connection once we are sure they have been used.
         cursor.close()
         conn.close()
 
-        # Render the edit page template with the subscription details
-        return render_template('edit_subscription.html', subscription=subscription)
+    # This will not execute if a redirect is returned above
+    return render_template('edit_subscription.html')
+
 
 @app.route('/delete_subscription/<int:subscription_id>', methods=['POST'])
 def delete_subscription(subscription_id):
