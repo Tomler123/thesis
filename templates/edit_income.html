@@ -7,16 +7,14 @@
     <div class="form-side">
     <h1>Edit Income</h1>
     <form method="post" action="{{ url_for('edit_income') }}">
-        <label for="salary">Salary/Wages:</label>
-        <input type="number" min="0" id="salary" name="salary" value="{{ income.SalaryWages }}" required>
-        <label for="bonuses">Bonuses/Commissions:</label>
-        <input type="number" min="0" id="bonuses" name="bonuses" value="{{ income.BonusesCommisions }}" required>
+        <label for="salary">Salary:</label>
+        <input type="number" min="0" id="salary" name="salary" value="{{ income.Salary }}" required>
+        <label for="bonuses">Bonuses:</label>
+        <input type="number" min="0" id="bonuses" name="bonuses" value="{{ income.Bonuses }}" required>
+        <label for="investment">Investment:</label>
+        <input type="number" min="0" id="investment" name="investment" value="{{ income.Investment }}" required>
         <label for="passive_income">Passive Income:</label>
         <input type="number" min="0" id="passive_income" name="passive_income" value="{{ income.PassiveIncome }}" required>
-        <label for="business_income">Business Income:</label>
-        <input type="number" min="0" id="business_income" name="business_income" value="{{ income.BusinessIncome }}" required>
-        <label for="investment_income">Investment Income:</label>
-        <input type="number" min="0" id="investment_income" name="investment_income" value="{{ income.InvestmentIncome }}" required>
         <label for="other">Other:</label>
         <input type="number" min="0" id="other" name="other" value="{{ income.Other }}" required>
         <button type="submit">Update</button>
@@ -31,11 +29,10 @@
         </div>
         <div class="chart-legend">
             <ul>
-                <li><span class="color-box" style="background-color: #4e79a7;"></span> Salary/Wages</li>
-                <li><span class="color-box" style="background-color: #f28e2b;"></span> Bonuses/Commissions</li>
+                <li><span class="color-box" style="background-color: #4e79a7;"></span> Salary</li>
+                <li><span class="color-box" style="background-color: #f28e2b;"></span> Bonuses</li>
+                <li><span class="color-box" style="background-color: #59a14f;"></span> Investment</li>
                 <li><span class="color-box" style="background-color: #e15759;"></span> Passive Income</li>
-                <li><span class="color-box" style="background-color: #76b7b2;"></span> Business Income</li>
-                <li><span class="color-box" style="background-color: #59a14f;"></span> Investment Income</li>
                 <li><span class="color-box" style="background-color: #edc948;"></span> Others</li>
             </ul>
         </div>

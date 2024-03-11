@@ -7,28 +7,14 @@
     <div class="form-side">
     <h1>Edit Expenses</h1>
     <form method="post" action="{{ url_for('edit_expenses') }}">
-        <label for="fixed">Fixed:</label>
-        <input type="number" min="0" id="fixed" name="fixed" value="{{ expenses.Fixed }}" required>
-        <label for="variable">Variable:</label>
-        <input type="number" min="0" id="variable" name="variable" value="{{ expenses.Variable }}" required>
-        <label for="discretionary">Discretionary:</label>
-        <input type="number" min="0" id="discretionary" name="discretionary" value="{{ expenses.Discretionary }}" required>
-        <label for="annualPeriodic">Annual/Periodic:</label>
-        <input type="number" min="0" id="annualPeriodic" name="annualPeriodic" value="{{ expenses.AnnualPeriodic }}" required>
-        <label for="rentMortrage">Rent/Mortrage:</label>
-        <input type="number" min="0" id="rentMortrage" name="rentMortrage" value="{{ expenses.RentMortrage }}" required>
-        <label for="utilities">Utilities:</label>
-        <input type="number" min="0" id="utilities" name="utilities" value="{{ expenses.Utilities }}" required>
+        <label for="rent">Rent:</label>
+        <input type="number" min="0" id="rent" name="rent" value="{{ expenses.Rent }}" required>
+        <label for="transport_pass">Transport Pass:</label>
+        <input type="number" min="0" id="transport_pass" name="transport_pass" value="{{ expenses.TransportPass }}" required>
+        <label for="education">Education:</label>
+        <input type="number" min="0" id="education" name="education" value="{{ expenses.Education }}" required>
         <label for="insurance">Insurance:</label>
         <input type="number" min="0" id="insurance" name="insurance" value="{{ expenses.Insurance }}" required>
-        <label for="groceries">Groceries:</label>
-        <input type="number" min="0" id="groceries" name="groceries" value="{{ expenses.Groceries }}" required>
-        <label for="transport">Transport:</label>
-        <input type="number" min="0" id="transport" name="transport" value="{{ expenses.Transport }}" required>
-        <label for="healthCare">Health Care:</label>
-        <input type="number" min="0" id="healthCare" name="healthCare" value="{{ expenses.HealthCare }}" required>
-        <label for="subscriptions">Subscriptions:</label>
-        <input type="number" min="0" id="subscriptions" name="subscriptions" value="{{ expenses.Subscriptions }}" required>
         <label for="other">Other:</label>
         <input type="number" min="0" id="other" name="other" value="{{ expenses.Other }}" required>
         <button type="submit">Update</button>
@@ -43,18 +29,11 @@
         </div>
         <div class="chart-legend">
             <ul>
-                <li><span class="color-box" style="background-color: #4e79a7;"></span> Fixed</li>
-                <li><span class="color-box" style="background-color: #f28e2b;"></span> Variable</li>
-                <li><span class="color-box" style="background-color: #e15759;"></span> Discretionary</li>
-                <li><span class="color-box" style="background-color: #76b7b2;"></span> Annual/Periodic</li>
-                <li><span class="color-box" style="background-color: #59a14f;"></span> Rent/Mortrage</li>
-                <li><span class="color-box" style="background-color: #4e79a7;"></span> Utilities</li>
-                <li><span class="color-box" style="background-color: #f28e2b;"></span> Insurance</li>
-                <li><span class="color-box" style="background-color: #e15759;"></span> Groceries</li>
-                <li><span class="color-box" style="background-color: #76b7b2;"></span> Transport</li>
-                <li><span class="color-box" style="background-color: #59a14f;"></span> Health Care</li>
-                <li><span class="color-box" style="background-color: #4e79a7;"></span> Subscriptions</li>                
-                <li><span class="color-box" style="background-color: #edc948;"></span> Others</li>
+                <li><span class="color-box" style="background-color: #e15759;"></span> Rent </li>
+                <li><span class="color-box" style="background-color: #76b7b2;"></span> Transport Pass </li>
+                <li><span class="color-box" style="background-color: #e15759;"></span> Education </li>
+                <li><span class="color-box" style="background-color: #59a14f;"></span> Insurance </li>
+                <li><span class="color-box" style="background-color: #edc948;"></span> Others </li>
             </ul>
         </div>
     </div>

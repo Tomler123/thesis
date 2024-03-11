@@ -19,22 +19,19 @@
         <table>
             <!-- Table Headers -->
             <tr>
-                <th>Salary/Wages</th>
-                <th>Bonuses/Commissions</th>
-                <th>Passive Income</th>
-                <th>Business Income</th>
-                <th>Investment Income</th>
+                <th>Salary</th>
+                <th>Bonuses</th>
+                <th>Investment</th>
+                <th>Passive</th>
                 <th>Others</th>
-                <!-- Add other income headers -->
             </tr>
             <!-- Income Data Rows -->
             {% for income in incomes %}
             <tr>
-                <td>{{ income.SalaryWages }}</td>
-                <td>{{ income.BonusesCommisions }}</td>
+                <td>{{ income.Salary }}</td>
+                <td>{{ income.Bonuses }}</td>
+                <td>{{ income.Investment }}</td>
                 <td>{{ income.PassiveIncome }}</td>
-                <td>{{ income.BusinessIncome }}</td>
-                <td>{{ income.InvestmentIncome }}</td>
                 <td>{{ income.Other }}</td>
                 <!-- Add other income data -->
             </tr>
@@ -58,6 +55,7 @@
                 <th>Education</th>
                 <th>GoalSpecific</th>
                 <th>Health</th>
+                <th>Insurance</th>
                 <th>Others</th>
             </tr>
             {% for saving in savings %}
@@ -67,6 +65,7 @@
                 <td>{{ saving.Education }}</td>
                 <td>{{ saving.GoalSpecific }}</td>
                 <td>{{ saving.Health }}</td>
+                <td>{{ saving.Insurance }}</td>
                 <td>{{ saving.Other }}</td>
             </tr>
             {% endfor %}
@@ -84,45 +83,23 @@
         <h2>Expenses</h2>
         <table>
             <tr>
-                <th>Fixed</th>
-                <th>Variable</th>
-                <th>Discretionaty</th>
-                <th>Annual/Periodic</th>
-                <th>Rent/Mortrage</th>
-                <th>Utilities</th>
-            </tr>
-            {% for expense in expenses %}
-            <tr>
-                <td>{{ expense.Fixed }}</td>
-                <td>{{ expense.Variable }}</td>
-                <td>{{ expense.Discretionary }}</td>
-                <td>{{ expense.AnnualPeriodic }}</td>
-                <td>{{ expense.RentMortrage }}</td>
-                <td>{{ expense.Utilities }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-        <br>
-        <table>
-            <tr>
-                <th>Insurance</th>
-                <th>Groceries</th>
+                <th>Rent</th>
                 <th>Transport</th>
-                <th>Health Care</th>
-                <th>Subscriptions</th>
-                <th>Others</th>
+                <th>Education</th>
+                <th>Insurance</th>
+                <th>Other</th>
             </tr>
             {% for expense in expenses %}
             <tr>
+                <td>{{ expense.Rent }}</td>
+                <td>{{ expense.TransportPass }}</td>
+                <td>{{ expense.Education }}</td>
                 <td>{{ expense.Insurance }}</td>
-                <td>{{ expense.Groceries }}</td>
-                <td>{{ expense.Transport }}</td>
-                <td>{{ expense.HealthCare }}</td>
-                <td>{{ expense.Subscriptions }}</td>                
                 <td>{{ expense.Other }}</td>
             </tr>
             {% endfor %}
         </table>
+        <br>
     </div>
 </section>
 

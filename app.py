@@ -8,7 +8,7 @@ import io
 from io import BytesIO
 import base64
 import pyodbc
-import urllib3
+import urllib
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, validators
@@ -36,13 +36,14 @@ password = 'Tomler123,./'
 driver= '{ODBC Driver 17 for SQL Server}'
 
 conn_str = f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}'
-params = urllib3.parse.quote_plus(
+params = urllib.parse.quote_plus(
     "DRIVER={ODBC Driver 17 for SQL Server};"
     "SERVER=walletbuddyai.database.windows.net;"
     "DATABASE=walletbuddyai;"
     "UID=toma_sulava_sulaberidze;"
     "PWD=Tomler123,./;"
 )
+
 app.config['SQLALCHEMY_DATABASE_URI'] = "mssql+pyodbc:///?odbc_connect={params}"
 
 conn = pyodbc.connect(conn_str)
@@ -106,6 +107,7 @@ class SignUpForm(FlaskForm):
     ])
     submit = SubmitField('Sign Up')
 
+# Done
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     form = SignUpForm()
@@ -115,7 +117,8 @@ def signup():
         last_name = form.last_name.data
         email = form.email.data
         hashed_password = generate_password_hash(form.password.data, method='pbkdf2:sha256')
-
+        role = 'user'
+        profile_image = 'none'
         conn = pyodbc.connect(conn_str)
         cursor = conn.cursor()
 
@@ -127,9 +130,9 @@ def signup():
 
         # If email does not exist, proceed with registration
         cursor.execute("""
-            INSERT INTO users (Name, LastName, Email, Password)
-            VALUES (?, ?, ?, ?)
-        """, name, last_name, email, hashed_password)
+            INSERT INTO users (Name, LastName, Email, Password, Role, ProfileImage)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, name, last_name, email, hashed_password, role, profile_image)
 
         # Fetch the new user's ID
         cursor.execute("SELECT UserID FROM users WHERE Email = ?", email)
@@ -137,19 +140,18 @@ def signup():
 
         # Insert initial income record with zeros
         cursor.execute("""
-            INSERT INTO income (UserID, SalaryWages, BonusesCommisions, PassiveIncome, BusinessIncome, InvestmentIncome, Other)
-            VALUES (?, 0, 0, 0, 0, 0, 0)
+            INSERT INTO incomes (UserID, Salary, Bonuses, Investment, PassiveIncome, Other)
+            VALUES (?, 0, 0, 0, 0, 0)
             """, user_id)
 
         cursor.execute("""
-            INSERT INTO expenses (UserID, Fixed, Variable, Discretionary, AnnualPeriodic, RentMortrage, Utilities, Insurance, Groceries, Transport, HealthCare, Subscriptions, Other)
-            VALUES (?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-            """, user_id)
-        
+            INSERT INTO fixed_expenses (UserID, Rent, TransportPass, Education, Insurance, Other)
+            VALUES (?, 0, 0, 0, 0, 0)
+            """, user_id)        
 
         cursor.execute("""
-            INSERT INTO saving (UserID, Emergency, retirement, Education, GoalSpecific, Health, Other)
-            VALUES (?, 0, 0, 0, 0, 0, 0)
+            INSERT INTO savings (UserID, Emergency, Retirement, Education, GoalSpecific, Health, Investment, Other)
+            VALUES (?, 0, 0, 0, 0, 0, 0, 0)
             """, user_id)
         
         conn.commit()
@@ -160,7 +162,7 @@ def signup():
         return redirect(url_for('account'))
 
     return render_template('signup.html', form=form)
-
+# Done
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -208,11 +210,11 @@ def account():
 
         # Check if user details were found
         if user_details:
-            cursor.execute(f"SELECT * FROM income WHERE UserID = {user_id}")
+            cursor.execute(f"SELECT * FROM incomes WHERE UserID = {user_id}")
             columns = [column[0] for column in cursor.description if column[0] != 'UserID']
             # Construct the SUM query string
             sum_columns = ' + '.join(columns)
-            query = f"SELECT SUM({sum_columns}) AS total_income FROM income WHERE UserID = ?"
+            query = f"SELECT SUM({sum_columns}) AS total_income FROM incomes WHERE UserID = ?"
             # Execute the query
             cursor.execute(query, (user_id,))
             result = cursor.fetchone()
@@ -220,19 +222,19 @@ def account():
 
             # Same for other tables
             # Saving
-            cursor.execute(f"SELECT * FROM saving WHERE UserID = {user_id}")
+            cursor.execute(f"SELECT * FROM savings WHERE UserID = {user_id}")
             columns = [column[0] for column in cursor.description if column[0] != 'UserID']
             sum_columns = ' + '.join(columns)
-            query = f"SELECT SUM({sum_columns}) AS total_saving FROM saving WHERE UserID = ?"
+            query = f"SELECT SUM({sum_columns}) AS total_saving FROM savings WHERE UserID = ?"
             cursor.execute(query, (user_id,))
             result = cursor.fetchone()
             total_saving = result.total_saving if isinstance(result.total_saving, int) else 0
 
             # Expenses
-            cursor.execute(f"SELECT * FROM expenses WHERE UserID = {user_id}")
+            cursor.execute(f"SELECT * FROM fixed_expenses WHERE UserID = {user_id}")
             columns = [column[0] for column in cursor.description if column[0] != 'UserID']
             sum_columns = ' + '.join(columns)
-            query = f"SELECT SUM({sum_columns}) AS total_expenses FROM expenses WHERE UserID = ?"
+            query = f"SELECT SUM({sum_columns}) AS total_expenses FROM fixed_expenses WHERE UserID = ?"
             cursor.execute(query, (user_id,))
             result = cursor.fetchone()
             total_expenses = result.total_expenses if isinstance(result.total_expenses, int) else 0
@@ -276,6 +278,7 @@ def logout():
 ################################################################
 # Finances
 
+# Done
 @app.route('/income', methods=['GET','POST'])
 def income():
     if 'user_id' not in session:
@@ -288,9 +291,9 @@ def income():
             user_id = session['user_id']
             salary = request.form['salary']
             bonuses = request.form['bonuses']
-            passive = request.form['passive']
-            business = request.form['business']
             investment = request.form['investment']
+            passive_income = request.form['passive_income']
+            # business = request.form['business']
             other = request.form['other']
             
             # Connect to the database
@@ -299,9 +302,9 @@ def income():
             
             # Insert the income data
             cursor.execute("""
-                INSERT INTO income
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (user_id, salary, bonuses, passive, business, investment, other))  # Add other income fields as needed
+                INSERT INTO incomes
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (user_id, salary, bonuses, passive_income, investment, other))  # Add other income fields as needed
 
             # Commit the transaction and close the connection
             conn.commit()
@@ -317,6 +320,7 @@ def income():
 
     return render_template('income.html')
 
+# Done
 @app.route('/expenses', methods=['GET','POST'])
 def expenses():
     if 'user_id' not in session:
@@ -327,17 +331,10 @@ def expenses():
         try:
             # Assuming you have an authenticated user and user_id is stored in session
             user_id = session['user_id']
-            fixed = request.form['fixed']
-            variable = request.form['variable']
-            discretionary = request.form['discretionary']
-            annual = request.form['annual']
             rent = request.form['rent']
-            utilities = request.form['utilities']
-            insurance = request.form['insurance']
-            groceries = request.form['groceries']
-            transport = request.form['transport']
-            health = request.form['health']
-            subscriptions = request.form['subscriptions']            
+            transport_pass = request.form['transport_pass']
+            education = request.form['education']         
+            insurance = request.form['insurance']         
             other = request.form['other']
             
             # Connect to the database
@@ -346,9 +343,9 @@ def expenses():
             
             # Insert the expenses data
             cursor.execute("""
-                INSERT INTO expenses
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (user_id, fixed, variable, discretionary, annual, rent, utilities, insurance, groceries, transport, health, subscriptions, other))  # Add other expenses fields as needed
+                INSERT INTO fixed_expenses
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (user_id, rent, transport_pass, education, insurance, other))  # Add other expenses fields as needed
 
             # Commit the transaction and close the connection
             conn.commit()
@@ -364,6 +361,7 @@ def expenses():
 
     return render_template('expenses.html')
 
+# Done
 @app.route('/saving', methods=['GET','POST'])
 def saving():
     if 'user_id' not in session:
@@ -379,6 +377,7 @@ def saving():
             education = request.form['education']
             goal = request.form['goal']
             health = request.form['health']
+            investment = request.form['investment']
             other = request.form['other']
             
             # Connect to the database
@@ -387,9 +386,9 @@ def saving():
             
             # Insert the saving data
             cursor.execute("""
-                INSERT INTO saving
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (user_id, emergency, retirement, education, goal, health, other))  # Add other saving fields as needed
+                INSERT INTO savings
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (user_id, emergency, retirement, education, goal, health, investment, other))  # Add other saving fields as needed
 
             # Commit the transaction and close the connection
             conn.commit()
@@ -405,7 +404,7 @@ def saving():
 
     return render_template('saving.html')
 
-
+# Done
 def create_bar_chart(data, categories):
     fig = Figure()
     axis = fig.add_subplot(1, 1, 1)
@@ -414,6 +413,7 @@ def create_bar_chart(data, categories):
     buf = io.BytesIO()
     FigureCanvas(fig).print_png(buf)
     return base64.b64encode(buf.getvalue()).decode('utf-8')
+
 
 @app.route('/view_finances')
 def view_finances():
@@ -428,47 +428,41 @@ def view_finances():
     cursor = conn.cursor()
     
     # Fetch the income data
-    cursor.execute("SELECT * FROM income WHERE UserID = ?", user_id)
+    cursor.execute("SELECT * FROM incomes WHERE UserID = ?", user_id)
     incomes = cursor.fetchall()
     
     # Fetch the savings data
-    cursor.execute("SELECT * FROM saving WHERE UserID = ?", user_id)
+    cursor.execute("SELECT * FROM savings WHERE UserID = ?", user_id)
     savings = cursor.fetchall()
     
     # Fetch the expenses data
-    cursor.execute("SELECT * FROM expenses WHERE UserID = ?", user_id)
+    cursor.execute("SELECT * FROM fixed_expenses WHERE UserID = ?", user_id)
     expenses = cursor.fetchall()
 
     # Fetch the income data
-    cursor.execute("SELECT * FROM income WHERE UserID = ?", user_id)
+    cursor.execute("SELECT * FROM incomes WHERE UserID = ?", user_id)
     income_data = cursor.fetchone()
 
     if income_data:
-        categories = ['Salary/Wages', 'Bonuses/Commissions', 'Passive Income', 'Business Income', 'Investment Income', 'Others']
-        amounts = [income_data.SalaryWages, income_data.BonusesCommisions, income_data.PassiveIncome, income_data.BusinessIncome, income_data.InvestmentIncome, income_data.Other]
+        categories = ['Salary', 'Bonuses', 'Investment', 'PassiveIncome', 'Others']
+        amounts = [income_data.Salary, income_data.Bonuses, income_data.Investment, income_data.PassiveIncome, income_data.Other]
         income_graph = create_bar_chart(amounts, categories)
     
-    cursor.execute("SELECT * FROM saving WHERE UserID = ?", user_id)
+    cursor.execute("SELECT * FROM savings WHERE UserID = ?", user_id)
     saving_data = cursor.fetchone()
 
     if saving_data:
-        categories = ['Emergency', 'Retirement', 'Education', 'GoalSpecific', 'Health', 'Others']
-        amounts = [saving_data.Emergency, saving_data.Retirement, saving_data.Education, saving_data.GoalSpecific, saving_data.Health, saving_data.Other]
+        categories = ['Emergency', 'Retirement', 'Education', 'GoalSpecific', 'Health', 'Investment', 'Others']
+        amounts = [saving_data.Emergency, saving_data.Retirement, saving_data.Education, saving_data.GoalSpecific, saving_data.Health, saving_data.Investment, saving_data.Other]
         saving_graph = create_bar_chart(amounts, categories)
     
-    cursor.execute("SELECT * FROM expenses WHERE UserID = ?", user_id)
+    cursor.execute("SELECT * FROM fixed_expenses WHERE UserID = ?", user_id)
     expenses_data = cursor.fetchone()
 
     if expenses_data:
-        categories = ['Fixed', 'Variable', 'Discretionary', 'AnnualPeriodic', 'RentMortrage', 
-            'Utilities', 'Insurance', 'Groceries', 'Transport', 'HealthCare',
-            'Subscriptions', 'Other']
-        amounts = [expenses_data.Fixed, expenses_data.Variable, expenses_data.Discretionary, expenses_data.AnnualPeriodic, expenses_data.RentMortrage, 
-            expenses_data.Utilities, expenses_data.Insurance, expenses_data.Groceries, expenses_data.Transport, expenses_data.HealthCare,
-            expenses_data.Subscriptions, expenses_data.Other]
+        categories = ['Rent', 'TransportPass', 'Education', 'Insurance', 'Other']
+        amounts = [expenses_data.Rent, expenses_data.TransportPass, expenses_data.Education, expenses_data.Insurance, expenses_data.Other]
         expenses_graph = create_bar_chart(amounts, categories)
-        
-
 
     cursor.close()
     conn.close()
@@ -477,6 +471,7 @@ def view_finances():
 
 ################################################################
 # Create pie chart for saved data
+# Done
 def income_pie_chart(income_data):
     # Replacing NaN with 0
     for key, value in income_data.items():
@@ -493,12 +488,13 @@ def income_pie_chart(income_data):
         axis = fig.add_subplot(1, 1, 1)
         # Assuming 'income_data' is a dictionary with your data
         axis.pie(
-            [income_data['SalaryWages'], income_data['BonusesCommisions'], income_data['PassiveIncome'], income_data['BusinessIncome'], income_data['InvestmentIncome'], income_data['Other']],
+            [income_data['Salary'], income_data['Bonuses'], income_data['Investment'], income_data['PassiveIncome'], income_data['Other']],
             autopct='%1.1f%%'
         )
         return fig
     
 # Edit income outcome
+# Done
 @app.route('/edit_income', methods=['GET', 'POST'])
 def edit_income():
     if 'user_id' not in session:
@@ -513,47 +509,43 @@ def edit_income():
     if request.method == 'POST':
         salary = request.form.get('salary')
         bonuses = request.form.get('bonuses')
+        investment = request.form.get('investment')
         passive_income = request.form.get('passive_income')
-        business_income = request.form.get('business_income')
-        investment_income = request.form.get('investment_income')
         other = request.form.get('other')
 
         cursor.execute("""
-            UPDATE income SET
-            SalaryWages = ?,
-            BonusesCommisions = ?,
+            UPDATE incomes SET
+            Salary= ?,
+            Bonuses = ?,
+            Investment = ?,
             PassiveIncome = ?,
-            BusinessIncome = ?,
-            InvestmentIncome = ?,
             Other = ?
             WHERE UserID = ?
-        """, (salary, bonuses, passive_income, business_income, investment_income, other, user_id))
+        """, (salary, bonuses, investment, passive_income, other, user_id))
 
         conn.commit()
         flash('Income updated successfully!')
         return redirect(url_for('view_finances'))
     else:
-        cursor.execute("SELECT * FROM income WHERE UserID = ?", user_id)
+        cursor.execute("SELECT * FROM incomes WHERE UserID = ?", user_id)
         income_data = cursor.fetchone()
 
         # Check if income_data is not None
         if income_data:
             # Convert fetched data to a dictionary
             income_dict = {
-                'SalaryWages': income_data[1],  # Assuming salary is at index 1
-                'BonusesCommisions': income_data[2],  # And so on...
-                'PassiveIncome': income_data[3],
-                'BusinessIncome': income_data[4],
-                'InvestmentIncome': income_data[5],
-                'Other': income_data[6],
+                'Salary': income_data[1],  # Assuming salary is at index 1
+                'Bonuses': income_data[2],  # And so on...
+                'Investment': income_data[3],
+                'PassiveIncome': income_data[4],
+                'Other': income_data[5],
             }
             # Calculate total sum
             total_sum = sum([
-                income_dict['SalaryWages'],
-                income_dict['BonusesCommisions'],
+                income_dict['Salary'],
+                income_dict['Bonuses'],
+                income_dict['Investment'],
                 income_dict['PassiveIncome'],
-                income_dict['BusinessIncome'],
-                income_dict['InvestmentIncome'],
                 income_dict['Other']
             ])
 
@@ -571,6 +563,7 @@ def edit_income():
             flash('No income data found.')
             return redirect(url_for('account'))
 
+# Done
 def saving_pie_chart(saving_data):
     for key, value in saving_data.items():
         if math.isnan(value):
@@ -581,11 +574,12 @@ def saving_pie_chart(saving_data):
         fig = Figure()
         axis = fig.add_subplot(1, 1, 1)
         axis.pie(
-            [saving_data['Emergency'], saving_data['Retirement'], saving_data['Education'], saving_data['GoalSpecific'], saving_data['Health'], saving_data['Other']],
+            [saving_data['Emergency'], saving_data['Retirement'], saving_data['Education'], saving_data['GoalSpecific'], saving_data['Health'], saving_data['Investment'], saving_data['Other']],
             autopct='%1.1f%%'
         )
         return fig
 
+# Done
 @app.route('/edit_saving', methods=['GET', 'POST'])
 def edit_saving():
     if 'user_id' not in session:
@@ -603,24 +597,26 @@ def edit_saving():
         education = request.form.get('education')
         goalSpecific = request.form.get('goalSpecific')
         health = request.form.get('health')
+        investment = request.form.get('investment')
         other = request.form.get('other')
 
         cursor.execute("""
-            UPDATE saving SET
+            UPDATE savings SET
             Emergency = ?,
             Retirement = ?,
             Education = ?,
             GoalSpecific = ?,
             Health = ?,
+            Investment = ?,
             Other = ?
             WHERE UserID = ?
-        """, (emergency, retirement, education, goalSpecific, health, other, user_id))
+        """, (emergency, retirement, education, goalSpecific, health, investment, other, user_id))
 
         conn.commit()
         flash('saving updated successfully!')
         return redirect(url_for('view_finances'))
     else:
-        cursor.execute("SELECT * FROM saving WHERE UserID = ?", user_id)
+        cursor.execute("SELECT * FROM savings WHERE UserID = ?", user_id)
         saving_data = cursor.fetchone()
         
         if saving_data:
@@ -630,7 +626,8 @@ def edit_saving():
                 'Education' : saving_data[3],
                 'GoalSpecific' : saving_data[4],
                 'Health' : saving_data[5],
-                'Other' : saving_data[6]
+                'Investment' : saving_data[6],
+                'Other' : saving_data[7]
             }
 
             total_sum = sum([
@@ -639,6 +636,7 @@ def edit_saving():
                 saving_dict['Education'],
                 saving_dict['GoalSpecific'],
                 saving_dict['Health'],
+                saving_dict['Investment'],
                 saving_dict['Other']
             ])
             
@@ -654,6 +652,7 @@ def edit_saving():
             flash('No income data found.')
             return redirect(url_for('account'))
 
+# Done
 def expenses_pie_chart(expenses_data):
     for key, value in expenses_data.items():
         if math.isnan(value):
@@ -664,14 +663,12 @@ def expenses_pie_chart(expenses_data):
         fig = Figure()
         axis = fig.add_subplot(1, 1, 1)
         axis.pie(
-            [expenses_data['Fixed'], expenses_data['Variable'], expenses_data['Discretionary'], expenses_data['AnnualPeriodic'], expenses_data['RentMortrage'], 
-            expenses_data['Utilities'], expenses_data['Insurance'], expenses_data['Groceries'], expenses_data['Transport'], expenses_data['HealthCare'],
-            expenses_data['Subscriptions'], expenses_data['Other']],
+            [expenses_data['Rent'], expenses_data['TransportPass'], expenses_data['Education'], expenses_data['Insurance'], expenses_data['Other']],
             autopct='%1.1f%%'
         )
         return fig
 
-
+# Done
 @app.route('/edit_expenses', methods=['GET', 'POST'])
 def edit_expenses():
     if 'user_id' not in session:
@@ -684,72 +681,44 @@ def edit_expenses():
     cursor = conn.cursor()
 
     if request.method == 'POST':
-        fixed = request.form.get('fixed')
-        variable = request.form.get('variable')
-        discretionary = request.form.get('discretionary')
-        annualPeriodic = request.form.get('annualPeriodic')
-        rentMortrage = request.form.get('rentMortrage')
-        utilities = request.form.get('utilities')
+        rent = request.form.get('rent')
+        transport_pass = request.form.get('transport_pass')
+        education = request.form.get('education')
         insurance = request.form.get('insurance')
-        groceries = request.form.get('groceries')
-        transport = request.form.get('transport')
-        healthCare = request.form.get('healthCare')
-        subscriptions = request.form.get('subscriptions')
         other = request.form.get('other')
 
         cursor.execute("""
-            UPDATE expenses SET
-            Fixed = ?,
-            Variable = ?,
-            Discretionary = ?,
-            AnnualPeriodic = ?,
-            RentMortrage = ?,
-            Utilities = ?,
+            UPDATE fixed_expenses SET
+            Rent = ?,
+            TransportPass = ?,
+            Education = ?,
             Insurance = ?,
-            Groceries = ?,
-            Transport = ?,
-            HealthCare = ?,
-            Subscriptions = ?,
             Other = ?
             WHERE UserID = ?
-        """, (fixed, variable, discretionary, annualPeriodic, rentMortrage, utilities, insurance, groceries, transport, healthCare, subscriptions, other, user_id))
+        """, (rent, transport_pass, education, insurance, other, user_id))
 
         conn.commit()
         flash('Expenses updated successfully!')
         return redirect(url_for('view_finances'))
     else:
-        cursor.execute("SELECT * FROM expenses WHERE UserID = ?", user_id)
+        cursor.execute("SELECT * FROM fixed_expenses WHERE UserID = ?", user_id)
         expenses_data = cursor.fetchone()
 
         if expenses_data:
             expenses_dict = {
-                'Fixed' : expenses_data[1],
-                'Variable' : expenses_data[2],
-                'Discretionary' : expenses_data[3],
-                'AnnualPeriodic' : expenses_data[4],
-                'RentMortrage' : expenses_data[5],
-                'Utilities' : expenses_data[6],
-                'Insurance' : expenses_data[7],
-                'Groceries' : expenses_data[8],
-                'Transport' : expenses_data[9],
-                'HealthCare' : expenses_data[10],
-                'Subscriptions' : expenses_data[11],
-                'Other' : expenses_data[12]
+                'Rent' : expenses_data[1],
+                'TransportPass' : expenses_data[2],
+                'Education' : expenses_data[3],
+                'Insurance' : expenses_data[4],
+                'Other' : expenses_data[5],
             }
 
             total_sum = sum([
-                expenses_dict['Fixed'],
-                expenses_dict['Variable'],
-                expenses_dict['Discretionary'],
-                expenses_dict['AnnualPeriodic'],
-                expenses_dict['RentMortrage'],
-                expenses_dict['Utilities'],
+                expenses_dict['Rent'],
+                expenses_dict['TransportPass'],
+                expenses_dict['Education'],
                 expenses_dict['Insurance'],
-                expenses_dict['Groceries'],
-                expenses_dict['Transport'],
-                expenses_dict['HealthCare'],
-                expenses_dict['Subscriptions'],
-                expenses_dict[ 'Other']
+                expenses_dict['Other']
             ])
 
             pie_chart = expenses_pie_chart(expenses_dict)
@@ -766,6 +735,7 @@ def edit_expenses():
         
 ################################################################
 # Loans
+# DONE
 @app.route('/loans')
 def loans():
     if 'user_id' not in session:
@@ -799,19 +769,18 @@ def add_loan():
         monthly_payment = request.form['monthly_payment']
         start_date = request.form['start_date']
         due_date = request.form['due_date']
-        loan_term = request.form['loan_term']
         remaining_balance = request.form['remaining_balance']
-        is_borrower = bool(request.form['is_borrower'])
+        is_borrower = request.form['is_borrower']
         notes = request.form['notes']
         user_id = session['user_id']
 
         # Add loan to database
         # Assuming conn is your database connection
-        query = """INSERT INTO loans (UserID, LenderName, LoanAmount, InterestRate, MonthlyPayment, StartDate, DueDate, LoanTerm, RemainingBalance,IsBorrower, Notes)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        query = """INSERT INTO loans (UserID, LenderName, LoanAmount, InterestRate, MonthlyPayment, StartDate, DueDate, RemainingBalance,IsBorrower, Notes)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
         with pyodbc.connect(conn_str) as conn:
             with conn.cursor() as cursor:
-                cursor.execute(query, (user_id, lender_name, loan_amount, interest_rate, monthly_payment, start_date, due_date, loan_term, remaining_balance, is_borrower, notes))
+                cursor.execute(query, (user_id, lender_name, loan_amount, interest_rate, monthly_payment, start_date, due_date, remaining_balance, is_borrower, notes))
                 conn.commit()
 
         flash('Loan added successfully!')
@@ -837,14 +806,13 @@ def edit_loan(loan_id):
         monthly_payment = request.form['monthly_payment']
         start_date = request.form['start_date']
         due_date = request.form['due_date']
-        loan_term = request.form['loan_term']
         remaining_balance = request.form['remaining_balance']
         is_borrower = request.form['is_borrower']
         notes = request.form['notes']
         
         # Update the loan details in the database
-        update_query = """UPDATE loans SET LenderName=?, LoanAmount=?, InterestRate=?, MonthlyPayment=?,StartDate=?, DueDate=?, LoanTerm=?, RemainingBalance=?, IsBorrower=?, Notes=? WHERE LoanID=?"""
-        cursor.execute(update_query, (lender_name, loan_amount, interest_rate, monthly_payment, start_date, due_date, loan_term, remaining_balance, is_borrower, notes, loan_id))
+        update_query = """UPDATE loans SET LenderName=?, LoanAmount=?, InterestRate=?, MonthlyPayment=?,StartDate=?, DueDate=?, RemainingBalance=?, IsBorrower=?, Notes=? WHERE LoanID=?"""
+        cursor.execute(update_query, (lender_name, loan_amount, interest_rate, monthly_payment, start_date, due_date, remaining_balance, is_borrower, notes, loan_id))
         conn.commit()
 
         # Redirect to a confirmation page or back to the loan list
@@ -882,6 +850,7 @@ def delete_loan(loan_id):
         return jsonify({'message': 'An error occurred while deleting the loan.'}), 500
 ################################################################
 
+# DONE (SUBSCRIPTIONS)
 @app.route('/recommendations', methods=['GET', 'POST'])
 def recommendations():
     if 'user_id' not in session:
@@ -911,25 +880,27 @@ def recommendations():
             total_expected_loan = 0
         
         # Calculating total fixed expenses
-        cursor.execute("SELECT * FROM expenses WHERE UserID = ?", user_id)
+        cursor.execute("SELECT * FROM fixed_expenses WHERE UserID = ?", user_id)
         expenses_data = cursor.fetchone()
         fixed_expenses = {
-            "Housing" : round(expenses_data.RentMortrage,2),
-            "Utilities" : round(expenses_data.Utilities,2),
+            "Rent" : round(expenses_data.Rent,2),
+            "Transport" : round(expenses_data.TransportPass,2),
             "Debt" : round(total_monthly_debt,2), # PROCESS LOAN TABLE
-            "Education" : round(expenses_data.Other,2), # OTHER, CHANGE TO EDUCATION LATER IN TABLE
-            "Subscriptions" : round(expenses_data.Subscriptions,2),
+            "Education" : round(expenses_data.Education,2), # OTHER, CHANGE TO EDUCATION LATER IN TABLE
+            "Insurance" : round(expenses_data.Insurance,2),
+            "Subscriptions" : round(1,2),
+            # FFFFFFIIIIIIIXXXXXXX SUBSCRIPTIONS
         }
 
         fixed_total = sum([b for (a,b) in fixed_expenses.items()])
-        savings_goal_percentage = float(request.form.get('savings_goal'))        
+        savings_goal_percentage = float(request.form.get('savings_goal'))
 
         # Calculating total income
         
-        cursor.execute(f"SELECT * FROM income WHERE UserID = {user_id}")
+        cursor.execute(f"SELECT * FROM incomes WHERE UserID = {user_id}")
         columns = [column[0] for column in cursor.description if column[0] != 'UserID']
         sum_columns = ' + '.join(columns)
-        query = f"SELECT SUM({sum_columns}) AS total_income FROM income WHERE UserID = ?"
+        query = f"SELECT SUM({sum_columns}) AS total_income FROM incomes WHERE UserID = ?"
         # Execute the query
         cursor.execute(query, (user_id,))
         result = cursor.fetchone()
@@ -961,19 +932,6 @@ def recommendations():
                 'pets': round(daily_spending_limit * 0.03, 2), 
                 'entertainment': round(daily_spending_limit * 0.05, 2), 
             }
-            # Just expenses table
-            # Fixed
-            # Variable
-            # Discretionary
-            # AnnualPeriodic
-            # RentMortrage
-            # Utilities
-            # Insurance
-            # Groceries
-            # Transport
-            # HealthCare
-            # Subscriptions
-            # Other
             cursor.close()
             conn.close()
             return render_template('recommendations.html', fixed_expenses=fixed_expenses, recommendations=recommendations, fixed=fixed_total, daily=daily_spending_limit, monthly=savings_amount, total_expected_loan=total_expected_loan)
@@ -982,7 +940,7 @@ def recommendations():
         return render_template('recommendations.html')
 ################################################################
 
-
+# DONE
 @app.route('/contact')
 def contact():
     return render_template('contact_us.html')
