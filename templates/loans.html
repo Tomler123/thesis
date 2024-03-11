@@ -8,7 +8,7 @@
     <h2>Borrowed Loans</h2>
     <ul>
         {% for loan in borrowed_loans %}
-        <li>{{ loan.LenderName }} - Amount: {{ loan.LoanAmount }} <a href="#" onclick="editLoan({{ loan.LoanID }})">Edit</a> | <a href="#" onclick="deleteLoan({{ loan.LoanID }})">Delete</a></li>        {% else %}
+        <li>{{ loan.LenderName }} - Amount: {{ loan.LoanAmount }} <a href="#" onclick="editLoan({{ loan.LoanID }})">&#160;&#160;&#160;&#160;&#160;Edit</a> | <a href="#" onclick="deleteLoan({{ loan.LoanID }})">Delete</a></li>        {% else %}
         <p>No borrowed loans.</p>
         {% endfor %}
     </ul>
@@ -16,7 +16,7 @@
     <h2>Lent Loans</h2>
     <ul>
         {% for loan in lent_loans %}
-        <li>{{ loan.LenderName }} - Amount: {{ loan.LoanAmount }} <a href="#" onclick="editLoan({{ loan.LoanID }})">Edit</a> | <a href="#" onclick="deleteLoan({{ loan.LoanID }})">Delete</a></li>        {% else %}
+        <li>{{ loan.LenderName }} - Amount: {{ loan.LoanAmount }} <a href="#" onclick="editLoan({{ loan.LoanID }})">&#160;&#160;&#160;&#160;&#160;Edit</a> | <a href="#" onclick="deleteLoan({{ loan.LoanID }})">Delete</a></li>        {% else %}
         <p>No lent loans.</p>
         {% endfor %}
     </ul>

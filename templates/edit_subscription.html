@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Edit Subscription</h1>
+    <form method="post" action="{{ url_for('edit_subscription', subscription_id=subscription.subscriptionID) }}">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" value="{{ subscription.Name }}" required>
+        <label for="cost">Cost:</label>
+        <input type="number" min="0" id="cost" name="cost" value="{{ subscription.Cost }}" required>
+        <button type="submit">Update</button>
+    </form>
+{% endblock %}

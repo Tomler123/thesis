@@ -849,6 +849,100 @@ def delete_loan(loan_id):
     except Exception as e:
         return jsonify({'message': 'An error occurred while deleting the loan.'}), 500
 ################################################################
+@app.route('/subscriptions')
+def subscriptions():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    conn = pyodbc.connect(conn_str)
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM subscriptions WHERE UserID = ?", user_id)
+    subscriptions = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('subscriptions.html', subscriptions=subscriptions)
+
+@app.route('/add_subscription', methods=['GET', 'POST'])
+def add_subscription():
+    if 'user_id' not in session:
+        flash('Please log in to add a subscription.')
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        name = request.form['name']
+        cost = request.form['cost']
+        user_id = session['user_id']
+
+        # Add subscription to database
+        # Assuming conn is your database connection
+        query = """INSERT INTO subscriptions (UserID, Name, Cost)
+                   VALUES (?, ?, ?)"""
+        with pyodbc.connect(conn_str) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query, (user_id, name, cost))
+                conn.commit()
+
+        flash('Subscription added successfully!')
+        return redirect(url_for('subscriptions'))  # Redirect to the subscriptions overview page
+
+    return render_template('add_subscription.html')
+
+@app.route('/edit_subscription/<int:subscription_id>', methods=['GET', 'POST'])
+def edit_subscription(subscription_id):
+    # Check if user is logged in
+    if not session.get('user_id'):
+        return redirect(url_for('login'))
+
+    # Connect to your database
+    conn = pyodbc.connect(conn_str)
+    cursor = conn.cursor()
+
+    if request.method == 'POST':
+        # Retrieve form data
+        name = request.form['name']
+        cost = request.form['cost']
+        # Update the subscription details in the database
+        update_query = """UPDATE subscriptions SET Name=?, Cost=? WHERE SubscriptionID=?"""
+        cursor.execute(update_query, (name, cost, subscription_id))
+        conn.commit()
+
+        # Redirect to a confirmation page or back to the subscription list
+        return redirect(url_for('subscriptions'))
+
+    else:
+        # For a GET request, fetch the subscription's current details to prefill the form
+        cursor.execute("SELECT * FROM subscriptions WHERE SubscriptionID=?", (subscription_id,))
+        subscription = cursor.fetchone()
+
+        # Close database connection
+        cursor.close()
+        conn.close()
+
+        # Render the edit page template with the subscription details
+        return render_template('edit_subscription.html', subscription=subscription)
+
+@app.route('/delete_subscription/<int:subscription_id>', methods=['POST'])
+def delete_subscription(subscription_id):
+    if 'user_id' not in session:
+        return jsonify({'message': 'Please log in to delete subscriptions.'}), 401
+    
+    try:
+        user_id = session['user_id']
+        # Ensure that the user deleting the subscription is the owner
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM subscriptions WHERE SubscriptionID = ? AND UserID = ?", (subscription_id, user_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Subscription deleted successfully!')
+        return redirect(url_for('subscriptions'))
+    except Exception as e:
+        return jsonify({'message': 'An error occurred while deleting the subscription.'}), 500
 
 # DONE (SUBSCRIPTIONS)
 @app.route('/recommendations', methods=['GET', 'POST'])
@@ -879,6 +973,13 @@ def recommendations():
         else:
             total_expected_loan = 0
         
+        cursor.execute("SELECT sum(Cost) FROM subscriptions WHERE UserID = ?", user_id)
+        total_subscription_data = cursor.fetchone()[0]
+        if total_subscription_data is not None:
+            total_subscriptions = float(total_subscription_data)
+        else:
+            total_subscriptions = 0
+        
         # Calculating total fixed expenses
         cursor.execute("SELECT * FROM fixed_expenses WHERE UserID = ?", user_id)
         expenses_data = cursor.fetchone()
@@ -888,7 +989,7 @@ def recommendations():
             "Debt" : round(total_monthly_debt,2), # PROCESS LOAN TABLE
             "Education" : round(expenses_data.Education,2), # OTHER, CHANGE TO EDUCATION LATER IN TABLE
             "Insurance" : round(expenses_data.Insurance,2),
-            "Subscriptions" : round(1,2),
+            "Subscriptions" : round(total_subscriptions,2),
             # FFFFFFIIIIIIIXXXXXXX SUBSCRIPTIONS
         }
 
