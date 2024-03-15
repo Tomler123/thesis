@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{% block links %}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+{% endblock %}
 {% block content %}
     <h1>Subscriptions</h1>
     <a href="{{ url_for('add_subscription') }}" class="btn btn-primary">Add Subscription</a>
@@ -16,14 +19,14 @@
 <script>
 function deleteSubscription(subscriptionId) {
     if (confirm("Are you sure you want to delete this subscription?")) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content'); // Fetch CSRF token from meta tag
         fetch(`/delete_subscription/${subscriptionId}`, {
             method: 'POST',
-            // CSRF token needed if CSRF protection is enabled in Flask
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                // 'X-CSRFToken': csrf_token // Uncomment and provide your CSRF token here
+                'X-CSRFToken': csrfToken // Include CSRF token in the request headers
             },
-            body: `subscription_id=${subscriptionId}` // Adjust according to how your server expects the data
+            body: `subscription_id=${subscriptionId}`
         })
         .then(() => {
             // Reload the page to reflect changes

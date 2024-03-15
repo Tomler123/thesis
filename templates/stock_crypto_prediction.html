@@ -9,9 +9,15 @@
     <h1>WalletBuddyAI.com</h1>
     <!-- Input form for stock graph -->
     <form action="{{ url_for('stock_crypto_prediction') }}" method="post">
-        <label for="stock_name">Enter Stock Name:</label>
-        <input type="text" id="stock_name" name="stock_name" required>
-        <input type="submit" value="Get Graph">
+        {{ form.csrf_token }}
+        <div class="form-group">
+            {{ form.stock_name.label }}
+            {{ form.stock_name(class="form-control") }}
+            {% for error in form.stock_name.errors %}
+                <span class="text-danger">{{ error }}</span>
+            {% endfor %}
+        </div>
+        {{ form.submit(class="btn btn-primary") }}
     </form>
     <!-- Conditionally display the graph if it exists -->
     {% if stock_name %}

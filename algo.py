@@ -62,7 +62,9 @@ def main(stock):
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.legend()
-    plt.savefig('loss_plot.png')  # Save the plot as an image
+    # plt.savefig('loss_plot.png')  # Save the plot as an image
+    plt.savefig('static/images/loss_plot.png')  # Save the plot as an image
+
     plt.close()
 
     # Predictions
@@ -71,7 +73,8 @@ def main(stock):
     plt.xlabel('Time')
     plt.ylabel('Price')
     plt.legend()
-    plt.savefig('predictions_plot.png')  # Save the plot as an image
+    # plt.savefig('predictions_plot.png')  # Save the plot as an image
+    plt.savefig('static/images/predictions_plot.png')  # Save the plot as an image
     plt.close()
 
     # Predict beyond the end date by 10 days
@@ -90,7 +93,8 @@ def main(stock):
     plt.xlabel('Time')
     plt.ylabel('Price')
     plt.legend()
-    plt.savefig('extended_predictions_plot.png')  # Save the plot as an image
+    # plt.savefig('extended_predictions_plot.png')  # Save the plot as an image
+    plt.savefig('static/images/extended_predictions_plot.png')  # Save the plot as an image
     plt.close()
 
 

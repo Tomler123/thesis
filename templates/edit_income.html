@@ -1,23 +1,24 @@
 {% extends "base.html" %}
-{% block links %}
-<link rel="stylesheet" href="static/css/edit.css">
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/edit.css') }}">
 {% endblock %}
 {% block content %}
 <div class="edit-container">
     <div class="form-side">
     <h1>Edit Income</h1>
-    <form method="post" action="{{ url_for('edit_income') }}">
+    <form method="post">
+        {{ form.csrf_token }}
         <label for="salary">Salary:</label>
-        <input type="number" min="0" id="salary" name="salary" value="{{ income.Salary }}" required>
+        {{ form.salary(class="form-control", id="salary") }}<br>
         <label for="bonuses">Bonuses:</label>
-        <input type="number" min="0" id="bonuses" name="bonuses" value="{{ income.Bonuses }}" required>
+        {{ form.bonuses(class="form-control", id="bonuses") }}<br>
         <label for="investment">Investment:</label>
-        <input type="number" min="0" id="investment" name="investment" value="{{ income.Investment }}" required>
+        {{ form.investment(class="form-control", id="investment") }}<br>
         <label for="passive_income">Passive Income:</label>
-        <input type="number" min="0" id="passive_income" name="passive_income" value="{{ income.PassiveIncome }}" required>
+        {{ form.passive_income(class="form-control", id="passive_income") }}<br>
         <label for="other">Other:</label>
-        <input type="number" min="0" id="other" name="other" value="{{ income.Other }}" required>
-        <button type="submit">Update</button>
+        {{ form.other(class="form-control", id="other") }}<br>
+        {{ form.submit(class="btn btn-primary") }}
     </form>
     </div>
     <div class="total-sum">

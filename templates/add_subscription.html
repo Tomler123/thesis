@@ -5,13 +5,20 @@
 {% block content %}
     <h1>Add New Subscription</h1>
     <form method="post" action="{{ url_for('add_subscription') }}">
+        {{ form.csrf_token }}
         <div>
-            <label for="name">Service Name:</label>
-            <input type="text" id="name" name="name" required>
+            {{ form.name.label }}<br>
+            {{ form.name(size=40) }}<br>
+            {% for error in form.name.errors %}
+                <span style="color: red;">{{ error }}</span><br>
+            {% endfor %}
         </div>
         <div>
-            <label for="cost">Cost (Monthly):</label>
-            <input type="number" min="0" id="cost" name="cost" required>
+            {{ form.cost.label }}<br>
+            {{ form.cost(min="0") }}<br>
+            {% for error in form.cost.errors %}
+                <span style="color: red;">{{ error }}</span><br>
+            {% endfor %}
         </div>
         <button type="submit">Add Subscription</button>
     </form>

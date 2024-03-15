@@ -8,8 +8,9 @@
     <p>Based on your monthly income, we provide personalized savings and spending recommendations to help you manage your finances effectively.</p>
 
     <form class="form-group" action="{{ url_for('recommendations') }}" method="post">
+        {{ form.csrf_token }}
         <label for="savings_goal">How much of your income would you like to save each month?</label>
-        <input type="number" id="savings_goal" name="savings_goal" min="0" max="100" step="1" value="0" required>%
+        <input type="number" id="savings_goal" name="savings_goal" min="0" max="100" step="1" value="0" required>%<br>
         <input class="button" type="submit" value="Get Recommendations">
     </form>
     
@@ -19,7 +20,7 @@
     {% if recommendations %}
     <p>Excluding fixed expenses, you can spend:<br>Daily : <strong>${{ "{:0.2f}".format(daily) }}</strong><br>Monthly : <strong>${{ "{:0.2f}".format(monthly) }}</strong></p>
     {% if total_expected_loan > 0 %}
-    <p>You are expected to get <strong>{{ total_expected_loan }}</strong> loan this month as income.<br>Go to the<i><strong> 'Navigation Bar'=>'View Finances'=>'Loans' </strong></i>for more information about loans.</p>
+    <p>You are expected to get <strong>{{ total_expected_loan }}</strong> loan this month as income.<br>Go to the <i>'Navigation Bar' => 'View Finances' => 'Loans'</i> for more information about loans.</p>
     {% endif %}
     <p></p>
     <section id="recommendations-section">
@@ -31,7 +32,6 @@
                 <th>Expense Category</th>
                 <th>Daily</th>
                 <th>Monthly</th>
-                
             </tr>
             {% for category, amount in recommendations.items() %}
             <tr>

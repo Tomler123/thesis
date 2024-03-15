@@ -11,10 +11,11 @@ import pyodbc
 import urllib
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, validators
-from wtforms.validators import DataRequired, Email, Length, EqualTo, Regexp
+from wtforms import StringField, PasswordField, SubmitField, validators, SelectField, FloatField, IntegerField, DateField, DecimalField, TextAreaField
+from wtforms.validators import DataRequired, Email, Length, EqualTo, Regexp, NumberRange, InputRequired
 import math
 import algo
+from flask_wtf.csrf import CSRFProtect
 
 # server = 'TOMLER'  # If a local instance, typically 'localhost\\SQLEXPRESS'
 # database = 'thesis'  # Your database name
@@ -45,7 +46,7 @@ params = urllib.parse.quote_plus(
 )
 
 app.config['SQLALCHEMY_DATABASE_URI'] = "mssql+pyodbc:///?odbc_connect={params}"
-
+csrf = CSRFProtect(app)
 conn = pyodbc.connect(conn_str)
 cursor = conn.cursor()
 
@@ -65,11 +66,19 @@ def financial_position():
 
 ################################################################
 # ??????????????????????
+# Define form class
+class StockPredictionForm(FlaskForm):
+    stock_name = StringField('Stock Name', validators=[DataRequired()])
+    submit = SubmitField('Get Graph')
+
 @app.route('/stock_crypto_prediction', methods=['GET', 'POST'])
 def stock_crypto_prediction():
-    if request.method == 'POST':
+    # Create an instance of the form class
+    form = StockPredictionForm()
+
+    if form.validate_on_submit():
         # Get the stock name from the form
-        stock_name = request.form.get('stock_name')
+        stock_name = form.stock_name.data
         
         # Call the main function from algo.py with stock_name
         # It should save the images in the static/images/ directory
@@ -85,13 +94,14 @@ def stock_crypto_prediction():
                                stock_name=stock_name,
                                loss_plot_path=loss_plot_path,
                                predictions_plot_path=predictions_plot_path,
-                               extended_predictions_plot_path=extended_predictions_plot_path)
-    else:
-        # GET request, just render the form
-        return render_template('stock_crypto_prediction.html')
+                               extended_predictions_plot_path=extended_predictions_plot_path,
+                               form=form)
+    
+    # If it's a GET request or the form is not valid, render the form
+    return render_template('stock_crypto_prediction.html', form=form)
+
 ################################################################
 # Login Signup
-
 class SignUpForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(min=2, max=30)])
     last_name = StringField('Last Name', validators=[DataRequired(), Length(min=2, max=30)])
@@ -107,7 +117,6 @@ class SignUpForm(FlaskForm):
     ])
     submit = SubmitField('Sign Up')
 
-# Done
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     form = SignUpForm()
@@ -162,9 +171,21 @@ def signup():
         return redirect(url_for('account'))
 
     return render_template('signup.html', form=form)
-# Done
+
+
+class LoginForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[
+        DataRequired(),
+        Length(min=8, max=30)
+    ])
+    
+    submit = SubmitField('Log In')
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    form = LoginForm()
+
     if request.method == 'POST':
         email = request.form.get('email')  # Use the .get method to avoid KeyError
         password = request.form.get('password')
@@ -189,20 +210,51 @@ def login():
             flash('Invalid email or password')
 
 
-    return render_template('login.html')
+    return render_template('login.html', form=form)
 
 
 # #########################################################################
 # ACCOUNT AND LOGOUT MUST BE COMPLETED
+class IconForm(FlaskForm):
+    selected_icon = StringField('Selected Icon', validators=[DataRequired()])
+    submit = SubmitField('Submit')
 
-@app.route('/account')
+@app.route('/update_icon', methods=['POST'])
+def update_icon():
+    if 'user_id' in session:
+        user_id = session['user_id']
+        selected_icon = request.form.get('selected_icon')
+
+        try:
+            conn = pyodbc.connect(conn_str)
+            cursor = conn.cursor()
+            cursor.execute("UPDATE users SET ProfileImage = ? WHERE UserID = ?", (selected_icon, user_id))
+            conn.commit()
+            cursor.close()
+            conn.close()
+            flash('Profile image updated successfully.')
+        except Exception as e:
+            flash('An error occurred while updating the profile image.')
+
+        return redirect(url_for('account'))  # Redirect to the account page after updating
+    else:
+        flash('You must be logged in to update the profile image.')
+        return redirect(url_for('login'))
+
+@app.route('/account', methods=['GET','POST'])
 def account():
     if 'user_id' in session:
         user_id = session['user_id']
         
+        form = IconForm()
+
         # Connect to the database
         conn = pyodbc.connect(conn_str)
         cursor = conn.cursor()
+
+        if form.validate_on_submit():  # Check if the form is submitted and validated
+            selected_icon = form.selected_icon.data
+            return update_icon()
 
         # Fetch user details
         cursor.execute("SELECT * FROM users WHERE UserID = ?", user_id)
@@ -258,7 +310,7 @@ def account():
             conn.close()
 
             # Pass the user details to the template
-            return render_template('account.html', user=user_details, total_saving=total_saving, total_income=total_income, total_expenses=total_expenses, total_borrowed=total_borrowed, total_lent=total_lent)
+            return render_template('account.html', user=user_details, total_saving=total_saving, total_income=total_income, total_expenses=total_expenses, total_borrowed=total_borrowed, total_lent=total_lent, form=form)
         else:
             # Close the database connection
             cursor.close()
@@ -277,8 +329,6 @@ def logout():
 
 ################################################################
 # Finances
-
-# Done
 @app.route('/income', methods=['GET','POST'])
 def income():
     if 'user_id' not in session:
@@ -320,7 +370,6 @@ def income():
 
     return render_template('income.html')
 
-# Done
 @app.route('/expenses', methods=['GET','POST'])
 def expenses():
     if 'user_id' not in session:
@@ -361,7 +410,6 @@ def expenses():
 
     return render_template('expenses.html')
 
-# Done
 @app.route('/saving', methods=['GET','POST'])
 def saving():
     if 'user_id' not in session:
@@ -404,7 +452,6 @@ def saving():
 
     return render_template('saving.html')
 
-# Done
 def create_bar_chart(data, categories):
     fig = Figure()
     axis = fig.add_subplot(1, 1, 1)
@@ -413,7 +460,6 @@ def create_bar_chart(data, categories):
     buf = io.BytesIO()
     FigureCanvas(fig).print_png(buf)
     return base64.b64encode(buf.getvalue()).decode('utf-8')
-
 
 @app.route('/view_finances')
 def view_finances():
@@ -471,7 +517,6 @@ def view_finances():
 
 ################################################################
 # Create pie chart for saved data
-# Done
 def income_pie_chart(income_data):
     # Replacing NaN with 0
     for key, value in income_data.items():
@@ -493,8 +538,15 @@ def income_pie_chart(income_data):
         )
         return fig
     
-# Edit income outcome
-# Done
+class EditIncomeForm(FlaskForm):
+    salary = DecimalField('Salary', validators=[DataRequired()])
+    bonuses = DecimalField('Bonuses', validators=[DataRequired()])
+    investment = DecimalField('Investment', validators=[DataRequired()])
+    passive_income = DecimalField('Passive Income', validators=[DataRequired()])
+    other = DecimalField('Other', validators=[DataRequired()])
+    submit = SubmitField('Update')
+
+# Edit income
 @app.route('/edit_income', methods=['GET', 'POST'])
 def edit_income():
     if 'user_id' not in session:
@@ -506,12 +558,14 @@ def edit_income():
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
 
-    if request.method == 'POST':
-        salary = request.form.get('salary')
-        bonuses = request.form.get('bonuses')
-        investment = request.form.get('investment')
-        passive_income = request.form.get('passive_income')
-        other = request.form.get('other')
+    form = EditIncomeForm()
+
+    if request.method == 'POST' and form.validate_on_submit():
+        salary = form.salary.data
+        bonuses = form.bonuses.data
+        investment = form.investment.data
+        passive_income = form.passive_income.data
+        other = form.other.data
 
         cursor.execute("""
             UPDATE incomes SET
@@ -530,40 +584,39 @@ def edit_income():
         cursor.execute("SELECT * FROM incomes WHERE UserID = ?", user_id)
         income_data = cursor.fetchone()
 
-        # Check if income_data is not None
         if income_data:
-            # Convert fetched data to a dictionary
-            income_dict = {
-                'Salary': income_data[1],  # Assuming salary is at index 1
-                'Bonuses': income_data[2],  # And so on...
-                'Investment': income_data[3],
-                'PassiveIncome': income_data[4],
-                'Other': income_data[5],
-            }
-            # Calculate total sum
+            form.salary.data = income_data[1]
+            form.bonuses.data = income_data[2]
+            form.investment.data = income_data[3]
+            form.passive_income.data = income_data[4]
+            form.other.data = income_data[5]
+
             total_sum = sum([
-                income_dict['Salary'],
-                income_dict['Bonuses'],
-                income_dict['Investment'],
-                income_dict['PassiveIncome'],
-                income_dict['Other']
+                form.salary.data,
+                form.bonuses.data,
+                form.investment.data,
+                form.passive_income.data,
+                form.other.data
             ])
 
-            # Create pie chart
-            pie_chart = income_pie_chart(income_dict)
-            # Convert to base64
+            pie_chart = income_pie_chart({
+                'Salary': form.salary.data,
+                'Bonuses': form.bonuses.data,
+                'Investment': form.investment.data,
+                'PassiveIncome': form.passive_income.data,
+                'Other': form.other.data
+            })
+
             png_output = BytesIO()
             FigureCanvas(pie_chart).print_png(png_output)
             png_output.seek(0)
             chart_url = base64.b64encode(png_output.getvalue()).decode('ascii')
 
-            return render_template('edit_income.html', income=income_dict, chart_url=chart_url, total_sum=total_sum)
+            return render_template('edit_income.html', form=form, chart_url=chart_url, total_sum=total_sum)
         else:
-            # Handle the case where no income data is found
             flash('No income data found.')
             return redirect(url_for('account'))
 
-# Done
 def saving_pie_chart(saving_data):
     for key, value in saving_data.items():
         if math.isnan(value):
@@ -579,7 +632,16 @@ def saving_pie_chart(saving_data):
         )
         return fig
 
-# Done
+class EditSavingForm(FlaskForm):
+    emergency = DecimalField('Emergency', validators=[DataRequired()])
+    retirement = DecimalField('Retirement', validators=[DataRequired()])
+    education = DecimalField('Education', validators=[DataRequired()])
+    goal_specific = DecimalField('Goal Specific', validators=[DataRequired()])
+    health = DecimalField('Health', validators=[DataRequired()])
+    investment = DecimalField('Investment', validators=[DataRequired()])
+    other = DecimalField('Other', validators=[DataRequired()])
+    submit = SubmitField('Update')
+
 @app.route('/edit_saving', methods=['GET', 'POST'])
 def edit_saving():
     if 'user_id' not in session:
@@ -591,14 +653,16 @@ def edit_saving():
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
 
-    if request.method == 'POST':
-        emergency = request.form.get('emergency')
-        retirement = request.form.get('retirement')
-        education = request.form.get('education')
-        goalSpecific = request.form.get('goalSpecific')
-        health = request.form.get('health')
-        investment = request.form.get('investment')
-        other = request.form.get('other')
+    form = EditSavingForm()
+
+    if request.method == 'POST' and form.validate_on_submit():
+        emergency = form.emergency.data
+        retirement = form.retirement.data
+        education = form.education.data
+        goal_specific = form.goal_specific.data
+        health = form.health.data
+        investment = form.investment.data
+        other = form.other.data
 
         cursor.execute("""
             UPDATE savings SET
@@ -610,49 +674,55 @@ def edit_saving():
             Investment = ?,
             Other = ?
             WHERE UserID = ?
-        """, (emergency, retirement, education, goalSpecific, health, investment, other, user_id))
+        """, (emergency, retirement, education, goal_specific, health, investment, other, user_id))
 
         conn.commit()
-        flash('saving updated successfully!')
+        flash('Savings updated successfully!')
         return redirect(url_for('view_finances'))
     else:
         cursor.execute("SELECT * FROM savings WHERE UserID = ?", user_id)
         saving_data = cursor.fetchone()
         
         if saving_data:
-            saving_dict = {
-                'Emergency' : saving_data[1],
-                'Retirement' : saving_data[2],
-                'Education' : saving_data[3],
-                'GoalSpecific' : saving_data[4],
-                'Health' : saving_data[5],
-                'Investment' : saving_data[6],
-                'Other' : saving_data[7]
-            }
+            form.emergency.data = saving_data[1]
+            form.retirement.data = saving_data[2]
+            form.education.data = saving_data[3]
+            form.goal_specific.data = saving_data[4]
+            form.health.data = saving_data[5]
+            form.investment.data = saving_data[6]
+            form.other.data = saving_data[7]
 
             total_sum = sum([
-                saving_dict['Emergency'],
-                saving_dict['Retirement'],
-                saving_dict['Education'],
-                saving_dict['GoalSpecific'],
-                saving_dict['Health'],
-                saving_dict['Investment'],
-                saving_dict['Other']
+                form.emergency.data,
+                form.retirement.data,
+                form.education.data,
+                form.goal_specific.data,
+                form.health.data,
+                form.investment.data,
+                form.other.data
             ])
             
+            saving_dict = {
+                'Emergency' : form.emergency.data,
+                'Retirement' : form.retirement.data,
+                'Education' : form.education.data,
+                'GoalSpecific' : form.goal_specific.data,
+                'Health' : form.health.data,
+                'Investment' : form.investment.data,
+                'Other' : form.other.data
+            }
+
             pie_chart = saving_pie_chart(saving_dict)
             png_output = BytesIO()
             FigureCanvas(pie_chart).print_png(png_output)
             png_output.seek(0)
             chart_url = base64.b64encode(png_output.getvalue()).decode('ascii')
 
-            return render_template('edit_saving.html', saving=saving_dict, chart_url=chart_url, total_sum=total_sum)
+            return render_template('edit_saving.html', form=form, chart_url=chart_url, total_sum=total_sum)
         else:
-            # Handle the case where no income data is found
-            flash('No income data found.')
+            flash('No saving data found.')
             return redirect(url_for('account'))
 
-# Done
 def expenses_pie_chart(expenses_data):
     for key, value in expenses_data.items():
         if math.isnan(value):
@@ -668,7 +738,14 @@ def expenses_pie_chart(expenses_data):
         )
         return fig
 
-# Done
+class EditExpensesForm(FlaskForm):
+    rent = FloatField('Rent', validators=[DataRequired(), NumberRange(min=0)])
+    transport_pass = FloatField('Transport Pass', validators=[DataRequired(), NumberRange(min=0)])
+    education = FloatField('Education', validators=[DataRequired(), NumberRange(min=0)])
+    insurance = FloatField('Insurance', validators=[DataRequired(), NumberRange(min=0)])
+    other = FloatField('Other', validators=[DataRequired(), NumberRange(min=0)])
+    submit = SubmitField('Update')
+
 @app.route('/edit_expenses', methods=['GET', 'POST'])
 def edit_expenses():
     if 'user_id' not in session:
@@ -680,12 +757,14 @@ def edit_expenses():
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
 
-    if request.method == 'POST':
-        rent = request.form.get('rent')
-        transport_pass = request.form.get('transport_pass')
-        education = request.form.get('education')
-        insurance = request.form.get('insurance')
-        other = request.form.get('other')
+    form = EditExpensesForm()
+
+    if request.method == 'POST' and form.validate_on_submit():
+        rent = form.rent.data
+        transport_pass = form.transport_pass.data
+        education = form.education.data
+        insurance = form.insurance.data
+        other = form.other.data
 
         cursor.execute("""
             UPDATE fixed_expenses SET
@@ -700,42 +779,37 @@ def edit_expenses():
         conn.commit()
         flash('Expenses updated successfully!')
         return redirect(url_for('view_finances'))
+
+    cursor.execute("SELECT * FROM fixed_expenses WHERE UserID = ?", user_id)
+    expenses_data = cursor.fetchone()
+
+    if expenses_data:
+        expenses_dict = {
+            'Rent' : expenses_data[1],
+            'TransportPass' : expenses_data[2],
+            'Education' : expenses_data[3],
+            'Insurance' : expenses_data[4],
+            'Other' : expenses_data[5],
+        }
+
+        # Generate the chart URL and calculate total sum here
+        total_sum = sum(expenses_dict.values())
+
+        # You need to implement the expenses_pie_chart() function to generate the pie chart
+        pie_chart = expenses_pie_chart(expenses_dict)
+        png_output = BytesIO()
+        FigureCanvas(pie_chart).print_png(png_output)
+        png_output.seek(0)
+        chart_url = base64.b64encode(png_output.getvalue()).decode('ascii')
+
+        return render_template('edit_expenses.html', form=form, expenses=expenses_dict, chart_url=chart_url, total_sum=total_sum)
     else:
-        cursor.execute("SELECT * FROM fixed_expenses WHERE UserID = ?", user_id)
-        expenses_data = cursor.fetchone()
-
-        if expenses_data:
-            expenses_dict = {
-                'Rent' : expenses_data[1],
-                'TransportPass' : expenses_data[2],
-                'Education' : expenses_data[3],
-                'Insurance' : expenses_data[4],
-                'Other' : expenses_data[5],
-            }
-
-            total_sum = sum([
-                expenses_dict['Rent'],
-                expenses_dict['TransportPass'],
-                expenses_dict['Education'],
-                expenses_dict['Insurance'],
-                expenses_dict['Other']
-            ])
-
-            pie_chart = expenses_pie_chart(expenses_dict)
-            png_output = BytesIO()
-            FigureCanvas(pie_chart).print_png(png_output)
-            png_output.seek(0)
-            chart_url = base64.b64encode(png_output.getvalue()).decode('ascii')
-
-            return render_template('edit_expenses.html', expenses=expenses_dict, chart_url=chart_url, total_sum=total_sum)
-        else:
-            # Handle the case where no income data is found
-            flash('No income data found.')
-            return redirect(url_for('account'))
+        # Handle the case where no expense data is found
+        flash('No expense data found.')
+        return redirect(url_for('account'))
         
 ################################################################
 # Loans
-# DONE
 @app.route('/loans')
 def loans():
     if 'user_id' not in session:
@@ -756,22 +830,35 @@ def loans():
 
     return render_template('loans.html', borrowed_loans=borrowed_loans, lent_loans=lent_loans)
 
+class AddLoanForm(FlaskForm):
+    lender_name = StringField('Lender/Borrower Name', validators=[InputRequired()])
+    loan_amount = DecimalField('Loan Amount', validators=[InputRequired(), NumberRange(min=0)])
+    interest_rate = DecimalField('Interest Rate (%)', validators=[InputRequired(), NumberRange(min=0)])
+    monthly_payment = DecimalField('Monthly Payment', validators=[InputRequired(), NumberRange(min=0)])
+    start_date = DateField('Start Date', format='%Y-%m-%d', validators=[InputRequired()])
+    due_date = DateField('Due Date', format='%Y-%m-%d', validators=[InputRequired()])
+    remaining_balance = DecimalField('Remaining Balance', validators=[InputRequired(), NumberRange(min=0)])
+    is_borrower = SelectField('Are you the borrower?', choices=[('1', 'Yes'), ('0', 'No')], validators=[InputRequired()])
+    notes = TextAreaField('Notes')
+
 @app.route('/add_loan', methods=['GET', 'POST'])
 def add_loan():
     if 'user_id' not in session:
         flash('Please log in to add a loan.')
         return redirect(url_for('login'))
 
-    if request.method == 'POST':
-        lender_name = request.form['lender_name']
-        loan_amount = request.form['loan_amount']
-        interest_rate = request.form['interest_rate']
-        monthly_payment = request.form['monthly_payment']
-        start_date = request.form['start_date']
-        due_date = request.form['due_date']
-        remaining_balance = request.form['remaining_balance']
-        is_borrower = request.form['is_borrower']
-        notes = request.form['notes']
+    form = AddLoanForm()
+    if form.validate_on_submit():
+        # Form data is valid, proceed to add the loan
+        lender_name = form.lender_name.data
+        loan_amount = form.loan_amount.data
+        interest_rate = form.interest_rate.data
+        monthly_payment = form.monthly_payment.data
+        start_date = form.start_date.data
+        due_date = form.due_date.data
+        remaining_balance = form.remaining_balance.data
+        is_borrower = form.is_borrower.data
+        notes = form.notes.data
         user_id = session['user_id']
 
         # Add loan to database
@@ -786,56 +873,70 @@ def add_loan():
         flash('Loan added successfully!')
         return redirect(url_for('loans'))  # Redirect to the loans overview page
 
-    return render_template('add_loan.html')
+    return render_template('add_loan.html', form=form)
+
+
+class EditLoanForm(FlaskForm):
+    lender_name = StringField('Lender Name', validators=[DataRequired(), Length(max=100)])
+    loan_amount = FloatField('Loan Amount', validators=[DataRequired(), NumberRange(min=0)])
+    interest_rate = FloatField('Interest Rate', validators=[DataRequired(), NumberRange(min=0)])
+    monthly_payment = FloatField('Monthly Payment', validators=[DataRequired(), NumberRange(min=0)])
+    start_date = DateField('Start Date', validators=[DataRequired()], format='%Y-%m-%d')
+    due_date = DateField('Due Date', validators=[DataRequired()], format='%Y-%m-%d')
+    remaining_balance = FloatField('Remaining Balance', validators=[DataRequired(), NumberRange(min=0)])
+    is_borrower = SelectField('Are you borrower', choices=[('1', 'Yes'), ('0', 'No')], coerce=int)
+    notes = StringField('Other', validators=[DataRequired(), Length(max=255)])
+    submit = SubmitField('Update')
 
 @app.route('/edit_loan/<int:loan_id>', methods=['GET', 'POST'])
 def edit_loan(loan_id):
     # Check if user is logged in
-    if not session.get('user_id'):
+    if 'user_id' not in session:
+        flash('Please log in to edit records.')
         return redirect(url_for('login'))
 
     # Connect to your database
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
-    try:
-        if request.method == 'POST':
-            # Retrieve form data
-            lender_name = request.form['lender_name']
-            loan_amount = request.form['loan_amount']
-            interest_rate = request.form['interest_rate']
-            monthly_payment = request.form['monthly_payment']
-            start_date = request.form['start_date']
-            due_date = request.form['due_date']
-            remaining_balance = request.form['remaining_balance']
-            is_borrower = request.form['is_borrower']
-            notes = request.form['notes']
-            
-            # Update the loan details in the database
-            update_query = """UPDATE loans SET LenderName=?, LoanAmount=?, InterestRate=?, MonthlyPayment=?,StartDate=?, DueDate=?, RemainingBalance=?, IsBorrower=?, Notes=? WHERE LoanID=?"""
-            cursor.execute(update_query, (lender_name, loan_amount, interest_rate, monthly_payment, start_date, due_date, remaining_balance, is_borrower, notes, loan_id))
-            conn.commit()
 
-            # Redirect to a confirmation page or back to the loan list
-            return redirect(url_for('loans'))
+    form = EditLoanForm()
 
-        else:
-            # For a GET request, fetch the loan's current details to prefill the form
-            cursor.execute("SELECT * FROM loans WHERE LoanID=?", (loan_id,))
-            loan = cursor.fetchone()
+    if request.method == 'POST' and form.validate_on_submit():
+        lender_name = form.lender_name.data
+        loan_amount = form.loan_amount.data
+        interest_rate = form.interest_rate.data
+        monthly_payment = form.monthly_payment.data
+        start_date = form.start_date.data
+        due_date = form.due_date.data
+        remaining_balance = form.remaining_balance.data
+        is_borrower = form.is_borrower.data
+        notes = form.notes.data
 
-            # Render the edit page template with the loan details
-            return render_template('edit_loan.html', loan=loan)
- 
-    except Exception as e:
-        flash(f'An error occurred: {e}')
-    finally:
-        # Now we only close the cursor and connection once we are sure they have been used.
-        cursor.close()
-        conn.close()
+        # Update the loan details in the database
+        update_query = """UPDATE loans SET LenderName=?, LoanAmount=?, InterestRate=?, MonthlyPayment=?,StartDate=?, DueDate=?, RemainingBalance=?, IsBorrower=?, Notes=? WHERE LoanID=?"""
+        cursor.execute(update_query, (lender_name, loan_amount, interest_rate, monthly_payment, start_date, due_date, remaining_balance, is_borrower, notes, loan_id))
+        conn.commit()
 
-    # This will not execute if a redirect is returned above
-    return render_template('edit_loan.html')
+        # Redirect to a confirmation page or back to the loan list
+        return redirect(url_for('loans'))
 
+    else:
+        # For a GET request, fetch the loan's current details to prefill the form
+        cursor.execute("SELECT * FROM loans WHERE LoanID=?", (loan_id,))
+        loan = cursor.fetchone()
+
+        form.lender_name.data = loan.LenderName
+        form.loan_amount.data = loan.LoanAmount
+        form.interest_rate.data = loan.InterestRate
+        form.monthly_payment.data = loan.MonthlyPayment
+        form.start_date.data = loan.StartDate
+        form.due_date.data = loan.DueDate
+        form.remaining_balance.data = loan.RemainingBalance
+        form.is_borrower.data = loan.IsBorrower
+        form.notes.data = loan.Notes
+
+        # Render the edit page template with the loan details
+        return render_template('edit_loan.html', form=form)
 
 @app.route('/delete_loan/<int:loan_id>', methods=['POST'])
 def delete_loan(loan_id):
@@ -873,15 +974,21 @@ def subscriptions():
 
     return render_template('subscriptions.html', subscriptions=subscriptions)
 
+class SubscriptionForm(FlaskForm):
+    name = StringField('Service Name', validators=[InputRequired()])
+    cost = DecimalField('Cost (Monthly)', validators=[InputRequired(), NumberRange(min=0)])
+
 @app.route('/add_subscription', methods=['GET', 'POST'])
 def add_subscription():
     if 'user_id' not in session:
         flash('Please log in to add a subscription.')
         return redirect(url_for('login'))
 
-    if request.method == 'POST':
-        name = request.form['name']
-        cost = request.form['cost']
+    form = SubscriptionForm()
+
+    if form.validate_on_submit():
+        name = form.name.data
+        cost = form.cost.data
         user_id = session['user_id']
 
         # Add subscription to database
@@ -896,20 +1003,28 @@ def add_subscription():
         flash('Subscription added successfully!')
         return redirect(url_for('subscriptions'))  # Redirect to the subscriptions overview page
 
-    return render_template('add_subscription.html')
+    return render_template('add_subscription.html', form=form)
+
+class EditSubscriptionForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired()])
+    cost = DecimalField('Cost', validators=[DataRequired()])
+    submit = SubmitField('Update')
 
 @app.route('/edit_subscription/<int:subscription_id>', methods=['GET', 'POST'])
 def edit_subscription(subscription_id):
     if not session.get('user_id'):
+        flash('Please log in to edit records.')
         return redirect(url_for('login'))
 
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
 
+    form = EditSubscriptionForm()
+
     try:
-        if request.method == 'POST':
-            name = request.form['name']
-            cost = request.form['cost']
+        if request.method == 'POST' and form.validate_on_submit():
+            name = form.name.data
+            cost = form.cost.data
             
             update_query = """UPDATE subscriptions SET Name=?, Cost=? WHERE SubscriptionID=?"""
             cursor.execute(update_query, (name, cost, subscription_id))
@@ -919,17 +1034,20 @@ def edit_subscription(subscription_id):
         else:
             cursor.execute("SELECT * FROM subscriptions WHERE SubscriptionID=?", (subscription_id,))
             subscription = cursor.fetchone()
-            return render_template('edit_subscription.html', subscription=subscription)
+            if subscription:
+                form.name.data = subscription.Name
+                form.cost.data = subscription.Cost
+                return render_template('edit_subscription.html', form=form)
+            else:
+                flash('Subscription not found.')
+                return redirect(url_for('subscriptions'))
     except Exception as e:
         flash(f'An error occurred: {e}')
     finally:
-        # Now we only close the cursor and connection once we are sure they have been used.
         cursor.close()
         conn.close()
 
-    # This will not execute if a redirect is returned above
-    return render_template('edit_subscription.html')
-
+    return render_template('edit_subscription.html', form=form)
 
 @app.route('/delete_subscription/<int:subscription_id>', methods=['POST'])
 def delete_subscription(subscription_id):
@@ -950,16 +1068,19 @@ def delete_subscription(subscription_id):
     except Exception as e:
         return jsonify({'message': 'An error occurred while deleting the subscription.'}), 500
 
-# DONE (SUBSCRIPTIONS)
+class RecommendationsForm(FlaskForm):
+    savings_goal = IntegerField('Savings Goal', validators=[NumberRange(min=0, max=100, message="Value must be between 0 and 100.")])
+    submit = SubmitField('Get Recommendations')
+
 @app.route('/recommendations', methods=['GET', 'POST'])
 def recommendations():
     if 'user_id' not in session:
         flash('Please log in to access recommendations.')
         return redirect(url_for('login'))
+    form = RecommendationsForm()
     
-    if request.method == 'POST':
-        user_id = session['user_id']
-        
+    if request.method == 'POST' and form.validate_on_submit():
+        user_id = session['user_id']    
         # Connect to the database
         conn = pyodbc.connect(conn_str)
         cursor = conn.cursor()
@@ -1016,15 +1137,15 @@ def recommendations():
         if total_income <= 0:
             cursor.close()
             conn.close()
-            return render_template('recommendations.html', error = "You have not entered income details. Please fill in all the necessary data. You can find link through 'Navigation Menu'=>'Finances'=>'Edit Income'")
+            return render_template('recommendations.html', form=form, error = "You have not entered income details. Please fill in all the necessary data. You can find link through 'Navigation Menu'=>'Finances'=>'Edit Income'")
         elif fixed_total > total_income:
             cursor.close()
             conn.close()
-            return render_template('recommendations.html', error = f"Total income ({total_income}) is less than total fixed expenses ({fixed_total})")
+            return render_template('recommendations.html',form=form, error = f"Total income ({total_income}) is less than total fixed expenses ({fixed_total})")
         elif total_income*(1-(savings_goal_percentage/100)) - fixed_total < 0:
             cursor.close()
             conn.close()
-            return render_template('recommendations.html', error = f"Can't save {savings_goal_percentage}%, because of high amount of total fixed expenses ({fixed_total}) compared to total income ({total_income})")
+            return render_template('recommendations.html',form=form, error = f"Can't save {savings_goal_percentage}%, because of high amount of total fixed expenses ({fixed_total}) compared to total income ({total_income})")
         else:
             savings_amount = total_income*(1-(savings_goal_percentage/100)) - fixed_total
             daily_spending_limit = round(savings_amount/30,2)
@@ -1041,13 +1162,12 @@ def recommendations():
             }
             cursor.close()
             conn.close()
-            return render_template('recommendations.html', fixed_expenses=fixed_expenses, recommendations=recommendations, fixed=fixed_total, daily=daily_spending_limit, monthly=savings_amount, total_expected_loan=total_expected_loan)
+            return render_template('recommendations.html', form=form, fixed_expenses=fixed_expenses, recommendations=recommendations, fixed=fixed_total, daily=daily_spending_limit, monthly=savings_amount, total_expected_loan=total_expected_loan)
     else:
         # GET request, just render the form
-        return render_template('recommendations.html')
+        return render_template('recommendations.html', form=form)
 ################################################################
 
-# DONE
 @app.route('/contact')
 def contact():
     return render_template('contact_us.html')

@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{% block links %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+{% endblock %}
 {% block content %}
     <h1>Loans Overview</h1>
     <a href="{{ url_for('add_loan') }}" class="btn btn-primary">Add Loan</a>
@@ -24,14 +27,14 @@
 <script>
 function deleteLoan(loanId) {
     if (confirm("Are you sure you want to delete this loan?")) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content'); // Fetch CSRF token from meta tag
         fetch(`/delete_loan/${loanId}`, {
             method: 'POST',
-            // CSRF token needed if CSRF protection is enabled in Flask
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                // 'X-CSRFToken': csrf_token // Uncomment and provide your CSRF token here
+                'X-CSRFToken': csrfToken // Include CSRF token in the request headers
             },
-            body: `loan_id=${loanId}` // Adjust according to how your server expects the data
+            body: `loan_id=${loanId}`
         })
         .then(() => {
             // Reload the page to reflect changes

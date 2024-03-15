@@ -1,36 +1,36 @@
 {% extends "base.html" %}
-{% block links %}
-<link rel="stylesheet" href="static/css/edit.css">
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/edit.css') }}">
 {% endblock %}
 {% block content %}
 <div class="edit-container">
     <div class="form-side">
     <h1>Edit Saving</h1>
-    <form method="post" action="{{ url_for('edit_saving') }}">
+    <form method="post">
+        {{ form.csrf_token }}
         <label for="emergency">Emergency:</label>
-        <input type="number" min="0" id="emergency" name="emergency" value="{{ saving.Emergency }}" required>
+        {{ form.emergency(class="form-control", id="emergency") }}<br>
         <label for="retirement">Retirement:</label>
-        <input type="number" min="0" id="retirement" name="retirement" value="{{ saving.Retirement }}" required>
+        {{ form.retirement(class="form-control", id="retirement") }}<br>
         <label for="education">Education:</label>
-        <input type="number" min="0" id="education" name="education" value="{{ saving.Education }}" required>
-        <label for="goalSpecific">Goal Specific:</label>
-        <input type="number" min="0" id="goalSpecific" name="goalSpecific" value="{{ saving.GoalSpecific }}" required>
+        {{ form.education(class="form-control", id="education") }}<br>
+        <label for="goal_specific">Goal Specific:</label>
+        {{ form.goal_specific(class="form-control", id="goal_specific") }}<br>
         <label for="health">Health:</label>
-        <input type="number" min="0" id="health" name="health" value="{{ saving.Health }}" required>
+        {{ form.health(class="form-control", id="health") }}<br>
         <label for="investment">Investment:</label>
-        <input type="number" min="0" id="investment" name="investment" value="{{ saving.Investment }}" required>
-        
+        {{ form.investment(class="form-control", id="investment") }}<br>
         <label for="other">Other:</label>
-        <input type="number" min="0" id="other" name="other" value="{{ saving.Other }}" required>
-        <button type="submit">Update</button>
+        {{ form.other(class="form-control", id="other") }}<br>
+        {{ form.submit(class="btn btn-primary") }}
     </form>
     </div>
     <div class="total-sum">
-        <h2 class="total">Total Income: {{ total_sum }}</h2>
+        <h2 class="total">Total Savings: {{ total_sum }}</h2>
     </div>
     <div class="chart-side">
         <div class="chart-placeholder">
-            <img src="data:image/png;base64,{{ chart_url }}" alt="Income Pie Chart" />
+            <img src="data:image/png;base64,{{ chart_url }}" alt="Savings Pie Chart" />
         </div>
         <div class="chart-legend">
             <ul>

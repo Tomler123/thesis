@@ -1,31 +1,33 @@
 {% extends "base.html" %}
 {% block links %}
-<link rel="stylesheet" href="static/css/edit.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/edit.css') }}">
 {% endblock %}
 {% block content %}
 <div class="edit-container">
     <div class="form-side">
-    <h1>Edit Expenses</h1>
-    <form method="post" action="{{ url_for('edit_expenses') }}">
-        <label for="rent">Rent:</label>
-        <input type="number" min="0" id="rent" name="rent" value="{{ expenses.Rent }}" required>
-        <label for="transport_pass">Transport Pass:</label>
-        <input type="number" min="0" id="transport_pass" name="transport_pass" value="{{ expenses.TransportPass }}" required>
-        <label for="education">Education:</label>
-        <input type="number" min="0" id="education" name="education" value="{{ expenses.Education }}" required>
-        <label for="insurance">Insurance:</label>
-        <input type="number" min="0" id="insurance" name="insurance" value="{{ expenses.Insurance }}" required>
-        <label for="other">Other:</label>
-        <input type="number" min="0" id="other" name="other" value="{{ expenses.Other }}" required>
-        <button type="submit">Update</button>
-    </form>
+        <h1>Edit Expenses</h1>
+        <form method="post" action="{{ url_for('edit_expenses') }}">
+            {{ form.hidden_tag() }}
+            {{ form.csrf_token }}
+            <label for="rent">Rent:</label>
+            <input type="number" min="0" id="rent" name="rent" value="{{ expenses.Rent }}" required><br>
+            <label for="transport_pass">Transport Pass:</label>
+            <input type="number" min="0" id="transport_pass" name="transport_pass" value="{{ expenses.TransportPass }}" required><br>
+            <label for="education">Education:</label>
+            <input type="number" min="0" id="education" name="education" value="{{ expenses.Education }}" required><br>
+            <label for="insurance">Insurance:</label>
+            <input type="number" min="0" id="insurance" name="insurance" value="{{ expenses.Insurance }}" required><br>
+            <label for="other">Other:</label>
+            <input type="number" min="0" id="other" name="other" value="{{ expenses.Other }}" required><br>
+            {{ form.submit }}
+        </form>
     </div>
     <div class="total-sum">
         <h2 class="total">Total Income: {{ total_sum }}</h2>
     </div>
     <div class="chart-side">
         <div class="chart-placeholder">
-            <img src="data:image/png;base64,{{ chart_url }}" alt="Income Pie Chart" />
+            <img src="data:image/png;base64,{{ chart_url }}" alt="Expenses Pie Chart" />
         </div>
         <div class="chart-legend">
             <ul>
@@ -37,6 +39,5 @@
             </ul>
         </div>
     </div>
-
 </div>
 {% endblock %}
