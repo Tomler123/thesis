@@ -98,3 +98,76 @@ form button:hover {
   display: inline-block;
   margin-right: 10px;
 }
+
+/* Styling for the form side */
+.expense-input {
+  display: flex;
+  align-items: center;
+}
+
+.expense-input input[type="number"] {
+  flex: 1;
+  padding: 10px;
+  margin-right: 10px; /* Add some spacing between the input field and checkbox */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.expense-input input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin-left: 5px; /* Adjust as needed */
+}
+
+/* Styling for the checkbox indicating fulfillment */
+.expense-input input[type="checkbox"]:checked {
+  background-color: green; /* Change color to green when checked */
+}
+
+.expense-input input[type="checkbox"]:not(:checked) {
+  background-color: red; /* Change color to red when not checked */
+}
+
+.expense-input input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: 2px solid #ccc;
+  border-radius: 50%;
+  outline: none;
+}
+
+.expense-input input[type="checkbox"]:checked {
+  background-color: green;
+}
+
+.expense-input input[type="checkbox"]:not(:checked) {
+  background-color: red;
+}
+
+.expense-input input[type="checkbox"]::after {
+  content: '';
+  display: block;
+  width: 10px;
+  height: 10px;
+  margin: 3px;
+  border-radius: 50%;
+  background: white;
+  transition: 0.3s;
+}
+
+.expense-input input[type="checkbox"]:checked::after {
+  background: green;
+}
+
+.expense-input input[type="checkbox"]:not(:checked)::after {
+  background: red;
+}
+
+.not-fulfilled {
+  border-color: red; /* Set border color to red */
+}
+
+.fulfilled {
+  border-color: green; /* Set border color to green */
+}

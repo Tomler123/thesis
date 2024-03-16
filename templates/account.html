@@ -41,8 +41,8 @@
         <div class="link-item">
             <h3>Loans</h3>
             <hr class="dotted">
-            <p>Lent ${{ total_lent }}</p>
-            <p>Borrowed ${{ total_borrowed }}</p>
+            <p>Lent<br>${{ total_lent }}</p>
+            <p>Borrowed<br>${{ total_borrowed }}</p>
             <a href="{{ url_for('loans') }}">More</a>
         </div>
     </div>
@@ -71,11 +71,7 @@
                 <img src="{{ url_for('static', filename='icons/icon2.png') }}" alt="Icon 2" onclick="selectIcon('icon2.png')">
 
             </div>
-            <div class="pagination">
-                <button id="prevPage" onclick="prevPage()">Previous</button>
-                <span id="currentPage">Page 1</span>
-                <button id="nextPage" onclick="nextPage()">Next</button>
-            </div>
+            
         </div>
     </div>
 
@@ -89,52 +85,6 @@
 
 <!-- JavaScript for popup functionality -->
 <script>
-    // Define variables for tracking current page and total number of pages
-    var currentPage = 1;
-    var totalPages = Math.ceil({{ num_icons }}/9); // Assuming 9 icons per page
-
-    // Function to load icons for the current page
-    function loadIcons() {
-        var iconGrid = document.getElementById("iconGrid");
-        iconGrid.innerHTML = ""; // Clear previous icons
-
-        // Calculate start and end index for the current page
-        var startIndex = (currentPage - 1) * 9;
-        var endIndex = Math.min(startIndex + 9, {{ num_icons }}); // Assuming 9 icons per page
-
-        // Dynamically create and append image elements for icons
-        for (var i = startIndex; i < endIndex; i++) {
-            var iconIndex = i + 1;
-            var iconSrc = "{{ url_for('static', filename='icons/icon') }}" + iconIndex + ".png";
-            var img = document.createElement("img");
-            img.src = iconSrc;
-            img.alt = "Icon " + iconIndex;
-            img.onclick = function() {
-                selectIcon(this.src); // Pass icon source to selectIcon function
-            };
-            iconGrid.appendChild(img);
-        }
-
-        // Update current page indicator
-        document.getElementById("currentPage").textContent = "Page " + currentPage;
-    }
-
-    // Function to navigate to the previous page
-    function prevPage() {
-        if (currentPage > 1) {
-            currentPage--;
-            loadIcons();
-        }
-    }
-
-    // Function to navigate to the next page
-    function nextPage() {
-        if (currentPage < totalPages) {
-            currentPage++;
-            loadIcons();
-        }
-    }
-
     function openPopup() {
         var popup = document.getElementById("imagePopup");
         if (popup) {
@@ -158,8 +108,7 @@
         // Submit the form
         document.getElementById("iconForm").submit();
     }
-
-    // Call loadIcons function to initially load icons
-    loadIcons();
 </script>
+
 {% endblock %}
+

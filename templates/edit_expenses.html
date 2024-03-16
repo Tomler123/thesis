@@ -10,15 +10,30 @@
             {{ form.hidden_tag() }}
             {{ form.csrf_token }}
             <label for="rent">Rent:</label>
-            <input type="number" min="0" id="rent" name="rent" value="{{ expenses.Rent }}" required><br>
+            <div class="expense-input">
+                <input type="number" min="0" id="rent" name="rent" value="{{ expenses.Rent }}" required>
+                <input type="checkbox" id="rent_fulfilled" name="rent_fulfilled" {% if fulfilled.RentFulfilled %} checked {% endif %}>
+            </div>
             <label for="transport_pass">Transport Pass:</label>
-            <input type="number" min="0" id="transport_pass" name="transport_pass" value="{{ expenses.TransportPass }}" required><br>
+            <div class="expense-input">
+                <input type="number" min="0" id="transport_pass" name="transport_pass" value="{{ expenses.TransportPass }}" required><br>
+                <input type="checkbox" id="transport_pass_fulfilled" name="transport_pass_fulfilled" {% if fulfilled.TransportPassFulfilled %} checked {% endif %}>
+            </div>
             <label for="education">Education:</label>
-            <input type="number" min="0" id="education" name="education" value="{{ expenses.Education }}" required><br>
+            <div class="expense-input">
+                <input type="number" min="0" id="education" name="education" value="{{ expenses.Education }}" required><br>
+                <input type="checkbox" id="education_fulfilled" name="education_fulfilled" {% if fulfilled.EducationFulfilled %} checked {% endif %}>
+            </div>
             <label for="insurance">Insurance:</label>
-            <input type="number" min="0" id="insurance" name="insurance" value="{{ expenses.Insurance }}" required><br>
+            <div class="expense-input">
+                <input type="number" min="0" id="insurance" name="insurance" value="{{ expenses.Insurance }}" required><br>
+                <input type="checkbox" id="insurance_fulfilled" name="insurance_fulfilled" {% if fulfilled.InsuranceFulfilled %} checked {% endif %}>
+            </div>
             <label for="other">Other:</label>
-            <input type="number" min="0" id="other" name="other" value="{{ expenses.Other }}" required><br>
+            <div class="expense-input">
+                <input type="number" min="0" id="other" name="other" value="{{ expenses.Other }}" required><br>
+                <input type="checkbox" id="other_fulfilled" name="other_fulfilled" {% if fulfilled.OtherFulfilled %} checked {% endif %}></div>
+        
             {{ form.submit }}
         </form>
     </div>

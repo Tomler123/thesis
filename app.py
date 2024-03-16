@@ -310,7 +310,7 @@ def account():
             conn.close()
 
             # Pass the user details to the template
-            return render_template('account.html', user=user_details, total_saving=total_saving, total_income=total_income, total_expenses=total_expenses, total_borrowed=total_borrowed, total_lent=total_lent, form=form)
+            return render_template('account.html', user=user_details, total_saving=total_saving, total_income=total_income, total_expenses=total_expenses, total_borrowed=round(total_borrowed, 0), total_lent=round(total_lent, 0), form=form)
         else:
             # Close the database connection
             cursor.close()
@@ -560,7 +560,7 @@ def edit_income():
 
     form = EditIncomeForm()
 
-    if request.method == 'POST' and form.validate_on_submit():
+    if request.method == 'POST' or form.validate_on_submit():
         salary = form.salary.data
         bonuses = form.bonuses.data
         investment = form.investment.data
@@ -655,7 +655,7 @@ def edit_saving():
 
     form = EditSavingForm()
 
-    if request.method == 'POST' and form.validate_on_submit():
+    if request.method == 'POST' or form.validate_on_submit():
         emergency = form.emergency.data
         retirement = form.retirement.data
         education = form.education.data
@@ -759,7 +759,7 @@ def edit_expenses():
 
     form = EditExpensesForm()
 
-    if request.method == 'POST' and form.validate_on_submit():
+    if request.method == 'POST' or form.validate_on_submit():
         rent = form.rent.data
         transport_pass = form.transport_pass.data
         education = form.education.data
@@ -767,14 +767,30 @@ def edit_expenses():
         other = form.other.data
 
         cursor.execute("""
-            UPDATE fixed_expenses SET
+                    UPDATE fixed_expenses SET
+                    Rent = ?,
+                    TransportPass = ?,
+                    Education = ?,
+                    Insurance = ?,
+                    Other = ?
+                    WHERE UserID = ?
+                """, (rent, transport_pass, education, insurance, other, user_id))
+
+        rent_fulfilled = 1 if request.form.get('rent_fulfilled') == 'on' else 0
+        transport_pass_fulfilled = 1 if request.form.get('transport_pass_fulfilled') == 'on' else 0
+        education_fulfilled = 1 if request.form.get('education_fulfilled') == 'on' else 0
+        insurance_fulfilled = 1 if request.form.get('insurance_fulfilled') == 'on' else 0
+        other_fulfilled = 1 if request.form.get('other_fulfilled') == 'on' else 0
+
+        cursor.execute("""
+            UPDATE fulfilled_expenses SET
             Rent = ?,
             TransportPass = ?,
             Education = ?,
             Insurance = ?,
             Other = ?
             WHERE UserID = ?
-        """, (rent, transport_pass, education, insurance, other, user_id))
+        """, (rent_fulfilled, transport_pass_fulfilled, education_fulfilled, insurance_fulfilled, other_fulfilled, user_id))
 
         conn.commit()
         flash('Expenses updated successfully!')
@@ -791,7 +807,25 @@ def edit_expenses():
             'Insurance' : expenses_data[4],
             'Other' : expenses_data[5],
         }
-
+        cursor.execute("SELECT * FROM fulfilled_expenses WHERE UserID = ?", user_id)
+        fulfilled_data = cursor.fetchone()
+        if fulfilled_data:
+            fulfilled_dict = {
+                'RentFulfilled': fulfilled_data[1],
+                'TransportPassFulfilled': fulfilled_data[2],
+                'EducationFulfilled': fulfilled_data[3],
+                'InsuranceFulfilled': fulfilled_data[4],
+                'OtherFulfilled': fulfilled_data[5],
+            }
+        else:
+            # Default fulfillment statuses if no data found
+            fulfilled_dict = {
+                'RentFulfilled': 0,
+                'TransportPassFulfilled': 0,
+                'EducationFulfilled': 0,
+                'InsuranceFulfilled': 0,
+                'OtherFulfilled': 0,
+            }
         # Generate the chart URL and calculate total sum here
         total_sum = sum(expenses_dict.values())
 
@@ -801,8 +835,8 @@ def edit_expenses():
         FigureCanvas(pie_chart).print_png(png_output)
         png_output.seek(0)
         chart_url = base64.b64encode(png_output.getvalue()).decode('ascii')
-
-        return render_template('edit_expenses.html', form=form, expenses=expenses_dict, chart_url=chart_url, total_sum=total_sum)
+        
+        return render_template('edit_expenses.html', form=form, expenses=expenses_dict, chart_url=chart_url, total_sum=total_sum, fulfilled=fulfilled_dict)
     else:
         # Handle the case where no expense data is found
         flash('No expense data found.')
@@ -874,7 +908,6 @@ def add_loan():
         return redirect(url_for('loans'))  # Redirect to the loans overview page
 
     return render_template('add_loan.html', form=form)
-
 
 class EditLoanForm(FlaskForm):
     lender_name = StringField('Lender Name', validators=[DataRequired(), Length(max=100)])
@@ -1113,16 +1146,16 @@ def recommendations():
         fixed_expenses = {
             "Rent" : round(expenses_data.Rent,2),
             "Transport" : round(expenses_data.TransportPass,2),
-            "Debt" : round(total_monthly_debt,2), # PROCESS LOAN TABLE
             "Education" : round(expenses_data.Education,2), # OTHER, CHANGE TO EDUCATION LATER IN TABLE
             "Insurance" : round(expenses_data.Insurance,2),
+            "Debt" : round(total_monthly_debt,2), # PROCESS LOAN TABLE
             "Subscriptions" : round(total_subscriptions,2),
             # FFFFFFIIIIIIIXXXXXXX SUBSCRIPTIONS
         }
 
         fixed_total = sum([b for (a,b) in fixed_expenses.items()])
         savings_goal_percentage = float(request.form.get('savings_goal'))
-
+        print(fixed_total)
         # Calculating total income
         
         cursor.execute(f"SELECT * FROM incomes WHERE UserID = {user_id}")
@@ -1160,9 +1193,25 @@ def recommendations():
                 'pets': round(daily_spending_limit * 0.03, 2), 
                 'entertainment': round(daily_spending_limit * 0.05, 2), 
             }
+            fulfilled_status = {}
+            cursor.execute("SELECT * FROM fulfilled_expenses WHERE UserID = ?", user_id)
+            fulfilled_data = cursor.fetchone()
+            if fulfilled_data:
+                # Assuming the table structure matches the dictionary keys
+                for category, fulfilled in zip(fixed_expenses.keys(), fulfilled_data[1:]):
+                    if fulfilled == 1:
+                        fulfilled_status[category] = 'Fulfilled'
+                    else:
+                        fulfilled_status[category] = 'Unfulfilled'
+            else:
+                # Default to 'Unfulfilled' if no data found
+                fulfilled_status = {category: 'Unfulfilled' for category in fixed_expenses.keys()}
             cursor.close()
             conn.close()
-            return render_template('recommendations.html', form=form, fixed_expenses=fixed_expenses, recommendations=recommendations, fixed=fixed_total, daily=daily_spending_limit, monthly=savings_amount, total_expected_loan=total_expected_loan)
+            return render_template('recommendations.html', form=form, fixed_expenses=fixed_expenses,
+                                   recommendations=recommendations, fixed=fixed_total,
+                                   daily=daily_spending_limit, monthly=savings_amount,
+                                   total_expected_loan=total_expected_loan, fulfilled_status=fulfilled_status)
     else:
         # GET request, just render the form
         return render_template('recommendations.html', form=form)

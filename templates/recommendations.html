@@ -52,16 +52,25 @@
             <tr>
                 <th>Expense Category</th>
                 <th>Monthly</th>
+                <th>Status</th>
             </tr>
             {% for category, amount in fixed_expenses.items() %}
             <tr>
                 <td>{{ category.capitalize() }}</td>
                 <td>${{ "{:0.2f}".format(amount) }}</td>
+                <td>
+                    {% if fulfilled_status[category] == 'Fulfilled' %}
+                        <span class="status-green">Fulfilled</span>
+                    {% else %}
+                        <span class="status-red">Unfulfilled</span>
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
             <tr>
                 <td><strong>Total</strong></td>
                 <td><strong>${{ "{:0.2f}".format(fixed) }}</strong></td>
+                <td><strong>N/A</strong></td>
             </tr>
         </table>
     </section>
