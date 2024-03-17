@@ -20,6 +20,13 @@
                 <span style="color: red;">{{ error }}</span><br>
             {% endfor %}
         </div>
+        <div>
+            {{ form.date.label }}<br>
+            {{ form.date(min="1", max="31") }}<br>
+            {% for error in form.cost.errors %}
+                <span style="color: red;">{{ error }}</span><br>
+            {% endfor %}
+        </div>
         <button type="submit">Add Subscription</button>
     </form>
 {% endblock %}

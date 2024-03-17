@@ -16,6 +16,7 @@ from wtforms.validators import DataRequired, Email, Length, EqualTo, Regexp, Num
 import math
 import algo
 from flask_wtf.csrf import CSRFProtect
+import json
 
 # server = 'TOMLER'  # If a local instance, typically 'localhost\\SQLEXPRESS'
 # database = 'thesis'  # Your database name
@@ -1010,6 +1011,7 @@ def subscriptions():
 class SubscriptionForm(FlaskForm):
     name = StringField('Service Name', validators=[InputRequired()])
     cost = DecimalField('Cost (Monthly)', validators=[InputRequired(), NumberRange(min=0)])
+    date = DecimalField('Date (Day of month)', validators=[InputRequired(), NumberRange(min=1, max=31)])
 
 @app.route('/add_subscription', methods=['GET', 'POST'])
 def add_subscription():
@@ -1022,15 +1024,16 @@ def add_subscription():
     if form.validate_on_submit():
         name = form.name.data
         cost = form.cost.data
+        date = form.date.data
         user_id = session['user_id']
 
         # Add subscription to database
         # Assuming conn is your database connection
-        query = """INSERT INTO subscriptions (UserID, Name, Cost)
-                   VALUES (?, ?, ?)"""
+        query = """INSERT INTO subscriptions (UserID, Name, Cost, Date)
+                   VALUES (?, ?, ?, ?)"""
         with pyodbc.connect(conn_str) as conn:
             with conn.cursor() as cursor:
-                cursor.execute(query, (user_id, name, cost))
+                cursor.execute(query, (user_id, name, cost, date))
                 conn.commit()
 
         flash('Subscription added successfully!')
@@ -1220,6 +1223,108 @@ def recommendations():
 @app.route('/contact')
 def contact():
     return render_template('contact_us.html')
+
+################################################################
+# Calendar
+@app.route('/calendar')
+def calendar():
+    # Assuming you have the user_id from the session
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+    
+    # Connect to the database
+    conn = pyodbc.connect(conn_str)
+    cursor = conn.cursor()
+    
+    # Fetch the dates from the subscriptions table
+    cursor.execute("SELECT Date FROM subscriptions WHERE UserID=?", (user_id,))
+    subscription_dates = [row.Date for row in cursor.fetchall()]
+    
+    # Close the connection
+    cursor.close()
+    conn.close()
+
+    # Render the calendar template and pass the dates
+    return render_template('calendar.html', subscription_dates=json.dumps(subscription_dates))
+
+@app.route('/get_subscriptions', methods=['POST'])
+def get_subscriptions():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+
+    day_clicked = request.json.get('day')
+    conn = pyodbc.connect(conn_str)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT s.SubscriptionID, s.Name, s.Cost, f.Fulfilled
+        FROM subscriptions s
+        LEFT JOIN fulfilled_subscriptions f ON s.SubscriptionID = f.SubscriptionID
+        WHERE s.UserID = ? AND s.Date = ? AND (f.Year IS NULL OR f.Year = YEAR(GETDATE())) AND (f.Month IS NULL OR f.Month = MONTH(GETDATE()))
+    """, (user_id, day_clicked))
+
+    subscriptions = [
+        {"id": row.SubscriptionID, "name": row.Name, "amount": row.Cost, "fulfilled": bool(row.Fulfilled)}
+        for row in cursor.fetchall()
+    ]
+
+    cursor.close()
+    conn.close()
+
+    return jsonify(subscriptions)
+
+@app.route('/update_subscription_status', methods=['POST'])
+def update_subscription_status():
+    data = request.get_json()
+    sub_id = data['sub_id']
+    status = data['status']
+
+    try:
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE fulfilled_subscriptions
+            SET Fulfilled = ?
+            WHERE SubscriptionID = ? AND Year = YEAR(GETDATE()) AND Month = MONTH(GETDATE())
+            """, (status, sub_id))
+
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+    return jsonify({'success': True, 'message': 'Status updated'})
+
+@app.route('/get_subscription_status_by_day', methods=['POST'])
+def get_subscription_status_by_day():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+
+    conn = pyodbc.connect(conn_str)
+    cursor = conn.cursor()
+
+    # Get the fulfillment status of all subscriptions for each day
+    cursor.execute("""
+        SELECT s.Date, 
+               CAST(CASE WHEN COUNT(f.Fulfilled) = SUM(CAST(f.Fulfilled AS INT)) THEN 1 ELSE 0 END AS BIT) AS AllFulfilled
+        FROM subscriptions s
+        LEFT JOIN fulfilled_subscriptions f ON s.SubscriptionID = f.SubscriptionID
+        WHERE s.UserID = ? AND (f.Year IS NULL OR f.Year = YEAR(GETDATE())) AND (f.Month IS NULL OR f.Month = MONTH(GETDATE()))
+        GROUP BY s.Date
+    """, (user_id,))
+
+    day_fulfillment_status = {str(row.Date): row.AllFulfilled for row in cursor.fetchall()}
+    
+    cursor.close()
+    conn.close()
+
+    return jsonify(day_fulfillment_status)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)

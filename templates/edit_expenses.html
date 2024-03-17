@@ -32,7 +32,8 @@
             <label for="other">Other:</label>
             <div class="expense-input">
                 <input type="number" min="0" id="other" name="other" value="{{ expenses.Other }}" required><br>
-                <input type="checkbox" id="other_fulfilled" name="other_fulfilled" {% if fulfilled.OtherFulfilled %} checked {% endif %}></div>
+                <input type="checkbox" id="other_fulfilled" name="other_fulfilled" {% if fulfilled.OtherFulfilled %} checked {% endif %}>
+            </div>
         
             {{ form.submit }}
         </form>
