@@ -745,6 +745,11 @@ class EditExpensesForm(FlaskForm):
     education = FloatField('Education', validators=[DataRequired(), NumberRange(min=0)])
     insurance = FloatField('Insurance', validators=[DataRequired(), NumberRange(min=0)])
     other = FloatField('Other', validators=[DataRequired(), NumberRange(min=0)])
+    rent_due_date = IntegerField('Rent Due Date', validators=[DataRequired(), NumberRange(min=1, max=31)])
+    transport_pass_due_date = IntegerField('Transport Pass Due Date', validators=[DataRequired(), NumberRange(min=1, max=31)])
+    education_due_date = IntegerField('Education Due Date', validators=[DataRequired(), NumberRange(min=1, max=31)])
+    insurance_due_date = IntegerField('Insurance Due Date', validators=[DataRequired(), NumberRange(min=1, max=31)])
+    other_due_date = IntegerField('Other Due Date', validators=[DataRequired(), NumberRange(min=1, max=31)])
     submit = SubmitField('Update')
 
 @app.route('/edit_expenses', methods=['GET', 'POST'])
@@ -766,6 +771,11 @@ def edit_expenses():
         education = form.education.data
         insurance = form.insurance.data
         other = form.other.data
+        rent_due_date = form.rent_due_date.data
+        transport_pass_due_date = form.transport_pass_due_date.data
+        education_due_date = form.education_due_date.data
+        insurance_due_date = form.insurance_due_date.data
+        other_due_date = form.other_due_date.data
 
         cursor.execute("""
                     UPDATE fixed_expenses SET
@@ -782,16 +792,68 @@ def edit_expenses():
         education_fulfilled = 1 if request.form.get('education_fulfilled') == 'on' else 0
         insurance_fulfilled = 1 if request.form.get('insurance_fulfilled') == 'on' else 0
         other_fulfilled = 1 if request.form.get('other_fulfilled') == 'on' else 0
-
+        # cursor.execute("""
+        #     UPDATE expenses SET
+        #     DueDate = ?,
+        #     Fulfilled = ?,
+        #     WHERE UserID = ? and ExpenseType = ?
+        # """, (rent_due_date, rent_fulfilled, user_id, 'Rent'))
         cursor.execute("""
-            UPDATE fulfilled_expenses SET
-            Rent = ?,
-            TransportPass = ?,
-            Education = ?,
-            Insurance = ?,
-            Other = ?
-            WHERE UserID = ?
-        """, (rent_fulfilled, transport_pass_fulfilled, education_fulfilled, insurance_fulfilled, other_fulfilled, user_id))
+            UPDATE expenses SET
+            DueDate = ?,
+            Fulfilled = ?
+            WHERE UserID = ? AND ExpenseType = ?
+        """, (rent_due_date, rent_fulfilled, user_id, 'Rent'))
+        cursor.execute("""
+            MERGE INTO expenses AS target
+            USING (VALUES (?, ?, ?, ?)) AS source (DueDate, Fulfilled, UserID, ExpenseType)
+            ON target.UserID = source.UserID AND target.ExpenseType = source.ExpenseType
+            WHEN MATCHED THEN
+                UPDATE SET target.DueDate = source.DueDate, target.Fulfilled = source.Fulfilled
+            WHEN NOT MATCHED THEN
+                INSERT (DueDate, Fulfilled, UserID, ExpenseType)
+                VALUES (source.DueDate, source.Fulfilled, source.UserID, source.ExpenseType);
+        """, (transport_pass_due_date, transport_pass_fulfilled, user_id, 'TransportPass'))
+        cursor.execute("""
+            MERGE INTO expenses AS target
+            USING (VALUES (?, ?, ?, ?)) AS source (DueDate, Fulfilled, UserID, ExpenseType)
+            ON target.UserID = source.UserID AND target.ExpenseType = source.ExpenseType
+            WHEN MATCHED THEN
+                UPDATE SET target.DueDate = source.DueDate, target.Fulfilled = source.Fulfilled
+            WHEN NOT MATCHED THEN
+                INSERT (DueDate, Fulfilled, UserID, ExpenseType)
+                VALUES (source.DueDate, source.Fulfilled, source.UserID, source.ExpenseType);
+        """, (education_due_date, education_fulfilled, user_id, 'Education'))
+        cursor.execute("""
+            MERGE INTO expenses AS target
+            USING (VALUES (?, ?, ?, ?)) AS source (DueDate, Fulfilled, UserID, ExpenseType)
+            ON target.UserID = source.UserID AND target.ExpenseType = source.ExpenseType
+            WHEN MATCHED THEN
+                UPDATE SET target.DueDate = source.DueDate, target.Fulfilled = source.Fulfilled
+            WHEN NOT MATCHED THEN
+                INSERT (DueDate, Fulfilled, UserID, ExpenseType)
+                VALUES (source.DueDate, source.Fulfilled, source.UserID, source.ExpenseType);
+        """, (insurance_due_date, insurance_fulfilled, user_id, 'Insurance'))
+        cursor.execute("""
+            MERGE INTO expenses AS target
+            USING (VALUES (?, ?, ?, ?)) AS source (DueDate, Fulfilled, UserID, ExpenseType)
+            ON target.UserID = source.UserID AND target.ExpenseType = source.ExpenseType
+            WHEN MATCHED THEN
+                UPDATE SET target.DueDate = source.DueDate, target.Fulfilled = source.Fulfilled
+            WHEN NOT MATCHED THEN
+                INSERT (DueDate, Fulfilled, UserID, ExpenseType)
+                VALUES (source.DueDate, source.Fulfilled, source.UserID, source.ExpenseType);
+        """, (other_due_date, other_fulfilled, user_id, 'Other'))
+
+        # cursor.execute("""
+        #     UPDATE fulfilled_expenses SET
+        #     Rent = ?,
+        #     TransportPass = ?,
+        #     Education = ?,
+        #     Insurance = ?,
+        #     Other = ?
+        #     WHERE UserID = ?
+        # """, (rent_fulfilled, transport_pass_fulfilled, education_fulfilled, insurance_fulfilled, other_fulfilled, user_id))
 
         conn.commit()
         flash('Expenses updated successfully!')
@@ -808,25 +870,55 @@ def edit_expenses():
             'Insurance' : expenses_data[4],
             'Other' : expenses_data[5],
         }
-        cursor.execute("SELECT * FROM fulfilled_expenses WHERE UserID = ?", user_id)
-        fulfilled_data = cursor.fetchone()
-        if fulfilled_data:
-            fulfilled_dict = {
-                'RentFulfilled': fulfilled_data[1],
-                'TransportPassFulfilled': fulfilled_data[2],
-                'EducationFulfilled': fulfilled_data[3],
-                'InsuranceFulfilled': fulfilled_data[4],
-                'OtherFulfilled': fulfilled_data[5],
-            }
+        cursor.execute("SELECT ExpenseType, DueDate FROM expenses WHERE UserID = ?", user_id)
+        due_date_data = cursor.fetchall()
+        due_date_dict = {}
+        if due_date_data:
+            for row in due_date_data:
+                due_date_dict[row[0]] = row[1]
         else:
-            # Default fulfillment statuses if no data found
-            fulfilled_dict = {
-                'RentFulfilled': 0,
-                'TransportPassFulfilled': 0,
-                'EducationFulfilled': 0,
-                'InsuranceFulfilled': 0,
-                'OtherFulfilled': 0,
+            due_date_dict = {
+                'Rent': 1,
+                'TransportPass': 1,
+                'Education': 1,
+                'Insurance': 1,
+                'Other': 1,
             }
+        cursor.execute("SELECT Fulfilled, ExpenseType FROM expenses WHERE UserID = ?", user_id)
+        data_fulfilled = cursor.fetchall()
+        
+        dict_fulfilled = {}
+        if data_fulfilled:
+            for row in data_fulfilled:
+                dict_fulfilled[row[1]] = row[0]
+        else:
+            dict_fulfilled = {
+                'Rent': 0,
+                'TransportPass': 0,
+                'Education': 0,
+                'Insurance': 0,
+                'Other': 0,
+            }
+
+        # cursor.execute("SELECT * FROM fulfilled_expenses WHERE UserID = ?", user_id)
+        # fulfilled_data = cursor.fetchone()
+        # if fulfilled_data:
+        #     fulfilled_dict = {
+        #         'RentFulfilled': fulfilled_data[1],
+        #         'TransportPassFulfilled': fulfilled_data[2],
+        #         'EducationFulfilled': fulfilled_data[3],
+        #         'InsuranceFulfilled': fulfilled_data[4],
+        #         'OtherFulfilled': fulfilled_data[5],
+        #     }
+        # else:
+        #     # Default fulfillment statuses if no data found
+        #     fulfilled_dict = {
+        #         'RentFulfilled': 0,
+        #         'TransportPassFulfilled': 0,
+        #         'EducationFulfilled': 0,
+        #         'InsuranceFulfilled': 0,
+        #         'OtherFulfilled': 0,
+        #     }
         # Generate the chart URL and calculate total sum here
         total_sum = sum(expenses_dict.values())
 
@@ -837,7 +929,8 @@ def edit_expenses():
         png_output.seek(0)
         chart_url = base64.b64encode(png_output.getvalue()).decode('ascii')
         
-        return render_template('edit_expenses.html', form=form, expenses=expenses_dict, chart_url=chart_url, total_sum=total_sum, fulfilled=fulfilled_dict)
+        return render_template('edit_expenses.html', form=form, expenses=expenses_dict, chart_url=chart_url, total_sum=total_sum, dict_fulfilled=dict_fulfilled, due_date_dict=due_date_dict)
+        # return render_template('edit_expenses.html', form=form, expenses=expenses_dict, chart_url=chart_url, total_sum=total_sum, fulfilled=fulfilled_dict, dict_fulfilled=dict_fulfilled)
     else:
         # Handle the case where no expense data is found
         flash('No expense data found.')

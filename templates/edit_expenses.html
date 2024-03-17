@@ -12,34 +12,39 @@
             <label for="rent">Rent:</label>
             <div class="expense-input">
                 <input type="number" min="0" id="rent" name="rent" value="{{ expenses.Rent }}" required>
-                <input type="checkbox" id="rent_fulfilled" name="rent_fulfilled" {% if fulfilled.RentFulfilled %} checked {% endif %}>
+                <input type="number" min="1" max="31" id="rent_due_date" name="rent_due_date" value="{{ due_date_dict['Rent'] }}" required>
+                <input type="checkbox" id="rent_fulfilled" name="rent_fulfilled" {% if dict_fulfilled.Rent %} checked {% endif %}>
             </div>
             <label for="transport_pass">Transport Pass:</label>
             <div class="expense-input">
                 <input type="number" min="0" id="transport_pass" name="transport_pass" value="{{ expenses.TransportPass }}" required><br>
-                <input type="checkbox" id="transport_pass_fulfilled" name="transport_pass_fulfilled" {% if fulfilled.TransportPassFulfilled %} checked {% endif %}>
+                <input type="number" min="1" max="31" id="transport_pass_due_date" name="transport_pass_due_date" value="{{due_date_dict['TransportPass']}}" required>
+                <input type="checkbox" id="transport_pass_fulfilled" name="transport_pass_fulfilled" {% if dict_fulfilled.TransportPass %} checked {% endif %}>
             </div>
             <label for="education">Education:</label>
             <div class="expense-input">
                 <input type="number" min="0" id="education" name="education" value="{{ expenses.Education }}" required><br>
-                <input type="checkbox" id="education_fulfilled" name="education_fulfilled" {% if fulfilled.EducationFulfilled %} checked {% endif %}>
+                <input type="number" min="1" max="31" id="education_due_date" name="education_due_date" value="{{due_date_dict['Education']}}" required>
+                <input type="checkbox" id="education_fulfilled" name="education_fulfilled" {% if dict_fulfilled.Education %} checked {% endif %}>
             </div>
             <label for="insurance">Insurance:</label>
             <div class="expense-input">
                 <input type="number" min="0" id="insurance" name="insurance" value="{{ expenses.Insurance }}" required><br>
-                <input type="checkbox" id="insurance_fulfilled" name="insurance_fulfilled" {% if fulfilled.InsuranceFulfilled %} checked {% endif %}>
+                <input type="number" min="1" max="31" id="insurance_due_date" name="insurance_due_date" value="{{due_date_dict['Insurance']}}" required>
+                <input type="checkbox" id="insurance_fulfilled" name="insurance_fulfilled" {% if dict_fulfilled.Insurance %} checked {% endif %}>
             </div>
             <label for="other">Other:</label>
             <div class="expense-input">
                 <input type="number" min="0" id="other" name="other" value="{{ expenses.Other }}" required><br>
-                <input type="checkbox" id="other_fulfilled" name="other_fulfilled" {% if fulfilled.OtherFulfilled %} checked {% endif %}>
+                <input type="number" min="1" max="31" id="other_due_date" name="other_due_date" value="{{due_date_dict['Other']}}" required>
+                <input type="checkbox" id="other_fulfilled" name="other_fulfilled" {% if dict_fulfilled.Other %} checked {% endif %}>
             </div>
         
             {{ form.submit }}
         </form>
     </div>
     <div class="total-sum">
-        <h2 class="total">Total Income: {{ total_sum }}</h2>
+        <h2 class="total">Total Expense: {{ total_sum }}</h2>
     </div>
     <div class="chart-side">
         <div class="chart-placeholder">
