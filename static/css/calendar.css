@@ -117,7 +117,7 @@
 
 /* Add this so the subscription-details mirrors the calendar's style */
 .wrap,
-.subscription-details {
+.finance-details {
   width: 450px; /* Your desired width */
   margin: 10px; /* Add margin for spacing */
   background: #fff;
@@ -126,7 +126,7 @@
   padding: 20px;
 }
 
-.subscription-details {
+.finance-details {
   display: none; /* It will be shown when a day is clicked */
 }
 .status-checkbox {

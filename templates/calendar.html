@@ -11,7 +11,7 @@
 {% endblock %}
 {% block content %}
 <div class="calendar-layout">
-    <div class="wrap" data-subscription-dates="{{ subscription_dates }}">
+    <div class="wrap" data-finance-dates="{{ all_dates }}">
         <div class="head">
         <p class="current-date"></p>
         <div class="icons">
@@ -33,17 +33,26 @@
         </div>
     </div>
 
-    <div class="subscription-details">
+    <div class="finance-details">
         <!-- Subscription details will be injected here -->
-        <!-- {% for subscription in subscriptions %} -->
+        {% for subscription in subscriptions %}
         <div class="subscription-item">
           <span>{{ subscription.name }} - Amount: {{ subscription.amount }}</span>
           <input type="checkbox" class="status-checkbox" id="sub{{ subscription.id }}" name="sub{{ subscription.id }}" {% if subscription.fulfilled %}checked{% endif %}>
           <label for="sub{{ subscription.id }}"></label>
         </div>
-        <!-- {% endfor %} -->
+        {% endfor %}
     </div>
-
+    <div class="finance-details" data-finance-type="expense">
+        <!-- Expense details will be injected here -->
+        {% for expense in expenses %}
+        <div class="expense-item">
+            <span>{{ expense.name }} - Amount: {{ expense.amount }}</span>
+            <input type="checkbox" class="status-checkbox" id="exp{{ expense.id }}" name="exp{{ expense.id }}" {% if expense.fulfilled %}checked{% endif %}>
+            <label for="exp{{ expense.id }}"></label>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}
 {% block script %}

@@ -49,7 +49,12 @@ const renderCalendar = (highlightedDates = [], statusByDay = {}) => {
             event.stopPropagation(); 
             getFinances(this.textContent).then(finances => {
                 updateFinanceDetails(finances);
+                const detailsElement = document.querySelector('.finance-details');
+                detailsElement.innerHTML = finances.map(sub => `${sub.name} - Amount: ${sub.amount}`).join('<br>');
+                detailsElement.style.display = 'block';
             });
+
+            
         });
 
         document.addEventListener('click', function(event) {
@@ -130,23 +135,13 @@ function getFinances(day) {
             'Content-Type': 'application/json',
             'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
-        body: JSON.stringify({ day: day })
+        body: JSON.stringify({day: day})
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
+    .then(response => response.json())
     .then(finances => {
         updateFinanceDetails(finances);
-    })
-    .catch(error => {
-        console.error('Error fetching finances:', error);
-        // Optionally, you can display an error message or handle the error in another way
     });
 }
-
 
 function updateFinanceDetails(finances) {
     const detailsElement = document.querySelector('.finance-details');
@@ -168,21 +163,9 @@ function updateFinanceDetails(finances) {
 }
 
 function handleCheckboxChange() {
-    let financeType, financeId;
+    const financeType = this.id.startsWith('sub') ? 'subscription' : 'expense'; // Determine finance type based on checkbox ID
+    const financeId = this.id.replace('sub', ''); // Extract finance ID from checkbox ID
 
-    // Determine finance type and ID based on checkbox ID prefix
-    if (this.id.startsWith('sub')) {
-        financeType = 'subscription';
-        financeId = this.id.replace('sub', '');
-    } else if (this.id.startsWith('exp')) {
-        financeType = 'expense';
-        financeId = this.id.replace('exp', '');
-    } else {
-        console.error('Invalid checkbox ID:', this.id);
-        return; // Exit the function if the checkbox ID is invalid
-    }
-
-    // Send the update request to the server
     fetch('/update_finance_status', {
         method: 'POST',
         headers: {
@@ -195,16 +178,9 @@ function handleCheckboxChange() {
             status: this.checked
         })
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to update finance status');
-        }
-        return response.json();
-    })
-    .then(data => console.log(data))
-    .catch(error => console.error('Error updating finance status:', error));
+    .then(response => response.json())
+    .then(data => console.log(data));
 }
-
 
 function fetchFinanceStatusByDay() {
     return fetch('/get_finance_status_by_day', {

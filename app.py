@@ -17,6 +17,7 @@ import math
 import algo
 from flask_wtf.csrf import CSRFProtect
 import json
+import datetime
 
 # server = 'TOMLER'  # If a local instance, typically 'localhost\\SQLEXPRESS'
 # database = 'thesis'  # Your database name
@@ -173,7 +174,6 @@ def signup():
 
     return render_template('signup.html', form=form)
 
-
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[
@@ -212,7 +212,6 @@ def login():
 
 
     return render_template('login.html', form=form)
-
 
 # #########################################################################
 # ACCOUNT AND LOGOUT MUST BE COMPLETED
@@ -1083,7 +1082,9 @@ def delete_loan(loan_id):
         return redirect(url_for('loans'))
     except Exception as e:
         return jsonify({'message': 'An error occurred while deleting the loan.'}), 500
+
 ################################################################
+# Subscriptions
 @app.route('/subscriptions')
 def subscriptions():
     if 'user_id' not in session:
@@ -1120,13 +1121,24 @@ def add_subscription():
         date = form.date.data
         user_id = session['user_id']
 
+        current_year = datetime.date.today().year
+        current_month = datetime.date.today().month
+        print(current_year)
+        print(current_month)
+        
         # Add subscription to database
-        # Assuming conn is your database connection
         query = """INSERT INTO subscriptions (UserID, Name, Cost, Date)
                    VALUES (?, ?, ?, ?)"""
         with pyodbc.connect(conn_str) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(query, (user_id, name, cost, date))
+                conn.commit()
+                
+                # Insert a row into fulfilled_subscriptions
+                subscription_id = cursor.execute("SELECT @@IDENTITY").fetchval()
+                insert_fulfilled_query = """INSERT INTO fulfilled_subscriptions (SubscriptionID, Fulfilled, Year, Month)
+                                            VALUES (?, ?, ?, ?)"""
+                cursor.execute(insert_fulfilled_query, (subscription_id, 0, current_year, current_month))
                 conn.commit()
 
         flash('Subscription added successfully!')
@@ -1311,6 +1323,7 @@ def recommendations():
     else:
         # GET request, just render the form
         return render_template('recommendations.html', form=form)
+
 ################################################################
 
 @app.route('/contact')
@@ -1319,6 +1332,31 @@ def contact():
 
 ################################################################
 # Calendar
+# @app.route('/calendar')
+# def calendar():
+#     # Assuming you have the user_id from the session
+#     user_id = session.get('user_id')
+#     if not user_id:
+#         return redirect(url_for('login'))
+    
+#     # Connect to the database
+#     conn = pyodbc.connect(conn_str)
+#     cursor = conn.cursor()
+    
+#     # Fetch the dates from the subscriptions table
+#     cursor.execute("SELECT Date FROM subscriptions WHERE UserID=?", (user_id,))
+#     subscription_dates = [row.Date for row in cursor.fetchall()]
+    
+#     cursor.execute("SELECT DueDate FROM expenses WHERE UserID=?", (user_id,))
+#     expense_dates = [row.DueDate for row in cursor.fetchall()]
+    
+#     # Close the connection
+#     cursor.close()
+#     conn.close()
+
+#     # Render the calendar template and pass the dates
+#     return render_template('calendar.html', subscription_dates=json.dumps(subscription_dates), expense_dates=json.dumps(expense_dates))
+
 @app.route('/calendar')
 def calendar():
     # Assuming you have the user_id from the session
@@ -1330,16 +1368,22 @@ def calendar():
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
     
-    # Fetch the dates from the subscriptions table
-    cursor.execute("SELECT Date FROM subscriptions WHERE UserID=?", (user_id,))
-    subscription_dates = [row.Date for row in cursor.fetchall()]
+    # Fetch both subscription and expense dates
+    cursor.execute("""
+        SELECT Date AS date FROM subscriptions WHERE UserID=?
+        UNION
+        SELECT DueDate AS date FROM expenses WHERE UserID=?
+    """, (user_id, user_id))
+    
+    # Fetch all dates from the cursor
+    all_dates = [row.date for row in cursor.fetchall()]
     
     # Close the connection
     cursor.close()
     conn.close()
 
     # Render the calendar template and pass the dates
-    return render_template('calendar.html', subscription_dates=json.dumps(subscription_dates))
+    return render_template('calendar.html', all_dates=json.dumps(all_dates))
 
 @app.route('/get_subscriptions', methods=['POST'])
 def get_subscriptions():
@@ -1368,6 +1412,72 @@ def get_subscriptions():
 
     return jsonify(subscriptions)
 
+@app.route('/get_expenses', methods=['POST'])
+def get_expenses():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+
+    day_clicked = request.json.get('day')
+    conn = pyodbc.connect(conn_str)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT e.ExpenseID, e.ExpenseType, e.Cost, e.Fulfilled
+        FROM expenses e
+        WHERE e.UserID = ? AND e.DueDate = ? AND e.Year = YEAR(GETDATE()) AND e.Month = MONTH(GETDATE())
+    """, (user_id, day_clicked))
+
+    expenses = [
+        {"id": row.ExpenseID, "name": row.ExpenseType, "amount": row.Cost, "fulfilled": bool(row.Fulfilled)}
+        for row in cursor.fetchall()
+    ]
+
+    cursor.close()
+    conn.close()
+
+    return jsonify(expenses)
+
+@app.route('/get_finances', methods=['POST'])
+def get_finances():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+
+    day_clicked = request.json.get('day')
+    conn = pyodbc.connect(conn_str)
+    cursor = conn.cursor()
+
+    # Query for subscriptions
+    cursor.execute("""
+        SELECT s.SubscriptionID AS id, s.Name, s.Cost AS amount, COALESCE(f.Fulfilled, 0) AS fulfilled
+        FROM subscriptions s
+        LEFT JOIN fulfilled_subscriptions f ON s.SubscriptionID = f.SubscriptionID 
+            AND f.Year = YEAR(GETDATE()) AND f.Month = MONTH(GETDATE())
+        WHERE s.UserID = ? AND s.Date = ?
+    """, (user_id, day_clicked))
+    subscriptions = [
+        {"id": row.id, "name": row.Name, "amount": row.amount, "fulfilled": bool(row.fulfilled)}
+        for row in cursor.fetchall()
+    ]
+
+    # Query for expenses
+    cursor.execute("""
+        SELECT e.ExpenseID AS id, e.ExpenseType AS name, e.Cost AS amount, e.Fulfilled AS fulfilled
+        FROM expenses e
+        WHERE e.UserID = ? AND e.DueDate = ? AND e.Year = YEAR(GETDATE()) AND e.Month = MONTH(GETDATE())
+    """, (user_id, day_clicked))
+    expenses = [
+        {"id": row.id, "name": row.name, "amount": row.amount, "fulfilled": bool(row.fulfilled)}
+        for row in cursor.fetchall()
+    ]
+
+    cursor.close()
+    conn.close()
+
+    finances = subscriptions + expenses  # Combine subscriptions and expenses
+    return jsonify(finances)
+
 @app.route('/update_subscription_status', methods=['POST'])
 def update_subscription_status():
     data = request.get_json()
@@ -1392,6 +1502,67 @@ def update_subscription_status():
         conn.close()
 
     return jsonify({'success': True, 'message': 'Status updated'})
+
+@app.route('/update_expense_status', methods=['POST'])
+def update_expense_status():
+    data = request.get_json()
+    expense_id = data['expense_id']
+    status = data['status']
+
+    try:
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE expenses
+            SET Fulfilled = ?
+            WHERE ExpenseID = ? AND Year = YEAR(GETDATE()) AND Month = MONTH(GETDATE())
+            """, (status, expense_id))
+
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+    return jsonify({'success': True, 'message': 'Expense status updated'})
+
+@app.route('/update_finance_status', methods=['POST'])
+def update_finance_status():
+    data = request.get_json()
+    finance_type = data.get('finance_type')
+    finance_id = data.get('finance_id')
+    status = data.get('status')
+
+    try:
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
+        
+        if finance_type == "subscription":
+            cursor.execute("""
+                UPDATE fulfilled_subscriptions
+                SET Fulfilled = ?
+                WHERE SubscriptionID = ? AND Year = YEAR(GETDATE()) AND Month = MONTH(GETDATE())
+                """, (status, finance_id))
+        elif finance_type == "expense":
+            cursor.execute("""
+                UPDATE expenses
+                SET Fulfilled = ?
+                WHERE ExpenseID = ? AND Year = YEAR(GETDATE()) AND Month = MONTH(GETDATE())
+                """, (status, finance_id))
+        else:
+            return jsonify({'success': False, 'message': 'Invalid finance type'}), 400
+        
+        conn.commit()
+        return jsonify({'success': True, 'message': f'{finance_type} status updated'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
 
 @app.route('/get_subscription_status_by_day', methods=['POST'])
 def get_subscription_status_by_day():
@@ -1418,6 +1589,65 @@ def get_subscription_status_by_day():
     conn.close()
 
     return jsonify(day_fulfillment_status)
+
+@app.route('/get_expense_status_by_day', methods=['POST'])
+def get_expense_status_by_day():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+
+    conn = pyodbc.connect(conn_str)
+    cursor = conn.cursor()
+
+    # Get the fulfillment status of all expenses for each day
+    cursor.execute("""
+        SELECT DueDate, SUM(CAST(Fulfilled AS INT)) AS AllFulfilled
+        FROM expenses
+        WHERE UserID = ?
+        GROUP BY DueDate
+    """, (user_id,))
+
+    day_expense_status = {str(row.DueDate): bool(row.AllFulfilled) for row in cursor.fetchall()}
+    
+    cursor.close()
+    conn.close()
+
+    return jsonify(day_expense_status)
+
+@app.route('/get_finance_status_by_day', methods=['POST'])
+def get_finance_status_by_day():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+
+    conn = pyodbc.connect(conn_str)
+    cursor = conn.cursor()
+
+    query = """
+    SELECT DueDate, SUM(CAST(Fulfilled AS INT)) AS AllFulfilled
+        FROM expenses
+        WHERE UserID = ?
+        GROUP BY DueDate
+
+        UNION ALL
+
+        SELECT s.Date, 
+            CAST(CASE WHEN COUNT(f.Fulfilled) = SUM(CAST(f.Fulfilled AS INT)) THEN 1 ELSE 0 END AS BIT) AS AllFulfilled
+        FROM subscriptions s
+        LEFT JOIN fulfilled_subscriptions f ON s.SubscriptionID = f.SubscriptionID
+        WHERE s.UserID = ? AND (f.Year IS NULL OR f.Year = YEAR(GETDATE())) AND (f.Month IS NULL OR f.Month = MONTH(GETDATE()))
+        GROUP BY s.Date
+    """
+    cursor.execute(query, (user_id, user_id))
+
+    # Fetch rows and convert the result into a dictionary
+    status_by_day = {str(row.DueDate): bool(row.AllFulfilled) for row in cursor.fetchall()}
+
+    cursor.close()
+    conn.close()
+
+    return jsonify(status_by_day)
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)
