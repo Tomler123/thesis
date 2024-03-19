@@ -1,48 +1,89 @@
+import yfinance as yf
 import numpy as np
+import pandas as pd
 import sys
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
-def hypothesis(theta, x):
-    return np.dot(theta, x)
+# Function to fetch historical stock price data
+def fetch_stock_data(ticker, start_date, end_date):
+    stock_data = yf.download(ticker, start=start_date, end=end_date)
+    return stock_data
 
-def cost_function(theta, x, y):
-    return (1 / 2) * ((hypothesis(theta, x) - y) ** 2)
-
-def gradient_descent(x, y, alpha=0.0001, num_iterations=10000000, tolerance=1e-5):
-    num_features = len(x[0])
-    theta = np.zeros(num_features)
-    temp = np.zeros(num_features)
-    m = len(y)
+# Function to preprocess stock data
+def preprocess_data(stock_data):
+    # Calculate daily returns
+    stock_data['Return'] = stock_data['Adj Close'].pct_change()
     
-    prev_cost = float('inf')  # Initialize with a large value
-
-    for iteration in range(num_iterations):
-        for i in range(num_features):
-            sum_gradient = 0
-            for j in range(m):
-                sum_gradient += (hypothesis(theta, x[j]) - y[j]) * x[j][i]
-            temp[i] = theta[i] - (alpha / m) * sum_gradient
-
-        # Calculate current cost function
-        current_cost = sum(cost_function(temp, x[j], y[j]) for j in range(m)) / m
-
-        # Check for convergence
-        if abs(current_cost - prev_cost) < tolerance:
-            print(f"Converged at iteration {iteration + 1}")
-            break
-
-        prev_cost = current_cost
-        theta = temp.copy()
-
-    return theta
+    # Label data: 1 if the stock gained 20% in the next 60 days, 0 otherwise
+    stock_data['Target'] = np.where(stock_data['Adj Close'].shift(-60) / stock_data['Adj Close'] >= 1.1, 1, 0)
+    
+    # Drop NaN values and unnecessary columns
+    stock_data.dropna(inplace=True)
+    
+    return stock_data
 
 
+def log_reg(ticker):
 
+    start_date = '2023-01-01'
+    end_date = '2024-01-01'
+    stock_data = fetch_stock_data(ticker, start_date, end_date)
 
-def main(X,Y):
-    optimal_theta = gradient_descent(X, Y)
-    print("Optimal theta:", optimal_theta)
+# Preprocess the data
+    stock_data = preprocess_data(stock_data)
 
+# Split data into features (X) and target variable (y)
+    X = stock_data[['Return']].values.reshape(-1, 1)
+    y = stock_data['Target'].values
 
-if __name__=='__main__':
-     if(len(sys.argv)==3):
-        main(sys.argv[1],sys.argv[2])
+# Split data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Standardize features
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+
+# Train logistic regression model
+    model = LogisticRegression()
+    model.fit(X_train_scaled, y_train)
+
+# Predict probabilities
+    y_pred_proba = model.predict_proba(X_test_scaled)[:, 1]
+
+# Set threshold for classification
+    threshold = 0.5
+    y_pred = (y_pred_proba > threshold).astype(int)
+
+# Evaluate model
+    accuracy = accuracy_score(y_test, y_pred)
+    print("Accuracy:", accuracy)
+    print(classification_report(y_test, y_pred))
+    print("Confusion Matrix:")
+    print(confusion_matrix(y_test, y_pred))
+
+# Plot the logistic regression curve
+    plt.figure(figsize=(10, 6))
+
+# Plot data points
+    plt.scatter(X_test_scaled, y_test, color='blue', label='Actual')
+
+# Plot logistic regression curve
+    X_range = np.linspace(X_test_scaled.min(), X_test_scaled.max(), 100)
+    probabilities = model.predict_proba(X_range.reshape(-1, 1))[:, 1]
+    plt.plot(X_range, probabilities, color='red', label='Logistic Regression Curve')
+
+    plt.xlabel('Daily Return')
+    plt.ylabel('Probability')
+    plt.title(f'Logistic Regression for {ticker}')
+    plt.legend()
+    plt.show()
+
+if __name__=="__main__":
+    if(len(sys.argv) == 2):
+        log_reg(sys.argv[1])
+
