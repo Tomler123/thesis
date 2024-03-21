@@ -844,16 +844,6 @@ def edit_expenses():
                 VALUES (source.DueDate, source.Fulfilled, source.UserID, source.ExpenseType);
         """, (other_due_date, other_fulfilled, user_id, 'Other'))
 
-        # cursor.execute("""
-        #     UPDATE fulfilled_expenses SET
-        #     Rent = ?,
-        #     TransportPass = ?,
-        #     Education = ?,
-        #     Insurance = ?,
-        #     Other = ?
-        #     WHERE UserID = ?
-        # """, (rent_fulfilled, transport_pass_fulfilled, education_fulfilled, insurance_fulfilled, other_fulfilled, user_id))
-
         conn.commit()
         flash('Expenses updated successfully!')
         return redirect(url_for('view_finances'))
@@ -899,25 +889,6 @@ def edit_expenses():
                 'Other': 0,
             }
 
-        # cursor.execute("SELECT * FROM fulfilled_expenses WHERE UserID = ?", user_id)
-        # fulfilled_data = cursor.fetchone()
-        # if fulfilled_data:
-        #     fulfilled_dict = {
-        #         'RentFulfilled': fulfilled_data[1],
-        #         'TransportPassFulfilled': fulfilled_data[2],
-        #         'EducationFulfilled': fulfilled_data[3],
-        #         'InsuranceFulfilled': fulfilled_data[4],
-        #         'OtherFulfilled': fulfilled_data[5],
-        #     }
-        # else:
-        #     # Default fulfillment statuses if no data found
-        #     fulfilled_dict = {
-        #         'RentFulfilled': 0,
-        #         'TransportPassFulfilled': 0,
-        #         'EducationFulfilled': 0,
-        #         'InsuranceFulfilled': 0,
-        #         'OtherFulfilled': 0,
-        #     }
         # Generate the chart URL and calculate total sum here
         total_sum = sum(expenses_dict.values())
 
@@ -929,7 +900,6 @@ def edit_expenses():
         chart_url = base64.b64encode(png_output.getvalue()).decode('ascii')
         
         return render_template('edit_expenses.html', form=form, expenses=expenses_dict, chart_url=chart_url, total_sum=total_sum, dict_fulfilled=dict_fulfilled, due_date_dict=due_date_dict)
-        # return render_template('edit_expenses.html', form=form, expenses=expenses_dict, chart_url=chart_url, total_sum=total_sum, fulfilled=fulfilled_dict, dict_fulfilled=dict_fulfilled)
     else:
         # Handle the case where no expense data is found
         flash('No expense data found.')
@@ -1258,7 +1228,6 @@ def recommendations():
             "Insurance" : round(expenses_data.Insurance,2),
             "Debt" : round(total_monthly_debt,2), # PROCESS LOAN TABLE
             "Subscriptions" : round(total_subscriptions,2),
-            # FFFFFFIIIIIIIXXXXXXX SUBSCRIPTIONS
         }
 
         fixed_total = sum([b for (a,b) in fixed_expenses.items()])
@@ -1302,11 +1271,11 @@ def recommendations():
                 'entertainment': round(daily_spending_limit * 0.05, 2), 
             }
             fulfilled_status = {}
-            cursor.execute("SELECT * FROM fulfilled_expenses WHERE UserID = ?", user_id)
-            fulfilled_data = cursor.fetchone()
-            if fulfilled_data:
+            cursor.execute("SELECT * FROM expenses WHERE UserID = ?", user_id)
+            f_data = cursor.fetchone()
+            if f_data:
                 # Assuming the table structure matches the dictionary keys
-                for category, fulfilled in zip(fixed_expenses.keys(), fulfilled_data[1:]):
+                for category, fulfilled in zip(fixed_expenses.keys(), f_data[1:]):
                     if fulfilled == 1:
                         fulfilled_status[category] = 'Fulfilled'
                     else:
