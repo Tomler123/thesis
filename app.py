@@ -11,7 +11,7 @@ import pyodbc
 import urllib
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, validators, SelectField, FloatField, IntegerField, DateField, DecimalField, TextAreaField
+from wtforms import BooleanField, StringField, PasswordField, SubmitField, validators, SelectField, FloatField, IntegerField, DateField, DecimalField, TextAreaField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, Regexp, NumberRange, InputRequired
 import math
 import algo
@@ -283,13 +283,20 @@ def account():
             total_saving = result.total_saving if isinstance(result.total_saving, int) else 0
 
             # Expenses
-            cursor.execute(f"SELECT * FROM fixed_expenses WHERE UserID = {user_id}")
-            columns = [column[0] for column in cursor.description if column[0] != 'UserID']
-            sum_columns = ' + '.join(columns)
-            query = f"SELECT SUM({sum_columns}) AS total_expenses FROM fixed_expenses WHERE UserID = ?"
-            cursor.execute(query, (user_id,))
+            # cursor.execute(f"SELECT * FROM fixed_expenses WHERE UserID = {user_id}")
+            # columns = [column[0] for column in cursor.description if column[0] != 'UserID']
+            # sum_columns = ' + '.join(columns)
+            # query = f"SELECT SUM({sum_columns}) AS total_expenses FROM fixed_expenses WHERE UserID = ?"
+            # cursor.execute(query, (user_id,))
+            # result = cursor.fetchone()
+            # total_expenses = result.total_expenses if isinstance(result.total_expenses, int) else 0
+
+            cursor.execute("""
+            SELECT SUM(Cost) AS total_expenses FROM outcomes 
+            WHERE UserID = ? AND Type = 'Expense'
+            """, (user_id,))
             result = cursor.fetchone()
-            total_expenses = result.total_expenses if isinstance(result.total_expenses, int) else 0
+            total_expenses = result.total_expenses if result.total_expenses else 0
 
             # Loan
             cursor.execute("""
@@ -329,86 +336,6 @@ def logout():
 
 ################################################################
 # Finances
-@app.route('/income', methods=['GET','POST'])
-def income():
-    if 'user_id' not in session:
-        flash('Please log in to record your income.')
-        return redirect(url_for('login'))
-    
-    if request.method == 'POST':
-        try:
-            # Assuming you have an authenticated user and user_id is stored in session
-            user_id = session['user_id']
-            salary = request.form['salary']
-            bonuses = request.form['bonuses']
-            investment = request.form['investment']
-            passive_income = request.form['passive_income']
-            # business = request.form['business']
-            other = request.form['other']
-            
-            # Connect to the database
-            conn = pyodbc.connect(conn_str)
-            cursor = conn.cursor()
-            
-            # Insert the income data
-            cursor.execute("""
-                INSERT INTO incomes
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (user_id, salary, bonuses, passive_income, investment, other))  # Add other income fields as needed
-
-            # Commit the transaction and close the connection
-            conn.commit()
-            cursor.close()
-            conn.close()
-
-            flash('Income recorded successfully!')
-        except pyodbc.Error as e:
-            flash('An error occurred while recording income.')
-            print("Error in SQL:", e)
-        
-        return redirect(url_for('income'))
-
-    return render_template('income.html')
-
-@app.route('/expenses', methods=['GET','POST'])
-def expenses():
-    if 'user_id' not in session:
-        flash('Please log in to record your expenses.')
-        return redirect(url_for('login'))
-    
-    if request.method == 'POST':
-        try:
-            # Assuming you have an authenticated user and user_id is stored in session
-            user_id = session['user_id']
-            rent = request.form['rent']
-            transport_pass = request.form['transport_pass']
-            education = request.form['education']         
-            insurance = request.form['insurance']         
-            other = request.form['other']
-            
-            # Connect to the database
-            conn = pyodbc.connect(conn_str)
-            cursor = conn.cursor()
-            
-            # Insert the expenses data
-            cursor.execute("""
-                INSERT INTO fixed_expenses
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (user_id, rent, transport_pass, education, insurance, other))  # Add other expenses fields as needed
-
-            # Commit the transaction and close the connection
-            conn.commit()
-            cursor.close()
-            conn.close()
-
-            flash('Expenses recorded successfully!')
-        except pyodbc.Error as e:
-            flash('An error occurred while recording expenses.')
-            print("Error in SQL:", e)
-        
-        return redirect(url_for('expenses'))
-
-    return render_template('expenses.html')
 
 @app.route('/saving', methods=['GET','POST'])
 def saving():
@@ -480,10 +407,6 @@ def view_finances():
     # Fetch the savings data
     cursor.execute("SELECT * FROM savings WHERE UserID = ?", user_id)
     savings = cursor.fetchall()
-    
-    # Fetch the expenses data
-    cursor.execute("SELECT * FROM fixed_expenses WHERE UserID = ?", user_id)
-    expenses = cursor.fetchall()
 
     # Fetch the income data
     cursor.execute("SELECT * FROM incomes WHERE UserID = ?", user_id)
@@ -502,18 +425,10 @@ def view_finances():
         amounts = [saving_data.Emergency, saving_data.Retirement, saving_data.Education, saving_data.GoalSpecific, saving_data.Health, saving_data.Investment, saving_data.Other]
         saving_graph = create_bar_chart(amounts, categories)
     
-    cursor.execute("SELECT * FROM fixed_expenses WHERE UserID = ?", user_id)
-    expenses_data = cursor.fetchone()
-
-    if expenses_data:
-        categories = ['Rent', 'TransportPass', 'Education', 'Insurance', 'Other']
-        amounts = [expenses_data.Rent, expenses_data.TransportPass, expenses_data.Education, expenses_data.Insurance, expenses_data.Other]
-        expenses_graph = create_bar_chart(amounts, categories)
-
     cursor.close()
     conn.close()
     
-    return render_template('view_finances.html', incomes=incomes, savings=savings, expenses=expenses, income_graph=income_graph, saving_graph=saving_graph, expenses_graph=expenses_graph)
+    return render_template('view_finances.html', incomes=incomes, savings=savings, income_graph=income_graph, saving_graph=saving_graph, )
 
 ################################################################
 # Create pie chart for saved data
@@ -537,85 +452,117 @@ def income_pie_chart(income_data):
             autopct='%1.1f%%'
         )
         return fig
-    
-class EditIncomeForm(FlaskForm):
-    salary = DecimalField('Salary', validators=[DataRequired()])
-    bonuses = DecimalField('Bonuses', validators=[DataRequired()])
-    investment = DecimalField('Investment', validators=[DataRequired()])
-    passive_income = DecimalField('Passive Income', validators=[DataRequired()])
-    other = DecimalField('Other', validators=[DataRequired()])
-    submit = SubmitField('Update')
 
-# Edit income
-@app.route('/edit_income', methods=['GET', 'POST'])
-def edit_income():
+@app.route('/incomes')
+def incomes():
     if 'user_id' not in session:
-        flash('Please log in to edit records.')
         return redirect(url_for('login'))
-    
-    user_id = session['user_id']
 
+    user_id = session['user_id']
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
 
+    cursor.execute("SELECT * FROM outcomes WHERE UserID = ? AND Type = 'Income'", user_id)
+    incomes = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('incomes.html', incomes=incomes)
+
+@app.route('/add_income', methods=['GET', 'POST'])
+def add_income():
+    if 'user_id' not in session:
+        flash('Please log in to add an income.')
+        return redirect(url_for('login'))
+
+    form = OutcomeForm()
+
+    if form.validate_on_submit():
+        name = form.name.data
+        cost = form.cost.data
+        day = form.day.data
+        income_type = form.type.data
+        user_id = session['user_id']
+
+        # Add income to the database
+        query = """INSERT INTO outcomes (UserID, Name, Cost, Day, Type)
+                   VALUES (?, ?, ?, ?, ?)"""
+        with pyodbc.connect(conn_str) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query, (user_id, name, cost, day, income_type))
+                conn.commit()
+
+        flash('Income added successfully!')
+        return redirect(url_for('incomes'))  # Redirect to the incomes overview page
+
+    return render_template('add_income.html', form=form)
+class EditIncomeForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired()])
+    cost = FloatField('Cost', validators=[DataRequired()])
+    day = IntegerField('Day', validators=[DataRequired(), NumberRange(min=1, max=31)])
+
+@app.route('/edit_income/<int:income_id>', methods=['GET', 'POST'])
+def edit_income(income_id):
+    if 'user_id' not in session:
+        flash('Please log in to edit records.')
+        return redirect(url_for('login'))
+
     form = EditIncomeForm()
 
-    if request.method == 'POST' or form.validate_on_submit():
-        salary = form.salary.data
-        bonuses = form.bonuses.data
-        investment = form.investment.data
-        passive_income = form.passive_income.data
-        other = form.other.data
+    if form.validate_on_submit():
+        name = form.name.data
+        cost = form.cost.data
+        day = form.day.data
+        user_id = session['user_id']
 
-        cursor.execute("""
-            UPDATE incomes SET
-            Salary= ?,
-            Bonuses = ?,
-            Investment = ?,
-            PassiveIncome = ?,
-            Other = ?
-            WHERE UserID = ?
-        """, (salary, bonuses, investment, passive_income, other, user_id))
+        # Update income in the database
+        query = """UPDATE outcomes SET Name=?, Cost=?, Day=? WHERE ID=? AND UserID=? AND Type='Income'"""
+        with pyodbc.connect(conn_str) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query, (name, cost, day, income_id, user_id))
+                conn.commit()
 
-        conn.commit()
         flash('Income updated successfully!')
-        return redirect(url_for('view_finances'))
+        return redirect(url_for('incomes'))  # Redirect to the incomes overview page
+
     else:
-        cursor.execute("SELECT * FROM incomes WHERE UserID = ?", user_id)
-        income_data = cursor.fetchone()
+        # Fetch the current income data
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM outcomes WHERE ID=? AND UserID=? AND Type='Income'", (income_id, session['user_id']))
+        income = cursor.fetchone()
+        cursor.close()
+        conn.close()
 
-        if income_data:
-            form.salary.data = income_data[1]
-            form.bonuses.data = income_data[2]
-            form.investment.data = income_data[3]
-            form.passive_income.data = income_data[4]
-            form.other.data = income_data[5]
-
-            total_sum = sum([
-                form.salary.data,
-                form.bonuses.data,
-                form.investment.data,
-                form.passive_income.data,
-                form.other.data
-            ])
-
-            pie_chart = income_pie_chart({
-                'Salary': form.salary.data,
-                'Bonuses': form.bonuses.data,
-                'Investment': form.investment.data,
-                'PassiveIncome': form.passive_income.data,
-                'Other': form.other.data
-            })
-
-            png_output = BytesIO()
-            FigureCanvas(pie_chart).print_png(png_output)
-            png_output.seek(0)
-            chart_url = base64.b64encode(png_output.getvalue()).decode('ascii')
-
-            return render_template('edit_income.html', form=form, chart_url=chart_url, total_sum=total_sum)
+        if income:
+            # Populate form fields with the current income data
+            form.name.data = income.Name
+            form.cost.data = income.Cost
+            form.day.data = income.Day
         else:
-            flash('No income data found.')
-            return redirect(url_for('account'))
+            flash('Income not found.')
+            return redirect(url_for('incomes'))
+
+    return render_template('edit_income.html', form=form)
+@app.route('/delete_income/<int:income_id>', methods=['POST'])
+def delete_income(income_id):
+    if 'user_id' not in session:
+        return jsonify({'message': 'Please log in to delete incomes.'}), 401
+    
+    try:
+        user_id = session['user_id']
+        # Ensure that the user deleting the income is the owner
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM incomes WHERE ID = ? AND UserID = ?", (income_id, user_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Income deleted successfully!')
+        return redirect(url_for('incomes'))
+    except Exception as e:
+        return jsonify({'message': 'An error occurred while deleting the income.'}), 500
 
 def saving_pie_chart(saving_data):
     for key, value in saving_data.items():
@@ -723,188 +670,127 @@ def edit_saving():
             flash('No saving data found.')
             return redirect(url_for('account'))
 
-def expenses_pie_chart(expenses_data):
-    for key, value in expenses_data.items():
-        if math.isnan(value):
-            expenses_data[key] = 0    
-    if all(value == 0 for value in expenses_data.values()):
-        pass
-    else:
-        fig = Figure()
-        axis = fig.add_subplot(1, 1, 1)
-        axis.pie(
-            [expenses_data['Rent'], expenses_data['TransportPass'], expenses_data['Education'], expenses_data['Insurance'], expenses_data['Other']],
-            autopct='%1.1f%%'
-        )
-        return fig
-
-class EditExpensesForm(FlaskForm):
-    rent = FloatField('Rent', validators=[DataRequired(), NumberRange(min=0)])
-    transport_pass = FloatField('Transport Pass', validators=[DataRequired(), NumberRange(min=0)])
-    education = FloatField('Education', validators=[DataRequired(), NumberRange(min=0)])
-    insurance = FloatField('Insurance', validators=[DataRequired(), NumberRange(min=0)])
-    other = FloatField('Other', validators=[DataRequired(), NumberRange(min=0)])
-    rent_due_date = IntegerField('Rent Due Date', validators=[DataRequired(), NumberRange(min=1, max=31)])
-    transport_pass_due_date = IntegerField('Transport Pass Due Date', validators=[DataRequired(), NumberRange(min=1, max=31)])
-    education_due_date = IntegerField('Education Due Date', validators=[DataRequired(), NumberRange(min=1, max=31)])
-    insurance_due_date = IntegerField('Insurance Due Date', validators=[DataRequired(), NumberRange(min=1, max=31)])
-    other_due_date = IntegerField('Other Due Date', validators=[DataRequired(), NumberRange(min=1, max=31)])
-    submit = SubmitField('Update')
-
-@app.route('/edit_expenses', methods=['GET', 'POST'])
-def edit_expenses():
+@app.route('/outcomes')
+def outcomes():
     if 'user_id' not in session:
-        flash('Please log in to edit records.')
         return redirect(url_for('login'))
-    
-    user_id = session['user_id']
 
+    user_id = session['user_id']
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
 
-    form = EditExpensesForm()
+    cursor.execute("SELECT * FROM outcomes WHERE UserID = ?", user_id)
+    outcomes = cursor.fetchall()
 
-    if request.method == 'POST' or form.validate_on_submit():
-        rent = form.rent.data
-        transport_pass = form.transport_pass.data
-        education = form.education.data
-        insurance = form.insurance.data
-        other = form.other.data
-        rent_due_date = form.rent_due_date.data
-        transport_pass_due_date = form.transport_pass_due_date.data
-        education_due_date = form.education_due_date.data
-        insurance_due_date = form.insurance_due_date.data
-        other_due_date = form.other_due_date.data
+    cursor.close()
+    conn.close()
 
-        cursor.execute("""
-                    UPDATE fixed_expenses SET
-                    Rent = ?,
-                    TransportPass = ?,
-                    Education = ?,
-                    Insurance = ?,
-                    Other = ?
-                    WHERE UserID = ?
-                """, (rent, transport_pass, education, insurance, other, user_id))
+    return render_template('outcomes.html', outcomes=outcomes)
 
-        rent_fulfilled = 1 if request.form.get('rent_fulfilled') == 'on' else 0
-        transport_pass_fulfilled = 1 if request.form.get('transport_pass_fulfilled') == 'on' else 0
-        education_fulfilled = 1 if request.form.get('education_fulfilled') == 'on' else 0
-        insurance_fulfilled = 1 if request.form.get('insurance_fulfilled') == 'on' else 0
-        other_fulfilled = 1 if request.form.get('other_fulfilled') == 'on' else 0
-        # cursor.execute("""
-        #     UPDATE expenses SET
-        #     DueDate = ?,
-        #     Fulfilled = ?,
-        #     WHERE UserID = ? and ExpenseType = ?
-        # """, (rent_due_date, rent_fulfilled, user_id, 'Rent'))
-        cursor.execute("""
-            UPDATE expenses SET
-            DueDate = ?,
-            Fulfilled = ?
-            WHERE UserID = ? AND ExpenseType = ?
-        """, (rent_due_date, rent_fulfilled, user_id, 'Rent'))
-        cursor.execute("""
-            MERGE INTO expenses AS target
-            USING (VALUES (?, ?, ?, ?)) AS source (DueDate, Fulfilled, UserID, ExpenseType)
-            ON target.UserID = source.UserID AND target.ExpenseType = source.ExpenseType
-            WHEN MATCHED THEN
-                UPDATE SET target.DueDate = source.DueDate, target.Fulfilled = source.Fulfilled
-            WHEN NOT MATCHED THEN
-                INSERT (DueDate, Fulfilled, UserID, ExpenseType)
-                VALUES (source.DueDate, source.Fulfilled, source.UserID, source.ExpenseType);
-        """, (transport_pass_due_date, transport_pass_fulfilled, user_id, 'TransportPass'))
-        cursor.execute("""
-            MERGE INTO expenses AS target
-            USING (VALUES (?, ?, ?, ?)) AS source (DueDate, Fulfilled, UserID, ExpenseType)
-            ON target.UserID = source.UserID AND target.ExpenseType = source.ExpenseType
-            WHEN MATCHED THEN
-                UPDATE SET target.DueDate = source.DueDate, target.Fulfilled = source.Fulfilled
-            WHEN NOT MATCHED THEN
-                INSERT (DueDate, Fulfilled, UserID, ExpenseType)
-                VALUES (source.DueDate, source.Fulfilled, source.UserID, source.ExpenseType);
-        """, (education_due_date, education_fulfilled, user_id, 'Education'))
-        cursor.execute("""
-            MERGE INTO expenses AS target
-            USING (VALUES (?, ?, ?, ?)) AS source (DueDate, Fulfilled, UserID, ExpenseType)
-            ON target.UserID = source.UserID AND target.ExpenseType = source.ExpenseType
-            WHEN MATCHED THEN
-                UPDATE SET target.DueDate = source.DueDate, target.Fulfilled = source.Fulfilled
-            WHEN NOT MATCHED THEN
-                INSERT (DueDate, Fulfilled, UserID, ExpenseType)
-                VALUES (source.DueDate, source.Fulfilled, source.UserID, source.ExpenseType);
-        """, (insurance_due_date, insurance_fulfilled, user_id, 'Insurance'))
-        cursor.execute("""
-            MERGE INTO expenses AS target
-            USING (VALUES (?, ?, ?, ?)) AS source (DueDate, Fulfilled, UserID, ExpenseType)
-            ON target.UserID = source.UserID AND target.ExpenseType = source.ExpenseType
-            WHEN MATCHED THEN
-                UPDATE SET target.DueDate = source.DueDate, target.Fulfilled = source.Fulfilled
-            WHEN NOT MATCHED THEN
-                INSERT (DueDate, Fulfilled, UserID, ExpenseType)
-                VALUES (source.DueDate, source.Fulfilled, source.UserID, source.ExpenseType);
-        """, (other_due_date, other_fulfilled, user_id, 'Other'))
+class OutcomeForm(FlaskForm):
+    name = StringField('Name', validators=[InputRequired()])
+    cost = FloatField('Cost', validators=[InputRequired(), NumberRange(min=0)])
+    day = IntegerField('Day', validators=[InputRequired(), NumberRange(min=1, max=31)])
+    type = SelectField('Type', choices=[('Expense', 'Expense'), ('Subscription', 'Subscription')], validators=[InputRequired()])
 
-        conn.commit()
-        flash('Expenses updated successfully!')
-        return redirect(url_for('view_finances'))
+@app.route('/add_outcome', methods=['GET', 'POST'])
+def add_outcome():
+    if 'user_id' not in session:
+        flash('Please log in to add an outcome.')
+        return redirect(url_for('login'))
 
-    cursor.execute("SELECT * FROM fixed_expenses WHERE UserID = ?", user_id)
-    expenses_data = cursor.fetchone()
+    form = OutcomeForm()
 
-    if expenses_data:
-        expenses_dict = {
-            'Rent' : expenses_data[1],
-            'TransportPass' : expenses_data[2],
-            'Education' : expenses_data[3],
-            'Insurance' : expenses_data[4],
-            'Other' : expenses_data[5],
-        }
-        cursor.execute("SELECT ExpenseType, DueDate FROM expenses WHERE UserID = ?", user_id)
-        due_date_data = cursor.fetchall()
-        due_date_dict = {}
-        if due_date_data:
-            for row in due_date_data:
-                due_date_dict[row[0]] = row[1]
-        else:
-            due_date_dict = {
-                'Rent': 1,
-                'TransportPass': 1,
-                'Education': 1,
-                'Insurance': 1,
-                'Other': 1,
-            }
-        cursor.execute("SELECT Fulfilled, ExpenseType FROM expenses WHERE UserID = ?", user_id)
-        data_fulfilled = cursor.fetchall()
-        
-        dict_fulfilled = {}
-        if data_fulfilled:
-            for row in data_fulfilled:
-                dict_fulfilled[row[1]] = row[0]
-        else:
-            dict_fulfilled = {
-                'Rent': 0,
-                'TransportPass': 0,
-                'Education': 0,
-                'Insurance': 0,
-                'Other': 0,
-            }
+    if form.validate_on_submit():
+        name = form.name.data
+        cost = form.cost.data
+        day = form.day.data
+        outcome_type = form.type.data
+        user_id = session['user_id']
 
-        # Generate the chart URL and calculate total sum here
-        total_sum = sum(expenses_dict.values())
+        # Add outcome to database
+        query = """INSERT INTO outcomes (UserID, Name, Cost, Day, Type, Year, Month, Fulfilled)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)"""
+        with pyodbc.connect(conn_str) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query, (user_id, name, cost, day, outcome_type, datetime.date.today().year, datetime.date.today().month, 0))
+                conn.commit()
+        flash('Outcome added successfully!')
+        return redirect(url_for('outcomes'))  # Redirect to the outcomes overview page
 
-        # You need to implement the expenses_pie_chart() function to generate the pie chart
-        pie_chart = expenses_pie_chart(expenses_dict)
-        png_output = BytesIO()
-        FigureCanvas(pie_chart).print_png(png_output)
-        png_output.seek(0)
-        chart_url = base64.b64encode(png_output.getvalue()).decode('ascii')
-        
-        return render_template('edit_expenses.html', form=form, expenses=expenses_dict, chart_url=chart_url, total_sum=total_sum, dict_fulfilled=dict_fulfilled, due_date_dict=due_date_dict)
+    return render_template('add_outcome.html', form=form)
+
+class EditOutcomeForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired()])
+    cost = FloatField('Cost', validators=[DataRequired()])
+    day = IntegerField('Day', validators=[DataRequired(), NumberRange(min=1, max=31)])
+    type = SelectField('Type', choices=[('Expense', 'Expense'), ('Subscription', 'Subscription')], validators=[DataRequired()])
+
+@app.route('/edit_outcome/<int:outcome_id>', methods=['GET', 'POST'])
+def edit_outcome(outcome_id):
+    if 'user_id' not in session:
+        flash('Please log in to edit records.')
+        return redirect(url_for('login'))
+
+    form = EditOutcomeForm()
+
+    if form.validate_on_submit():
+        name = form.name.data
+        cost = form.cost.data
+        day = form.day.data
+        outcome_type = form.type.data
+        user_id = session['user_id']
+
+        # Update outcome in the database
+        query = """UPDATE outcomes SET Name=?, Cost=?, Day=?, Type=? WHERE ID=? AND UserID=?"""
+        with pyodbc.connect(conn_str) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query, (name, cost, day, outcome_type, outcome_id, user_id))
+                conn.commit()
+
+        flash('Outcome updated successfully!')
+        return redirect(url_for('outcomes'))  # Redirect to the outcomes overview page
+
     else:
-        # Handle the case where no expense data is found
-        flash('No expense data found.')
-        return redirect(url_for('account'))
-        
+        # Fetch the current outcome data
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM outcomes WHERE ID=? AND UserID=?", (outcome_id, session['user_id']))
+        outcome = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if outcome:
+            # Populate form fields with the current outcome data
+            form.name.data = outcome.Name
+            form.cost.data = outcome.Cost
+            form.day.data = outcome.Day
+            form.type.data = outcome.Type
+        else:
+            flash('Outcome not found.')
+            return redirect(url_for('outcomes'))
+
+    return render_template('edit_outcome.html', form=form)
+
+@app.route('/delete_outcome/<int:outcome_id>', methods=['POST'])
+def delete_outcome(outcome_id):
+    if 'user_id' not in session:
+        return jsonify({'message': 'Please log in to delete outcomes.'}), 401
+    
+    try:
+        user_id = session['user_id']
+        # Ensure that the user deleting the outcome is the owner
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM outcomes WHERE ID = ? AND UserID = ?", (outcome_id, user_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Outcome deleted successfully!')
+        return redirect(url_for('outcomes'))
+    except Exception as e:
+        return jsonify({'message': 'An error occurred while deleting the outcome.'}), 500
+
 ################################################################
 # Loans
 @app.route('/loans')
@@ -1295,37 +1181,14 @@ def recommendations():
 
 ################################################################
 
+################################################################
+
 @app.route('/contact')
 def contact():
     return render_template('contact_us.html')
 
 ################################################################
 # Calendar
-# @app.route('/calendar')
-# def calendar():
-#     # Assuming you have the user_id from the session
-#     user_id = session.get('user_id')
-#     if not user_id:
-#         return redirect(url_for('login'))
-    
-#     # Connect to the database
-#     conn = pyodbc.connect(conn_str)
-#     cursor = conn.cursor()
-    
-#     # Fetch the dates from the subscriptions table
-#     cursor.execute("SELECT Date FROM subscriptions WHERE UserID=?", (user_id,))
-#     subscription_dates = [row.Date for row in cursor.fetchall()]
-    
-#     cursor.execute("SELECT DueDate FROM expenses WHERE UserID=?", (user_id,))
-#     expense_dates = [row.DueDate for row in cursor.fetchall()]
-    
-#     # Close the connection
-#     cursor.close()
-#     conn.close()
-
-#     # Render the calendar template and pass the dates
-#     return render_template('calendar.html', subscription_dates=json.dumps(subscription_dates), expense_dates=json.dumps(expense_dates))
-
 @app.route('/calendar')
 def calendar():
     # Assuming you have the user_id from the session
@@ -1353,59 +1216,6 @@ def calendar():
 
     # Render the calendar template and pass the dates
     return render_template('calendar.html', all_dates=json.dumps(all_dates))
-
-@app.route('/get_subscriptions', methods=['POST'])
-def get_subscriptions():
-    user_id = session.get('user_id')
-    if not user_id:
-        return redirect(url_for('login'))
-
-    day_clicked = request.json.get('day')
-    conn = pyodbc.connect(conn_str)
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT s.SubscriptionID, s.Name, s.Cost, f.Fulfilled
-        FROM subscriptions s
-        LEFT JOIN fulfilled_subscriptions f ON s.SubscriptionID = f.SubscriptionID
-        WHERE s.UserID = ? AND s.Date = ? AND (f.Year IS NULL OR f.Year = YEAR(GETDATE())) AND (f.Month IS NULL OR f.Month = MONTH(GETDATE()))
-    """, (user_id, day_clicked))
-
-    subscriptions = [
-        {"id": row.SubscriptionID, "name": row.Name, "amount": row.Cost, "fulfilled": bool(row.Fulfilled)}
-        for row in cursor.fetchall()
-    ]
-
-    cursor.close()
-    conn.close()
-
-    return jsonify(subscriptions)
-
-@app.route('/get_expenses', methods=['POST'])
-def get_expenses():
-    user_id = session.get('user_id')
-    if not user_id:
-        return redirect(url_for('login'))
-
-    day_clicked = request.json.get('day')
-    conn = pyodbc.connect(conn_str)
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT e.ExpenseID, e.ExpenseType, e.Cost, e.Fulfilled
-        FROM expenses e
-        WHERE e.UserID = ? AND e.DueDate = ? AND e.Year = YEAR(GETDATE()) AND e.Month = MONTH(GETDATE())
-    """, (user_id, day_clicked))
-
-    expenses = [
-        {"id": row.ExpenseID, "name": row.ExpenseType, "amount": row.Cost, "fulfilled": bool(row.Fulfilled)}
-        for row in cursor.fetchall()
-    ]
-
-    cursor.close()
-    conn.close()
-
-    return jsonify(expenses)
 
 @app.route('/get_finances', methods=['POST'])
 def get_finances():
@@ -1447,55 +1257,6 @@ def get_finances():
     finances = subscriptions + expenses  # Combine subscriptions and expenses
     return jsonify(finances)
 
-@app.route('/update_subscription_status', methods=['POST'])
-def update_subscription_status():
-    data = request.get_json()
-    sub_id = data['sub_id']
-    status = data['status']
-
-    try:
-        conn = pyodbc.connect(conn_str)
-        cursor = conn.cursor()
-        cursor.execute("""
-            UPDATE fulfilled_subscriptions
-            SET Fulfilled = ?
-            WHERE SubscriptionID = ? AND Year = YEAR(GETDATE()) AND Month = MONTH(GETDATE())
-            """, (status, sub_id))
-
-        conn.commit()
-    except Exception as e:
-        conn.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
-    finally:
-        cursor.close()
-        conn.close()
-
-    return jsonify({'success': True, 'message': 'Status updated'})
-
-@app.route('/update_expense_status', methods=['POST'])
-def update_expense_status():
-    data = request.get_json()
-    expense_id = data['expense_id']
-    status = data['status']
-
-    try:
-        conn = pyodbc.connect(conn_str)
-        cursor = conn.cursor()
-        cursor.execute("""
-            UPDATE expenses
-            SET Fulfilled = ?
-            WHERE ExpenseID = ? AND Year = YEAR(GETDATE()) AND Month = MONTH(GETDATE())
-            """, (status, expense_id))
-
-        conn.commit()
-    except Exception as e:
-        conn.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500
-    finally:
-        cursor.close()
-        conn.close()
-
-    return jsonify({'success': True, 'message': 'Expense status updated'})
 
 @app.route('/update_finance_status', methods=['POST'])
 def update_finance_status():
@@ -1532,56 +1293,6 @@ def update_finance_status():
         cursor.close()
         conn.close()
 
-
-@app.route('/get_subscription_status_by_day', methods=['POST'])
-def get_subscription_status_by_day():
-    user_id = session.get('user_id')
-    if not user_id:
-        return redirect(url_for('login'))
-
-    conn = pyodbc.connect(conn_str)
-    cursor = conn.cursor()
-
-    # Get the fulfillment status of all subscriptions for each day
-    cursor.execute("""
-        SELECT s.Date, 
-               CAST(CASE WHEN COUNT(f.Fulfilled) = SUM(CAST(f.Fulfilled AS INT)) THEN 1 ELSE 0 END AS BIT) AS AllFulfilled
-        FROM subscriptions s
-        LEFT JOIN fulfilled_subscriptions f ON s.SubscriptionID = f.SubscriptionID
-        WHERE s.UserID = ? AND (f.Year IS NULL OR f.Year = YEAR(GETDATE())) AND (f.Month IS NULL OR f.Month = MONTH(GETDATE()))
-        GROUP BY s.Date
-    """, (user_id,))
-
-    day_fulfillment_status = {str(row.Date): row.AllFulfilled for row in cursor.fetchall()}
-    
-    cursor.close()
-    conn.close()
-
-    return jsonify(day_fulfillment_status)
-
-@app.route('/get_expense_status_by_day', methods=['POST'])
-def get_expense_status_by_day():
-    user_id = session.get('user_id')
-    if not user_id:
-        return redirect(url_for('login'))
-
-    conn = pyodbc.connect(conn_str)
-    cursor = conn.cursor()
-
-    # Get the fulfillment status of all expenses for each day
-    cursor.execute("""
-        SELECT DueDate, SUM(CAST(Fulfilled AS INT)) AS AllFulfilled
-        FROM expenses
-        WHERE UserID = ?
-        GROUP BY DueDate
-    """, (user_id,))
-
-    day_expense_status = {str(row.DueDate): bool(row.AllFulfilled) for row in cursor.fetchall()}
-    
-    cursor.close()
-    conn.close()
-
-    return jsonify(day_expense_status)
 
 @app.route('/get_finance_status_by_day', methods=['POST'])
 def get_finance_status_by_day():

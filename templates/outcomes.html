@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block links %}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+{% endblock %}
+{% block content %}
+    <h1>Outcomes</h1>
+    <a href="{{ url_for('add_outcome') }}" class="btn btn-primary">Add Outcome</a>
+    <br><br>
+    <h2>Expenses</h2>
+    <ul>
+        {% for outcome in outcomes if outcome.Type == 'Expense' %}
+        <li>{{ outcome.Name }}  -  Amount: <strong>{{ outcome.Cost }}</strong> <a href="#" onclick="editOutcome({{ outcome.ID }})">&#160;&#160;&#160;&#160;&#160;Edit</a> | <a href="#" onclick="deleteOutcome({{ outcome.ID }})">Delete</a></li>
+        {% else %}
+        <p>No Expenses.</p>
+        {% endfor %}
+    </ul>
+    <hr>
+    <h2>Subscriptions</h2>
+    <ul>
+        {% for outcome in outcomes if outcome.Type == 'Subscription' %}
+        <li>{{ outcome.Name }}  -  Amount: <strong>{{ outcome.Cost }}</strong> <a href="#" onclick="editOutcome({{ outcome.ID }})">&#160;&#160;&#160;&#160;&#160;Edit</a> | <a href="#" onclick="deleteOutcome({{ outcome.ID }})">Delete</a></li>
+        {% else %}
+        <p>No Subscriptions.</p>
+        {% endfor %}
+    </ul>
+    <hr>
+{% block script %}
+<script>
+function deleteOutcome(outcomeId) {
+    if (confirm("Are you sure you want to delete this outcome?")) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content'); // Fetch CSRF token from meta tag
+        fetch(`/delete_outcome/${outcomeId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken // Include CSRF token in the request headers
+            },
+            body: `outcome_id=${outcomeId}`
+        })
+        .then(() => {
+            // Reload the page to reflect changes
+            window.location.reload();
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+}
+function editOutcome(outcomeID) {
+    window.location.href = '/edit_outcome/' + outcomeID;
+}
+
+</script>
+{% endblock %}
+{% endblock %}

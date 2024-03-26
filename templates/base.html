@@ -39,9 +39,9 @@
 
                     <ul class="dropdown__menu">
                         <li>
-                            <a href="{{ url_for('edit_income') }}" class="dropdown__link">
-                            <i class="ri-pie-chart-line"></i> Income
-                            </a>                          
+                            <a href="{{ url_for('incomes') }}" class="dropdown__link">
+                            <i class="ri-pie-chart-line"></i> Incomes
+                            </a>
                         </li>
                     
                         <li>
@@ -51,19 +51,14 @@
                         </li>
                     
                         <li>
-                            <a href="{{ url_for('edit_expenses') }}" class="dropdown__link">
-                            <i class="ri-pie-chart-line"></i> Expenses
+                            <a href="{{ url_for('outcomes') }}" class="dropdown__link">
+                            <i class="ri-pie-chart-line"></i> Outcomes
                             </a>
                         </li>
 
                         <li>
                             <a href="{{ url_for('loans') }}" class="dropdown__link">
                             <i class="ri-pie-chart-line"></i> Loans
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ url_for('subscriptions') }}" class="dropdown__link">
-                            <i class="ri-pie-chart-line"></i> Subscriptions
                             </a>
                         </li>
                         <li>
@@ -80,11 +75,7 @@
                             </div>
 
                             <ul class="dropdown__submenu">
-                            <li>
-                                <a href="{{url_for('edit_income')}}" class="dropdown__sublink">
-                                <i class="ri-file-list-line"></i> Edit Income
-                                </a>
-                            </li>
+                            
       
                             <li>
                                 <a href="{{url_for('edit_saving')}}" class="dropdown__sublink">
@@ -92,11 +83,7 @@
                                 </a>
                             </li>
       
-                            <li>
-                                <a href="{{url_for('edit_expenses')}}" class="dropdown__sublink">
-                                <i class="ri-refund-2-line"></i> Edit Expenses
-                                </a>
-                            </li>
+                            
                             </ul>
                         </li> -->
                     </ul>

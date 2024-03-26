@@ -72,37 +72,6 @@
         </table>
     </div>
 </section>
-<br>
-<hr>
-<br>
-<section class="section-container">
-    <div class="graph-container">
-        <img src="data:image/png;base64,{{ expenses_graph }}" alt="Expenses Graph">
-    </div>
-    <div class="table-container">
-        <h2>Expenses</h2>
-        <table>
-            <tr>
-                <th>Rent</th>
-                <th>Transport</th>
-                <th>Education</th>
-                <th>Insurance</th>
-                <th>Other</th>
-            </tr>
-            {% for expense in expenses %}
-            <tr>
-                <td>{{ expense.Rent }}</td>
-                <td>{{ expense.TransportPass }}</td>
-                <td>{{ expense.Education }}</td>
-                <td>{{ expense.Insurance }}</td>
-                <td>{{ expense.Other }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-        <br>
-    </div>
-</section>
-
 
 {% block script %}    
 {% endblock %}
