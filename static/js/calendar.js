@@ -13,7 +13,7 @@ const months = ["January", "February", "March", "April", "May", "June", "July",
 let highlightedDates = []; // This will hold your highlighted dates after fetching from the server
 
 // After entering the page, colors will be displayed correctly
-fetchFinanceStatusByDay().then(statusByDay => {
+fetchSubscriptionStatusByDay().then(statusByDay => {
     renderCalendar(highlightedDates, statusByDay);
 });
 
@@ -47,13 +47,18 @@ const renderCalendar = (highlightedDates = [], statusByDay = {}) => {
         day.addEventListener('click', function(event) {
             // Stops the click from propagating to the document level
             event.stopPropagation(); 
-            getFinances(this.textContent).then(finances => {
-                updateFinanceDetails(finances);
+            getSubscriptions(this.textContent).then(subscriptions => {
+                updateSubscriptionDetails(subscriptions);
+                const detailsElement = document.querySelector('.subscription-details');
+                detailsElement.innerHTML = subscriptions.map(sub => `${sub.name} - Amount: ${sub.amount}`).join('<br>');
+                detailsElement.style.display = 'block';
             });
+
+            
         });
 
         document.addEventListener('click', function(event) {
-            const detailsElement = document.querySelector('.finance-details');
+            const detailsElement = document.querySelector('.subscription-details');
             if (!detailsElement.contains(event.target)) {
                 detailsElement.style.display = 'none';
             }
@@ -63,7 +68,7 @@ const renderCalendar = (highlightedDates = [], statusByDay = {}) => {
         checkbox.addEventListener('change', function() {
             const subscriptionId = this.id.replace('sub', ''); // Correctly extract subscription ID
             const isFulfilled = this.checked; // Boolean value true or false
-            fetch('/update_finance_status', {
+            fetch('/update_subscription_status', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -83,18 +88,18 @@ const renderCalendar = (highlightedDates = [], statusByDay = {}) => {
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         const wrap = document.querySelector('.wrap');
-        const highlightedDates = JSON.parse(wrap.getAttribute('data-finance-dates'));
+        const highlightedDates = JSON.parse(wrap.getAttribute('data-subscription-dates'));
         renderCalendar(highlightedDates);
     });
 } else {
     const wrap = document.querySelector('.wrap');
-    const highlightedDates = JSON.parse(wrap.getAttribute('data-finance-dates'));
+    const highlightedDates = JSON.parse(wrap.getAttribute('data-subscription-dates'));
     renderCalendar(highlightedDates);
 }
 renderCalendar(highlightedDates);
 
 document.addEventListener('click', function(event) {
-    const detailsElement = document.querySelector('.finance-details');
+    const detailsElement = document.querySelector('.subscription-details');
     const clickInsideDetails = detailsElement.contains(event.target);
     const clickOnHighlightedDay = event.target.classList.contains('highlighted');
   
@@ -114,7 +119,7 @@ prevNextIcon.forEach(icon => { // getting prev and next icons
         } else {
             date = new Date();
         }
-        fetchFinanceStatusByDay().then(statusByDay => {
+        fetchSubscriptionStatusByDay().then(statusByDay => {
             renderCalendar(highlightedDates, statusByDay);
         });
         // renderCalendar(highlightedDates); // Call renderCalendar with highlightedDates
@@ -123,34 +128,24 @@ prevNextIcon.forEach(icon => { // getting prev and next icons
 
 // Mock function to simulate fetching subscription data
 // Replace this with actual fetching logic from your server
-function getFinances(day) {
-    return fetch('/get_finances', {
+function getSubscriptions(day) {
+    return fetch('/get_subscriptions', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
-        body: JSON.stringify({ day: day })
+        body: JSON.stringify({day: day})
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(finances => {
-        updateFinanceDetails(finances);
-    })
-    .catch(error => {
-        console.error('Error fetching finances:', error);
-        // Optionally, you can display an error message or handle the error in another way
+    .then(response => response.json())
+    .then(subscriptions => {
+        updateSubscriptionDetails(subscriptions);
     });
 }
 
-
-function updateFinanceDetails(finances) {
-    const detailsElement = document.querySelector('.finance-details');
-    let content = finances.map(sub => `
+function updateSubscriptionDetails(subscriptions) {
+    const detailsElement = document.querySelector('.subscription-details');
+    let content = subscriptions.map(sub => `
         <div class="subscription-item">
             <span>${sub.name} - Amount: ${sub.amount}</span>
             <input type="checkbox" class="status-checkbox" id="sub${sub.id}" ${sub.fulfilled ? 'checked' : ''}>
@@ -168,46 +163,22 @@ function updateFinanceDetails(finances) {
 }
 
 function handleCheckboxChange() {
-    let financeType, financeId;
-
-    // Determine finance type and ID based on checkbox ID prefix
-    if (this.id.startsWith('sub')) {
-        financeType = 'subscription';
-        financeId = this.id.replace('sub', '');
-    } else if (this.id.startsWith('exp')) {
-        financeType = 'expense';
-        financeId = this.id.replace('exp', '');
-    } else {
-        console.error('Invalid checkbox ID:', this.id);
-        return; // Exit the function if the checkbox ID is invalid
-    }
-
-    // Send the update request to the server
-    fetch('/update_finance_status', {
+    fetch('/update_subscription_status', {
         method: 'POST',
+        body: JSON.stringify({
+            sub_id: this.id.replace('sub', ''),
+            status: this.checked
+        }),
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({
-            finance_type: financeType,
-            finance_id: financeId,
-            status: this.checked
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to update finance status');
         }
-        return response.json();
     })
-    .then(data => console.log(data))
-    .catch(error => console.error('Error updating finance status:', error));
+    .then(response => response.json())
+    .then(data => console.log(data));
 }
-
-
-function fetchFinanceStatusByDay() {
-    return fetch('/get_finance_status_by_day', {
+function fetchSubscriptionStatusByDay() {
+    return fetch('/get_subscription_status_by_day', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -218,6 +189,6 @@ function fetchFinanceStatusByDay() {
 }
 document.addEventListener('DOMContentLoaded', () => {
     const wrap = document.querySelector('.wrap');
-    highlightedDates = JSON.parse(wrap.getAttribute('data-finance-dates') || '[]');
+    highlightedDates = JSON.parse(wrap.getAttribute('data-subscription-dates') || '[]');
     renderCalendar(highlightedDates);
 });

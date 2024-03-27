@@ -1,4 +1,4 @@
-/* ????????????????????????? */
+
 /* Import Google font - Poppins */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
 *{
@@ -117,7 +117,7 @@
 
 /* Add this so the subscription-details mirrors the calendar's style */
 .wrap,
-.finance-details {
+.subscription-details {
   width: 450px; /* Your desired width */
   margin: 10px; /* Add margin for spacing */
   background: #fff;
@@ -126,7 +126,7 @@
   padding: 20px;
 }
 
-.finance-details {
+.subscription-details {
   display: none; /* It will be shown when a day is clicked */
 }
 .status-checkbox {
@@ -169,3 +169,4 @@
 .days li.all-fulfilled::before {
   background: green; /* Color for all fulfilled subscriptions */
 }
+

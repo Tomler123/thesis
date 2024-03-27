@@ -1189,6 +1189,34 @@ def contact():
 
 ################################################################
 # Calendar
+# @app.route('/calendar')
+# def calendar():
+#     # Assuming you have the user_id from the session
+#     user_id = session.get('user_id')
+#     if not user_id:
+#         return redirect(url_for('login'))
+    
+#     # Connect to the database
+#     conn = pyodbc.connect(conn_str)
+#     cursor = conn.cursor()
+    
+#     # Fetch both subscription and expense dates
+#     cursor.execute("""
+#         SELECT Date AS date FROM subscriptions WHERE UserID=?
+#         UNION
+#         SELECT DueDate AS date FROM expenses WHERE UserID=?
+#     """, (user_id, user_id))
+    
+#     # Fetch all dates from the cursor
+#     all_dates = [row.date for row in cursor.fetchall()]
+    
+#     # Close the connection
+#     cursor.close()
+#     conn.close()
+
+#     # Render the calendar template and pass the dates
+#     return render_template('calendar.html', all_dates=json.dumps(all_dates))
+
 @app.route('/calendar')
 def calendar():
     # Assuming you have the user_id from the session
@@ -1202,10 +1230,8 @@ def calendar():
     
     # Fetch both subscription and expense dates
     cursor.execute("""
-        SELECT Date AS date FROM subscriptions WHERE UserID=?
-        UNION
-        SELECT DueDate AS date FROM expenses WHERE UserID=?
-    """, (user_id, user_id))
+        SELECT Day AS date FROM outcomes WHERE UserID=?
+    """, (user_id))
     
     # Fetch all dates from the cursor
     all_dates = [row.date for row in cursor.fetchall()]
@@ -1217,8 +1243,8 @@ def calendar():
     # Render the calendar template and pass the dates
     return render_template('calendar.html', all_dates=json.dumps(all_dates))
 
-@app.route('/get_finances', methods=['POST'])
-def get_finances():
+@app.route('/get_subscriptions', methods=['POST'])
+def get_subscriptions():
     user_id = session.get('user_id')
     if not user_id:
         return redirect(url_for('login'))
@@ -1227,65 +1253,38 @@ def get_finances():
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
 
-    # Query for subscriptions
     cursor.execute("""
-        SELECT s.SubscriptionID AS id, s.Name, s.Cost AS amount, COALESCE(f.Fulfilled, 0) AS fulfilled
-        FROM subscriptions s
-        LEFT JOIN fulfilled_subscriptions f ON s.SubscriptionID = f.SubscriptionID 
-            AND f.Year = YEAR(GETDATE()) AND f.Month = MONTH(GETDATE())
-        WHERE s.UserID = ? AND s.Date = ?
+        SELECT ID, Name, Cost, Fulfilled
+        FROM outcomes
+        WHERE UserID = ? AND Day = ? AND Month = MONTH(GETDATE()) AND Year = YEAR(GETDATE())
     """, (user_id, day_clicked))
-    subscriptions = [
-        {"id": row.id, "name": row.Name, "amount": row.amount, "fulfilled": bool(row.fulfilled)}
-        for row in cursor.fetchall()
-    ]
 
-    # Query for expenses
-    cursor.execute("""
-        SELECT e.ExpenseID AS id, e.ExpenseType AS name, e.Cost AS amount, e.Fulfilled AS fulfilled
-        FROM expenses e
-        WHERE e.UserID = ? AND e.DueDate = ? AND e.Year = YEAR(GETDATE()) AND e.Month = MONTH(GETDATE())
-    """, (user_id, day_clicked))
-    expenses = [
-        {"id": row.id, "name": row.name, "amount": row.amount, "fulfilled": bool(row.fulfilled)}
+    subscriptions = [
+        {"id": row.ID, "name": row.Name, "amount": row.Cost, "fulfilled": bool(row.Fulfilled)}
         for row in cursor.fetchall()
     ]
 
     cursor.close()
     conn.close()
 
-    finances = subscriptions + expenses  # Combine subscriptions and expenses
-    return jsonify(finances)
+    return jsonify(subscriptions)
 
-
-@app.route('/update_finance_status', methods=['POST'])
-def update_finance_status():
+@app.route('/update_subscription_status', methods=['POST'])
+def update_subscription_status():
     data = request.get_json()
-    finance_type = data.get('finance_type')
-    finance_id = data.get('finance_id')
-    status = data.get('status')
+    sub_id = data['sub_id']
+    status = data['status']
 
     try:
         conn = pyodbc.connect(conn_str)
         cursor = conn.cursor()
-        
-        if finance_type == "subscription":
-            cursor.execute("""
-                UPDATE fulfilled_subscriptions
-                SET Fulfilled = ?
-                WHERE SubscriptionID = ? AND Year = YEAR(GETDATE()) AND Month = MONTH(GETDATE())
-                """, (status, finance_id))
-        elif finance_type == "expense":
-            cursor.execute("""
-                UPDATE expenses
-                SET Fulfilled = ?
-                WHERE ExpenseID = ? AND Year = YEAR(GETDATE()) AND Month = MONTH(GETDATE())
-                """, (status, finance_id))
-        else:
-            return jsonify({'success': False, 'message': 'Invalid finance type'}), 400
-        
+        cursor.execute("""
+            UPDATE outcomes
+            SET Fulfilled = ?
+            WHERE ID = ? AND Year = YEAR(GETDATE()) AND Month = MONTH(GETDATE())
+            """, (status, sub_id))
+
         conn.commit()
-        return jsonify({'success': True, 'message': f'{finance_type} status updated'})
     except Exception as e:
         conn.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -1293,9 +1292,10 @@ def update_finance_status():
         cursor.close()
         conn.close()
 
+    return jsonify({'success': True, 'message': 'Status updated'})
 
-@app.route('/get_finance_status_by_day', methods=['POST'])
-def get_finance_status_by_day():
+@app.route('/get_subscription_status_by_day', methods=['POST'])
+def get_subscription_status_by_day():
     user_id = session.get('user_id')
     if not user_id:
         return redirect(url_for('login'))
@@ -1303,30 +1303,97 @@ def get_finance_status_by_day():
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
 
-    query = """
-    SELECT DueDate, SUM(CAST(Fulfilled AS INT)) AS AllFulfilled
-        FROM expenses
-        WHERE UserID = ?
-        GROUP BY DueDate
+    cursor.execute("""
+        SELECT Day, 
+               CAST(CASE WHEN COUNT(Fulfilled) = SUM(CAST(Fulfilled AS INT)) THEN 1 ELSE 0 END AS BIT) AS AllFulfilled
+        FROM outcomes
+        WHERE UserID = ? AND Month = MONTH(GETDATE()) AND Year = YEAR(GETDATE())
+        GROUP BY Day
+    """, (user_id,))
 
-        UNION ALL
-
-        SELECT s.Date, 
-            CAST(CASE WHEN COUNT(f.Fulfilled) = SUM(CAST(f.Fulfilled AS INT)) THEN 1 ELSE 0 END AS BIT) AS AllFulfilled
-        FROM subscriptions s
-        LEFT JOIN fulfilled_subscriptions f ON s.SubscriptionID = f.SubscriptionID
-        WHERE s.UserID = ? AND (f.Year IS NULL OR f.Year = YEAR(GETDATE())) AND (f.Month IS NULL OR f.Month = MONTH(GETDATE()))
-        GROUP BY s.Date
-    """
-    cursor.execute(query, (user_id, user_id))
-
-    # Fetch rows and convert the result into a dictionary
-    status_by_day = {str(row.DueDate): bool(row.AllFulfilled) for row in cursor.fetchall()}
-
+    day_fulfillment_status = {str(row.Day): row.AllFulfilled for row in cursor.fetchall()}
+    
     cursor.close()
     conn.close()
 
-    return jsonify(status_by_day)
+    return jsonify(day_fulfillment_status)
+# @app.route('/get_finances', methods=['POST'])
+# def get_finances():
+#     user_id = session.get('user_id')
+#     if not user_id:
+#         return redirect(url_for('login'))
+
+#     day_clicked = request.json.get('day')
+#     conn = pyodbc.connect(conn_str)
+#     cursor = conn.cursor()
+
+#     # Query for outcomes
+#     cursor.execute("""
+#         SELECT ID, Name, Cost AS amount, 'Outcome' AS type, 1 AS fulfilled
+#         FROM outcomes
+#         WHERE UserID = ? AND Day = ?
+#     """, (user_id, day_clicked))
+#     outcomes = [
+#         {"id": row.ID, "name": row.Name, "amount": row.amount, "type": row.type, "fulfilled": bool(row.fulfilled)}
+#         for row in cursor.fetchall()
+#     ]
+
+#     cursor.close()
+#     conn.close()
+
+#     return jsonify(outcomes)
+
+
+# @app.route('/update_finance_status', methods=['POST'])
+# def update_finance_status():
+#     data = request.get_json()
+#     finance_id = data.get('finance_id')
+#     status = data.get('status')
+
+#     try:
+#         conn = pyodbc.connect(conn_str)
+#         cursor = conn.cursor()
+
+#         # Update outcome fulfillment status
+#         cursor.execute("""
+#             UPDATE outcomes
+#             SET Fulfilled = ?
+#             WHERE ID = ? AND UserID = ?
+#             """, (status, finance_id, session['user_id']))
+
+#         conn.commit()
+#         return jsonify({'success': True, 'message': 'Outcome status updated'})
+#     except Exception as e:
+#         conn.rollback()
+#         return jsonify({'success': False, 'message': str(e)}), 500
+#     finally:
+#         cursor.close()
+#         conn.close()
+
+# @app.route('/get_finance_status_by_day', methods=['POST'])
+# def get_finance_status_by_day():
+#     user_id = session.get('user_id')
+#     if not user_id:
+#         return redirect(url_for('login'))
+
+#     conn = pyodbc.connect(conn_str)
+#     cursor = conn.cursor()
+
+#     query = """
+#     SELECT Day, MAX(CAST(Fulfilled AS INT)) AS AllFulfilled
+#     FROM outcomes
+#     WHERE UserID = ?
+#     GROUP BY Day
+#     """
+#     cursor.execute(query, (user_id,))
+
+#     # Fetch rows and convert the result into a dictionary
+#     status_by_day = {str(row.Day): bool(row.AllFulfilled) for row in cursor.fetchall()}
+
+#     cursor.close()
+#     conn.close()
+
+#     return jsonify(status_by_day)
 
 
 if __name__ == '__main__':
