@@ -387,7 +387,6 @@ def create_bar_chart(data, categories):
     buf = io.BytesIO()
     FigureCanvas(fig).print_png(buf)
     return base64.b64encode(buf.getvalue()).decode('utf-8')
-
 @app.route('/view_finances')
 def view_finances():
     if 'user_id' not in session:
@@ -400,35 +399,81 @@ def view_finances():
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
     
-    # Fetch the income data
-    cursor.execute("SELECT * FROM incomes WHERE UserID = ?", user_id)
-    incomes = cursor.fetchall()
+    # Fetch the expenses data from the outcomes table
+    cursor.execute("SELECT * FROM outcomes WHERE UserID = ? AND Type = 'Expense'", user_id)
+    expenses = cursor.fetchall()
+
+    # Fetch the expenses categories
+    cursor.execute("SELECT DISTINCT Name FROM outcomes WHERE UserID = ? AND Type = 'Expense'", user_id)
+    categories = [row.Name for row in cursor.fetchall()]
+
+    # Fetch the expenses amounts for each category
+    amounts = {}
+    for category in categories:
+        cursor.execute("SELECT SUM(Cost) FROM outcomes WHERE UserID = ? AND Type = 'Expense' AND Name = ?", (user_id, category))
+        amounts[category] = cursor.fetchone()[0] or 0
+
+    # Generate the expenses graph
+    expenses_graph = create_bar_chart(list(amounts.values()), categories)
+
     
-    # Fetch the savings data
-    cursor.execute("SELECT * FROM savings WHERE UserID = ?", user_id)
+    # Fetch the expenses data from the outcomes table
+    cursor.execute("SELECT * FROM outcomes WHERE UserID = ? AND Type = 'Income'", user_id)
+    incomes = cursor.fetchall()
+
+    # Fetch the expenses categories
+    cursor.execute("SELECT DISTINCT Name FROM outcomes WHERE UserID = ? AND Type = 'Income'", user_id)
+    categories = [row.Name for row in cursor.fetchall()]
+
+    # Fetch the expenses amounts for each category
+    amounts = {}
+    for category in categories:
+        cursor.execute("SELECT SUM(Cost) FROM outcomes WHERE UserID = ? AND Type = 'Income' AND Name = ?", (user_id, category))
+        amounts[category] = cursor.fetchone()[0] or 0
+
+    # Generate the expenses graph
+    incomes_graph = create_bar_chart(list(amounts.values()), categories)
+
+
+    # Fetch the expenses data from the outcomes table
+    cursor.execute("SELECT * FROM outcomes WHERE UserID = ? AND Type = 'Saving'", user_id)
     savings = cursor.fetchall()
 
-    # Fetch the income data
-    cursor.execute("SELECT * FROM incomes WHERE UserID = ?", user_id)
-    income_data = cursor.fetchone()
+    # Fetch the expenses categories
+    cursor.execute("SELECT DISTINCT Name FROM outcomes WHERE UserID = ? AND Type = 'Saving'", user_id)
+    categories = [row.Name for row in cursor.fetchall()]
 
-    if income_data:
-        categories = ['Salary', 'Bonuses', 'Investment', 'PassiveIncome', 'Others']
-        amounts = [income_data.Salary, income_data.Bonuses, income_data.Investment, income_data.PassiveIncome, income_data.Other]
-        income_graph = create_bar_chart(amounts, categories)
-    
-    cursor.execute("SELECT * FROM savings WHERE UserID = ?", user_id)
-    saving_data = cursor.fetchone()
+    # Fetch the expenses amounts for each category
+    amounts = {}
+    for category in categories:
+        cursor.execute("SELECT SUM(Cost) FROM outcomes WHERE UserID = ? AND Type = 'Saving' AND Name = ?", (user_id, category))
+        amounts[category] = cursor.fetchone()[0] or 0
 
-    if saving_data:
-        categories = ['Emergency', 'Retirement', 'Education', 'GoalSpecific', 'Health', 'Investment', 'Others']
-        amounts = [saving_data.Emergency, saving_data.Retirement, saving_data.Education, saving_data.GoalSpecific, saving_data.Health, saving_data.Investment, saving_data.Other]
-        saving_graph = create_bar_chart(amounts, categories)
-    
+    # Generate the expenses graph
+    savings_graph = create_bar_chart(list(amounts.values()), categories)
+
+    # Fetch the expenses data from the outcomes table
+    cursor.execute("SELECT * FROM outcomes WHERE UserID = ? AND Type = 'Subscription'", user_id)
+    subscriptions = cursor.fetchall()
+
+    # Fetch the expenses categories
+    cursor.execute("SELECT DISTINCT Name FROM outcomes WHERE UserID = ? AND Type = 'Subscription'", user_id)
+    categories = [row.Name for row in cursor.fetchall()]
+
+    # Fetch the expenses amounts for each category
+    amounts = {}
+    for category in categories:
+        cursor.execute("SELECT SUM(Cost) FROM outcomes WHERE UserID = ? AND Type = 'Subscription' AND Name = ?", (user_id, category))
+        amounts[category] = cursor.fetchone()[0] or 0
+
+    # Generate the expenses graph
+    subscriptions_graph = create_bar_chart(list(amounts.values()), categories)
+
     cursor.close()
     conn.close()
     
-    return render_template('view_finances.html', incomes=incomes, savings=savings, income_graph=income_graph, saving_graph=saving_graph, )
+    return render_template('view_finances.html', expenses=expenses, expenses_graph=expenses_graph, incomes=incomes, incomes_graph=incomes_graph, savings=savings, savings_graph=savings_graph, subscriptions=subscriptions, subscriptions_graph=subscriptions_graph)
+
 
 ################################################################
 # Create pie chart for saved data
