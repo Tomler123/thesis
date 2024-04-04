@@ -337,47 +337,6 @@ def logout():
 ################################################################
 # Finances
 
-@app.route('/saving', methods=['GET','POST'])
-def saving():
-    if 'user_id' not in session:
-        flash('Please log in to record your saving.')
-        return redirect(url_for('login'))
-    
-    if request.method == 'POST':
-        try:
-            # Assuming you have an authenticated user and user_id is stored in session
-            user_id = session['user_id']
-            emergency = request.form['emergency']
-            retirement = request.form['retirement']
-            education = request.form['education']
-            goal = request.form['goal']
-            health = request.form['health']
-            investment = request.form['investment']
-            other = request.form['other']
-            
-            # Connect to the database
-            conn = pyodbc.connect(conn_str)
-            cursor = conn.cursor()
-            
-            # Insert the saving data
-            cursor.execute("""
-                INSERT INTO savings
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (user_id, emergency, retirement, education, goal, health, investment, other))  # Add other saving fields as needed
-
-            # Commit the transaction and close the connection
-            conn.commit()
-            cursor.close()
-            conn.close()
-
-            flash('saving recorded successfully!')
-        except pyodbc.Error as e:
-            flash('An error occurred while recording saving.')
-            print("Error in SQL:", e)
-        
-        return redirect(url_for('saving'))
-
-    return render_template('saving.html')
 
 def create_bar_chart(data, categories):
     fig = Figure()
@@ -515,33 +474,37 @@ def incomes():
 
     return render_template('incomes.html', incomes=incomes)
 
+class IncomeForm(FlaskForm):
+    name = StringField('Name', validators=[InputRequired()])
+    cost = FloatField('Cost', validators=[InputRequired(), NumberRange(min=0)])
+    day = IntegerField('Day', validators=[InputRequired(), NumberRange(min=1, max=31)])
 @app.route('/add_income', methods=['GET', 'POST'])
 def add_income():
     if 'user_id' not in session:
         flash('Please log in to add an income.')
         return redirect(url_for('login'))
 
-    form = OutcomeForm()
+    form = IncomeForm()
 
     if form.validate_on_submit():
         name = form.name.data
         cost = form.cost.data
         day = form.day.data
-        income_type = form.type.data
         user_id = session['user_id']
 
         # Add income to the database
         query = """INSERT INTO outcomes (UserID, Name, Cost, Day, Type)
-                   VALUES (?, ?, ?, ?, ?)"""
+                   VALUES (?, ?, ?, ?, 'Income')"""
         with pyodbc.connect(conn_str) as conn:
             with conn.cursor() as cursor:
-                cursor.execute(query, (user_id, name, cost, day, income_type))
+                cursor.execute(query, (user_id, name, cost, day))
                 conn.commit()
 
         flash('Income added successfully!')
         return redirect(url_for('incomes'))  # Redirect to the incomes overview page
 
     return render_template('add_income.html', form=form)
+    
 class EditIncomeForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
     cost = FloatField('Cost', validators=[DataRequired()])
@@ -590,6 +553,7 @@ def edit_income(income_id):
             return redirect(url_for('incomes'))
 
     return render_template('edit_income.html', form=form)
+
 @app.route('/delete_income/<int:income_id>', methods=['POST'])
 def delete_income(income_id):
     if 'user_id' not in session:
@@ -608,6 +572,114 @@ def delete_income(income_id):
         return redirect(url_for('incomes'))
     except Exception as e:
         return jsonify({'message': 'An error occurred while deleting the income.'}), 500
+
+# THIS ONE HAS TO BE KEPT
+@app.route('/saving')
+def savings():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    conn = pyodbc.connect(conn_str)
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM outcomes WHERE UserID = ? AND Type = 'Saving'", user_id)
+    savings = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('saving.html', savings=savings)
+
+class SavingForm(FlaskForm):
+    name = StringField('Name', validators=[InputRequired()])
+    cost = FloatField('Cost', validators=[InputRequired(), NumberRange(min=0)])
+@app.route('/add_saving', methods=['GET', 'POST'])
+def add_saving():
+    if 'user_id' not in session:
+        flash('Please log in to add an saving.')
+        return redirect(url_for('login'))
+
+    form = SavingForm()
+
+    if form.validate_on_submit():
+        name = form.name.data
+        cost = form.cost.data
+        user_id = session['user_id']
+
+        # Add saving to the database
+        query = """INSERT INTO outcomes (UserID, Name, Cost, Type)
+                   VALUES (?, ?, ?, 'Saving')"""
+        with pyodbc.connect(conn_str) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query, (user_id, name, cost))
+                conn.commit()
+
+        flash('Saving added successfully!')
+        return redirect(url_for('savings'))  # Redirect to the savings overview page
+
+    return render_template('add_saving.html', form=form)
+
+@app.route('/edit_savings/<int:saving_id>', methods=['GET', 'POST'])
+def edit_savings(saving_id):
+    if 'user_id' not in session:
+        flash('Please log in to edit records.')
+        return redirect(url_for('login'))
+
+    form = SavingForm()
+
+    if form.validate_on_submit():
+        name = form.name.data
+        cost = form.cost.data
+        user_id = session['user_id']
+
+        # Update saving in the database
+        query = """UPDATE outcomes SET Name=?, Cost=? WHERE ID=? AND UserID=? AND Type='Saving'"""
+        with pyodbc.connect(conn_str) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query, (name, cost, saving_id, user_id))
+                conn.commit()
+
+        flash('Saving updated successfully!')
+        return redirect(url_for('savings'))  # Redirect to the savings overview page
+
+    else:
+        # Fetch the current saving data
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM outcomes WHERE ID=? AND UserID=? AND Type='Saving'", (saving_id, session['user_id']))
+        saving = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if saving:
+            # Populate form fields with the current saving data
+            form.name.data = saving.Name
+            form.cost.data = saving.Cost
+        else:
+            flash('Saving not found.')
+            return redirect(url_for('savings'))
+
+    return render_template('edit_savings.html', form=form)
+
+@app.route('/delete_saving/<int:saving_id>', methods=['POST'])
+def delete_saving(saving_id):
+    if 'user_id' not in session:
+        return jsonify({'message': 'Please log in to delete savings.'}), 401
+    
+    try:
+        user_id = session['user_id']
+        # Ensure that the user deleting the saving is the owner
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM savings WHERE ID = ? AND UserID = ?", (saving_id, user_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Saving deleted successfully!')
+        return redirect(url_for('savings'))
+    except Exception as e:
+        return jsonify({'message': 'An error occurred while deleting the saving.'}), 500
 
 def saving_pie_chart(saving_data):
     for key, value in saving_data.items():

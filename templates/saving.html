@@ -1,44 +1,45 @@
 {% extends "base.html" %}
-{% block title %}Savings{% endblock %}
 {% block links %}
-<!-- <link rel="stylesheet" href="static/css/index.css"> -->
-<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"> -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 {% endblock %}
 {% block content %}
-
-    <h1>Record Your Savings</h1>
-    <form method="post" action="{{ url_for('saving') }}">
-        <p>
-            <label for="emergency">Emergency:</label>
-            <input type="number" id="emergency" name="emergency" required>
-        </p>
-        <p>
-            <label for="retirement">Retirement:</label>
-            <input type="number" id="retirement" name="retirement" required>
-        </p>
-        <p>
-            <label for="education">Education:</label>
-            <input type="number" id="education" name="education" required>
-        </p>
-        <p>
-            <label for="goal">Goal Specific:</label>
-            <input type="number" id="goal" name="goal" required>
-        </p>
-        <p>
-            <label for="health">Health:</label>
-            <input type="number" id="health" name="health" required>
-        </p>
-        <p>
-            <label for="investment">Investment:</label>
-            <input type="number" id="investment" name="investment" required>
-        </p>
-        <p>
-            <label for="other">Others:</label>
-            <input type="number" id="other" name="other" required>
-        </p>
-        <p>
-            <button type="submit">Submit</button>
-        </p>
-    </form>
-
+    <h1>Savings</h1>
+    <a href="{{ url_for('add_saving') }}" class="btn btn-primary">Add Saving</a>
+    <br><br>
+    <h2>Saving Sources</h2>
+    <ul>
+        {% for saving in savings %}
+            <li>{{ saving.Name }}  -  Amount: <strong>{{ saving.Cost }}</strong> <a href="#" onclick="editSaving({{ saving.ID }})">&#160;&#160;&#160;&#160;&#160;Edit</a> | <a href="#" onclick="deleteOutcome({{ saving.ID }})">Delete</a></li>
+        {% else %}
+            <p>No Saving sources.</p>
+        {% endfor %}
+    </ul>
+    <hr>
+{% block script %}
+<script>
+function deleteOutcome(outcomeId) {
+    if (confirm("Are you sure you want to delete this outcome?")) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content'); // Fetch CSRF token from meta tag
+        fetch(`/delete_outcome/${outcomeId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken // Include CSRF token in the request headers
+            },
+            body: `outcome_id=${outcomeId}`
+        })
+        .then(() => {
+            // Reload the page to reflect changes
+            window.location.reload();
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+}
+function editSaving(savingID) {
+    window.location.href = '/edit_savings/' + savingID;
+}
+</script>
+{% endblock %}
 {% endblock %}

@@ -3,30 +3,31 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/add_subscription.css') }}">
 {% endblock %}
 {% block content %}
-    <h1>Add New Income</h1>
-    <form method="post" action="{{ url_for('add_income') }}">
+    <h1>Edit Income</h1>
+    <form method="post">
         {{ form.csrf_token }}
         <div>
             {{ form.name.label }}<br>
-            {{ form.name(size=40) }}<br>
+            {{ form.name(class="form-control") }}<br>
             {% for error in form.name.errors %}
                 <span style="color: red;">{{ error }}</span><br>
             {% endfor %}
         </div>
         <div>
             {{ form.cost.label }}<br>
-            {{ form.cost(min="0") }}<br>
+            {{ form.cost(class="form-control") }}<br>
             {% for error in form.cost.errors %}
                 <span style="color: red;">{{ error }}</span><br>
             {% endfor %}
         </div>
         <div>
             {{ form.day.label }}<br>
-            {{ form.day(min="1", max="31") }}<br>
+            {{ form.day(class="form-control") }}<br>
             {% for error in form.day.errors %}
                 <span style="color: red;">{{ error }}</span><br>
             {% endfor %}
         </div>
-        <button type="submit">Add Income</button>
+        
+        <button type="submit" class="btn btn-primary">Update Income</button>
     </form>
 {% endblock %}
