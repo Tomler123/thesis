@@ -15,12 +15,37 @@
 
         <!-- Contact Form -->
         <div class="contact-form">
-            <form id="contact-form">
-                <input type="text" placeholder="First Name*" name="first_name" required>
-                <input type="text" placeholder="Last Name" name="last_name">
-                <input type="email" placeholder="Email*" name="email" required>
-                <textarea placeholder="What can we help you with?" name="message" required></textarea>
-                <button type="submit">Submit</button>
+            <form id="contact-form" method="post" action="{{ url_for('contact') }}">
+                {{ form.csrf_token }}
+                <div>
+                    {{ form.name.label }}<br>
+                    {{ form.name }}<br>
+                    {% for error in form.name.errors %}
+                        <span style="color: red;">{{ error }}</span><br>
+                    {% endfor %}
+                </div>
+                <div>
+                    {{ form.last_name.label }}<br>
+                    {{ form.last_name }}<br>
+                    {% for error in form.last_name.errors %}
+                        <span style="color: red;">{{ error }}</span><br>
+                    {% endfor %}
+                </div>
+                <div>
+                    {{ form.email.label }}<br>
+                    {{ form.email }}<br>
+                    {% for error in form.email.errors %}
+                        <span style="color: red;">{{ error }}</span><br>
+                    {% endfor %}
+                </div>
+                <div>
+                    {{ form.message.label }}<br>
+                    {{ form.message }}<br>
+                    {% for error in form.message.errors %}
+                        <span style="color: red;">{{ error }}</span><br>
+                    {% endfor %}
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
             </form>
         </div>
     </div>

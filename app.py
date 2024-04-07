@@ -13,11 +13,13 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, StringField, PasswordField, SubmitField, validators, SelectField, FloatField, IntegerField, DateField, DecimalField, TextAreaField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, Regexp, NumberRange, InputRequired
+from flask_mail import Mail, Message
 import math
 import algo
 from flask_wtf.csrf import CSRFProtect
 import json
 import datetime
+import threading
 
 # server = 'TOMLER'  # If a local instance, typically 'localhost\\SQLEXPRESS'
 # database = 'thesis'  # Your database name
@@ -27,9 +29,18 @@ import datetime
 
 # Tomleras database route
 # C:\Program Files (x86)\Microsoft SQL Server Management Studio 19
+# WalletBuddyAI123@
+# walletbuddyai@gmail.com
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key_here'
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USERNAME'] = 'walletbuddyai@gmail.com'
+app.config['MAIL_PASSWORD'] = 'WalletBuddyAI123@'
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USE_SSL'] = True
+mail = Mail(app)
 
 # Configure Database URI: 
 server = 'walletbuddyai.database.windows.net'
@@ -84,8 +95,9 @@ def stock_crypto_prediction():
         
         # Call the main function from algo.py with stock_name
         # It should save the images in the static/images/ directory
-        algo.main(stock_name)
-
+        t =threading.Thread(target=algo.main,args=(stock_name,))
+        t.start()
+        t.join()
         # Construct paths to the images
         loss_plot_path = 'images/loss_plot.png'
         predictions_plot_path = 'images/predictions_plot.png'
@@ -148,22 +160,6 @@ def signup():
         # Fetch the new user's ID
         cursor.execute("SELECT UserID FROM users WHERE Email = ?", email)
         user_id = cursor.fetchone()[0]
-
-        # Insert initial income record with zeros
-        # cursor.execute("""
-        #     INSERT INTO incomes (UserID, Salary, Bonuses, Investment, PassiveIncome, Other)
-        #     VALUES (?, 0, 0, 0, 0, 0)
-        #     """, user_id)
-
-        # cursor.execute("""
-        #     INSERT INTO fixed_expenses (UserID, Rent, TransportPass, Education, Insurance, Other)
-        #     VALUES (?, 0, 0, 0, 0, 0)
-        #     """, user_id)        
-
-        # cursor.execute("""
-        #     INSERT INTO savings (UserID, Emergency, Retirement, Education, GoalSpecific, Health, Investment, Other)
-        #     VALUES (?, 0, 0, 0, 0, 0, 0, 0)
-        #     """, user_id)
         
         conn.commit()
         cursor.close()
@@ -332,6 +328,7 @@ def create_bar_chart(data, categories):
     buf = io.BytesIO()
     FigureCanvas(fig).print_png(buf)
     return base64.b64encode(buf.getvalue()).decode('utf-8')
+
 @app.route('/view_finances')
 def view_finances():
     if 'user_id' not in session:
@@ -1190,15 +1187,41 @@ def recommendations():
             # GET request, just render the form
             return render_template('recommendations.html', form=form)
 
-
-
 ################################################################
 
 ################################################################
+class ContactUsForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired(), Length(min=2, max=30)])
+    last_name = StringField('Last Name', validators=[DataRequired(), Length(min=2, max=30)])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    message = StringField('Message', validators=[DataRequired()])
+    submit = SubmitField('Submit')
 
-@app.route('/contact')
+@app.route('/contact', methods=['GET', 'POST'])
 def contact():
-    return render_template('contact_us.html')
+    print(request.method)
+    form = ContactUsForm()
+
+    if request.method == 'POST' or form.validate_on_submit():
+        # Extract form data
+        print(form.validate_on_submit())
+        print("Inside conditional block")
+        email = form.email.data
+        subject = "Contact Form Submission"
+        msg = Message(subject, sender=app.config['MAIL_USERNAME'], recipients=[app.config['MAIL_USERNAME']])
+        msg.body = f"Message from {email}: {form.message.data}"
+        
+        try:
+            mail.send(msg)
+            flash('Your message has been sent successfully!', 'success')
+            print("Email sent successfully")
+        except Exception as e:
+            print("Error sending email:", e)
+            flash(f'Error sending email: {str(e)}', 'error')
+
+        return redirect(url_for('contact'))
+
+    return render_template('contact_us.html', form=form)
 
 ################################################################
 # Calendar
