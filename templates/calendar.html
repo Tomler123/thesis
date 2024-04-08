@@ -11,7 +11,7 @@
 {% endblock %}
 {% block content %}
 <div class="calendar-layout">
-    <div class="wrap" data-subscription-dates="{{ all_dates }}">
+    <div class="wrap" data-outcome-dates="{{ all_dates }}">
         <div class="head">
         <p class="current-date"></p>
         <div class="icons">
@@ -33,13 +33,13 @@
         </div>
     </div>
 
-    <div class="subscription-details">
+    <div class="outcome-details">
         <!-- Subscription details will be injected here -->
-        <!-- {% for subscription in subscriptions %} -->
-        <div class="subscription-item">
-          <span>{{ subscription.name }} - Amount: {{ subscription.amount }}</span>
-          <input type="checkbox" class="status-checkbox" id="sub{{ subscription.id }}" name="sub{{ subscription.id }}" {% if subscription.fulfilled %}checked{% endif %}>
-          <label for="sub{{ subscription.id }}"></label>
+        <!-- {% for outcome in outcomes %} -->
+        <div class="outcome-item">
+          <span>{{ outcome.name }} - Amount: {{ outcome.amount }}</span>
+          <input type="checkbox" class="status-checkbox" id="out{{ outcome.id }}" name="out{{ outcome.id }}" {% if outcome.fulfilled %}checked{% endif %}>
+          <label for="out{{ outcome.id }}"></label>
         </div>
         <!-- {% endfor %} -->
     </div>
@@ -48,6 +48,6 @@
 {% endblock %}
 {% block script %}
 <script>
-    // const subscriptionDates = JSON.parse(document.body.getAttribute('data-subscription-dates'));
+    // const outcomeDates = JSON.parse(document.body.getAttribute('data-outcome-dates'));
 </script>
 {% endblock %}

@@ -115,9 +115,9 @@
   z-index: -1;
 }
 
-/* Add this so the subscription-details mirrors the calendar's style */
+/* Add this so the outcome-details mirrors the calendar's style */
 .wrap,
-.subscription-details {
+.outcome-details {
   width: 450px; /* Your desired width */
   margin: 10px; /* Add margin for spacing */
   background: #fff;
@@ -126,7 +126,7 @@
   padding: 20px;
 }
 
-.subscription-details {
+.outcome-details {
   display: none; /* It will be shown when a day is clicked */
 }
 .status-checkbox {
@@ -167,6 +167,6 @@
 }
 
 .days li.all-fulfilled::before {
-  background: green; /* Color for all fulfilled subscriptions */
+  background: green; /* Color for all fulfilled outcomes */
 }
 

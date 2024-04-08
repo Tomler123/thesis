@@ -47,10 +47,10 @@ const renderCalendar = (highlightedDates = [], statusByDay = {}) => {
         day.addEventListener('click', function(event) {
             // Stops the click from propagating to the document level
             event.stopPropagation(); 
-            getSubscriptions(this.textContent).then(subscriptions => {
-                updateSubscriptionDetails(subscriptions);
-                const detailsElement = document.querySelector('.subscription-details');
-                detailsElement.innerHTML = subscriptions.map(sub => `${sub.name} - Amount: ${sub.amount}`).join('<br>');
+            getSubscriptions(this.textContent).then(outcomes => {
+                updateSubscriptionDetails(outcomes);
+                const detailsElement = document.querySelector('.outcome-details');
+                detailsElement.innerHTML = outcomes.map(out => `${out.name} - Amount: ${out.amount}`).join('<br>');
                 detailsElement.style.display = 'block';
             });
 
@@ -58,7 +58,7 @@ const renderCalendar = (highlightedDates = [], statusByDay = {}) => {
         });
 
         document.addEventListener('click', function(event) {
-            const detailsElement = document.querySelector('.subscription-details');
+            const detailsElement = document.querySelector('.outcome-details');
             if (!detailsElement.contains(event.target)) {
                 detailsElement.style.display = 'none';
             }
@@ -66,7 +66,7 @@ const renderCalendar = (highlightedDates = [], statusByDay = {}) => {
     });
     document.querySelectorAll('.status-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', function() {
-            const subscriptionId = this.id.replace('sub', ''); // Correctly extract subscription ID
+            const outcomeId = this.id.replace('out', ''); // Correctly extract outcome ID
             const isFulfilled = this.checked; // Boolean value true or false
             fetch('/update_outcome_status', {
               method: 'POST',
@@ -75,7 +75,7 @@ const renderCalendar = (highlightedDates = [], statusByDay = {}) => {
                 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
               },
               body: JSON.stringify({
-                sub_id: subscriptionId,
+                out_id: outcomeId,
                 status: isFulfilled
               })
             })
@@ -88,18 +88,18 @@ const renderCalendar = (highlightedDates = [], statusByDay = {}) => {
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         const wrap = document.querySelector('.wrap');
-        const highlightedDates = JSON.parse(wrap.getAttribute('data-subscription-dates'));
+        const highlightedDates = JSON.parse(wrap.getAttribute('data-outcome-dates'));
         renderCalendar(highlightedDates);
     });
 } else {
     const wrap = document.querySelector('.wrap');
-    const highlightedDates = JSON.parse(wrap.getAttribute('data-subscription-dates'));
+    const highlightedDates = JSON.parse(wrap.getAttribute('data-outcome-dates'));
     renderCalendar(highlightedDates);
 }
 renderCalendar(highlightedDates);
 
 document.addEventListener('click', function(event) {
-    const detailsElement = document.querySelector('.subscription-details');
+    const detailsElement = document.querySelector('.outcome-details');
     const clickInsideDetails = detailsElement.contains(event.target);
     const clickOnHighlightedDay = event.target.classList.contains('highlighted');
   
@@ -126,10 +126,10 @@ prevNextIcon.forEach(icon => { // getting prev and next icons
     });
 });
 
-// Mock function to simulate fetching subscription data
+// Mock function to simulate fetching outcome data
 // Replace this with actual fetching logic from your server
 function getSubscriptions(day) {
-    return fetch('/get_subscriptions', {
+    return fetch('/get_outcomes', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -138,18 +138,18 @@ function getSubscriptions(day) {
         body: JSON.stringify({day: day})
     })
     .then(response => response.json())
-    .then(subscriptions => {
-        updateSubscriptionDetails(subscriptions);
+    .then(outcomes => {
+        updateSubscriptionDetails(outcomes);
     });
 }
 
-function updateSubscriptionDetails(subscriptions) {
-    const detailsElement = document.querySelector('.subscription-details');
-    let content = subscriptions.map(sub => `
-        <div class="subscription-item">
-            <span>${sub.name} - Amount: ${sub.amount}</span>
-            <input type="checkbox" class="status-checkbox" id="sub${sub.id}" ${sub.fulfilled ? 'checked' : ''}>
-            <label for="sub${sub.id}"></label>
+function updateSubscriptionDetails(outcomes) {
+    const detailsElement = document.querySelector('.outcome-details');
+    let content = outcomes.map(out => `
+        <div class="outcome-item">
+            <span>${out.name} - Amount: ${out.amount}</span>
+            <input type="checkbox" class="status-checkbox" id="out${out.id}" ${out.fulfilled ? 'checked' : ''}>
+            <label for="out${out.id}"></label>
         </div>
     `).join('');
 
@@ -166,7 +166,7 @@ function handleCheckboxChange() {
     fetch('/update_outcome_status', {
         method: 'POST',
         body: JSON.stringify({
-            sub_id: this.id.replace('sub', ''),
+            out_id: this.id.replace('out', ''),
             status: this.checked
         }),
         headers: {
@@ -178,7 +178,7 @@ function handleCheckboxChange() {
     .then(data => console.log(data));
 }
 function fetchSubscriptionStatusByDay() {
-    return fetch('/get_subscription_status_by_day', {
+    return fetch('/get_outcomes_status_by_day', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -189,6 +189,6 @@ function fetchSubscriptionStatusByDay() {
 }
 document.addEventListener('DOMContentLoaded', () => {
     const wrap = document.querySelector('.wrap');
-    highlightedDates = JSON.parse(wrap.getAttribute('data-subscription-dates') || '[]');
+    highlightedDates = JSON.parse(wrap.getAttribute('data-outcome-dates') || '[]');
     renderCalendar(highlightedDates);
 });

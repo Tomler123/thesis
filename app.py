@@ -1262,7 +1262,7 @@ def calendar():
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
     
-    # Fetch both subscription and expense dates
+    # Fetch both outcome and expense dates
     cursor.execute("""
         SELECT Day AS date FROM outcomes WHERE UserID=?
     """, (user_id))
@@ -1277,8 +1277,8 @@ def calendar():
     # Render the calendar template and pass the dates
     return render_template('calendar.html', all_dates=json.dumps(all_dates))
 
-@app.route('/get_subscriptions', methods=['POST'])
-def get_subscriptions():
+@app.route('/get_outcomes', methods=['POST'])
+def get_outcomes():
     user_id = session.get('user_id')
     if not user_id:
         return redirect(url_for('login'))
@@ -1293,7 +1293,7 @@ def get_subscriptions():
         WHERE UserID = ? AND Day = ?
     """, (user_id, day_clicked))
 
-    subscriptions = [
+    outcomes = [
         {"id": row.ID, "name": row.Name, "amount": row.Cost, "fulfilled": bool(row.Fulfilled)}
         for row in cursor.fetchall()
     ]
@@ -1301,12 +1301,12 @@ def get_subscriptions():
     cursor.close()
     conn.close()
 
-    return jsonify(subscriptions)
+    return jsonify(outcomes)
 
 @app.route('/update_outcome_status', methods=['POST'])
 def update_outcome_status():
     data = request.get_json()
-    sub_id = data['sub_id']
+    out_id = data['out_id']
     status = data['status']
 
     try:
@@ -1316,7 +1316,7 @@ def update_outcome_status():
             UPDATE outcomes
             SET Fulfilled = ?
             WHERE ID = ?
-            """, (status, sub_id))
+            """, (status, out_id))
 
         conn.commit()
     except Exception as e:
@@ -1328,8 +1328,8 @@ def update_outcome_status():
 
     return jsonify({'success': True, 'message': 'Status updated'})
 
-@app.route('/get_subscription_status_by_day', methods=['POST'])
-def get_subscription_status_by_day():
+@app.route('/get_outcomes_status_by_day', methods=['POST'])
+def get_outcomes_status_by_day():
     user_id = session.get('user_id')
     if not user_id:
         return redirect(url_for('login'))
