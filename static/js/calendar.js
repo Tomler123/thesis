@@ -68,7 +68,7 @@ const renderCalendar = (highlightedDates = [], statusByDay = {}) => {
         checkbox.addEventListener('change', function() {
             const subscriptionId = this.id.replace('sub', ''); // Correctly extract subscription ID
             const isFulfilled = this.checked; // Boolean value true or false
-            fetch('/update_subscription_status', {
+            fetch('/update_outcome_status', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -163,7 +163,7 @@ function updateSubscriptionDetails(subscriptions) {
 }
 
 function handleCheckboxChange() {
-    fetch('/update_subscription_status', {
+    fetch('/update_outcome_status', {
         method: 'POST',
         body: JSON.stringify({
             sub_id: this.id.replace('sub', ''),

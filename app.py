@@ -29,8 +29,6 @@ import threading
 
 # Tomleras database route
 # C:\Program Files (x86)\Microsoft SQL Server Management Studio 19
-# WalletBuddyAI123@
-# walletbuddyai@gmail.com
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key_here'
@@ -1292,7 +1290,7 @@ def get_subscriptions():
     cursor.execute("""
         SELECT ID, Name, Cost, Fulfilled
         FROM outcomes
-        WHERE UserID = ? AND Day = ? AND Month = MONTH(GETDATE()) AND Year = YEAR(GETDATE())
+        WHERE UserID = ? AND Day = ?
     """, (user_id, day_clicked))
 
     subscriptions = [
@@ -1305,8 +1303,8 @@ def get_subscriptions():
 
     return jsonify(subscriptions)
 
-@app.route('/update_subscription_status', methods=['POST'])
-def update_subscription_status():
+@app.route('/update_outcome_status', methods=['POST'])
+def update_outcome_status():
     data = request.get_json()
     sub_id = data['sub_id']
     status = data['status']
@@ -1317,7 +1315,7 @@ def update_subscription_status():
         cursor.execute("""
             UPDATE outcomes
             SET Fulfilled = ?
-            WHERE ID = ? AND Year = YEAR(GETDATE()) AND Month = MONTH(GETDATE())
+            WHERE ID = ?
             """, (status, sub_id))
 
         conn.commit()
@@ -1343,7 +1341,7 @@ def get_subscription_status_by_day():
         SELECT Day, 
                CAST(CASE WHEN COUNT(Fulfilled) = SUM(CAST(Fulfilled AS INT)) THEN 1 ELSE 0 END AS BIT) AS AllFulfilled
         FROM outcomes
-        WHERE UserID = ? AND Month = MONTH(GETDATE()) AND Year = YEAR(GETDATE())
+        WHERE UserID = ?
         GROUP BY Day
     """, (user_id,))
 
@@ -1353,85 +1351,6 @@ def get_subscription_status_by_day():
     conn.close()
 
     return jsonify(day_fulfillment_status)
-
-# @app.route('/get_finances', methods=['POST'])
-# def get_finances():
-#     user_id = session.get('user_id')
-#     if not user_id:
-#         return redirect(url_for('login'))
-
-#     day_clicked = request.json.get('day')
-#     conn = pyodbc.connect(conn_str)
-#     cursor = conn.cursor()
-
-#     # Query for outcomes
-#     cursor.execute("""
-#         SELECT ID, Name, Cost AS amount, 'Outcome' AS type, 1 AS fulfilled
-#         FROM outcomes
-#         WHERE UserID = ? AND Day = ?
-#     """, (user_id, day_clicked))
-#     outcomes = [
-#         {"id": row.ID, "name": row.Name, "amount": row.amount, "type": row.type, "fulfilled": bool(row.fulfilled)}
-#         for row in cursor.fetchall()
-#     ]
-
-#     cursor.close()
-#     conn.close()
-
-#     return jsonify(outcomes)
-
-
-# @app.route('/update_finance_status', methods=['POST'])
-# def update_finance_status():
-#     data = request.get_json()
-#     finance_id = data.get('finance_id')
-#     status = data.get('status')
-
-#     try:
-#         conn = pyodbc.connect(conn_str)
-#         cursor = conn.cursor()
-
-#         # Update outcome fulfillment status
-#         cursor.execute("""
-#             UPDATE outcomes
-#             SET Fulfilled = ?
-#             WHERE ID = ? AND UserID = ?
-#             """, (status, finance_id, session['user_id']))
-
-#         conn.commit()
-#         return jsonify({'success': True, 'message': 'Outcome status updated'})
-#     except Exception as e:
-#         conn.rollback()
-#         return jsonify({'success': False, 'message': str(e)}), 500
-#     finally:
-#         cursor.close()
-#         conn.close()
-
-# @app.route('/get_finance_status_by_day', methods=['POST'])
-# def get_finance_status_by_day():
-#     user_id = session.get('user_id')
-#     if not user_id:
-#         return redirect(url_for('login'))
-
-#     conn = pyodbc.connect(conn_str)
-#     cursor = conn.cursor()
-
-#     query = """
-#     SELECT Day, MAX(CAST(Fulfilled AS INT)) AS AllFulfilled
-#     FROM outcomes
-#     WHERE UserID = ?
-#     GROUP BY Day
-#     """
-#     cursor.execute(query, (user_id,))
-
-#     # Fetch rows and convert the result into a dictionary
-#     status_by_day = {str(row.Day): bool(row.AllFulfilled) for row in cursor.fetchall()}
-
-#     cursor.close()
-#     conn.close()
-
-#     return jsonify(status_by_day)
-
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)
