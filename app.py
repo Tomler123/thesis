@@ -20,7 +20,7 @@ from flask_wtf.csrf import CSRFProtect
 import json
 import datetime
 import threading
-
+import os
 # server = 'TOMLER'  # If a local instance, typically 'localhost\\SQLEXPRESS'
 # database = 'thesis'  # Your database name
 
@@ -29,33 +29,30 @@ import threading
 
 # Tomleras database route
 # C:\Program Files (x86)\Microsoft SQL Server Management Studio 19
-
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your_secret_key_here'
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USERNAME'] = 'walletbuddyai@gmail.com'
-app.config['MAIL_PASSWORD'] = 'WalletBuddyAI123@'
-app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USE_SSL'] = True
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'a_default_secret_key')
+app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 465))
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'walletbuddyai@gmail.com')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_USERNAME', 'tmgq owra tjts hkfx')
+app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'False').lower() in ('true', '1', 't')
+app.config['MAIL_USE_SSL'] = os.getenv('MAIL_USE_SSL', 'True').lower() in ('true', '1', 't')
+app.config['WTF_CSRF_ENABLED'] = True
 mail = Mail(app)
 
 # Configure Database URI: 
-server = 'walletbuddyai.database.windows.net'
-database = 'walletbuddyai'
-username = 'toma_sulava_sulaberidze'
-password = 'Tomler123,./'
 driver= '{ODBC Driver 17 for SQL Server}'
+server = os.getenv('SQL_SERVER', 'walletbuddyai.database.windows.net')
+database = os.getenv('SQL_DATABASE', 'walletbuddyai')
+username = os.getenv('SQL_USER', 'toma_sulava_sulaberidze')
+password = os.getenv('SQL_PASSWORD', 'Tomler123,./')
+
 
 conn_str = f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}'
-params = urllib.parse.quote_plus(
-    "DRIVER={ODBC Driver 17 for SQL Server};"
-    "SERVER=walletbuddyai.database.windows.net;"
-    "DATABASE=walletbuddyai;"
-    "UID=toma_sulava_sulaberidze;"
-    "PWD=Tomler123,./;"
-)
 
+params = urllib.parse.quote_plus(
+    f"DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}"
+)
 app.config['SQLALCHEMY_DATABASE_URI'] = "mssql+pyodbc:///?odbc_connect={params}"
 csrf = CSRFProtect(app)
 conn = pyodbc.connect(conn_str)
@@ -97,9 +94,9 @@ def stock_crypto_prediction():
         t.start()
         t.join()
         # Construct paths to the images
-        loss_plot_path = 'images/loss_plot.png'
-        predictions_plot_path = 'images/predictions_plot.png'
-        extended_predictions_plot_path = 'images/extended_predictions_plot.png'
+        loss_plot_path = os.getenv('IMAGE_PATH_LOSS', 'images/loss_plot.png')
+        predictions_plot_path = os.getenv('IMAGE_PATH_PREDICTIONS', 'images/predictions_plot.png')
+        extended_predictions_plot_path = os.getenv('IMAGE_PATH_EXTENDED', 'images/extended_predictions_plot.png')
         
         # Render the template with the paths to the generated images
         return render_template('stock_crypto_prediction.html',
@@ -1177,10 +1174,11 @@ def recommendations():
                     fulfilled_status[name] = 'Fulfilled'
                 else:
                     fulfilled_status[name] = 'Unfulfilled'
+            print(total_monthly_debt)
             return render_template('recommendations.html', form=form, fixed_expenses=fixed_expenses, subscriptions=subscriptions,
                                    recommendations=recommendations, fixed=fixed_total, subscriptions_total = subscriptions_total,
                                    daily=daily_spending_limit, monthly=savings_amount,
-                                   total_expected_loan=total_expected_loan, fulfilled_status=fulfilled_status)
+                                   total_expected_loan=total_expected_loan, fulfilled_status=fulfilled_status, total_monthly_debt=total_monthly_debt)
     else:
             # GET request, just render the form
             return render_template('recommendations.html', form=form)
@@ -1189,68 +1187,42 @@ def recommendations():
 
 ################################################################
 class ContactUsForm(FlaskForm):
-    name = StringField('Name', validators=[DataRequired(), Length(min=2, max=30)])
-    last_name = StringField('Last Name', validators=[DataRequired(), Length(min=2, max=30)])
-    email = StringField('Email', validators=[DataRequired(), Email()])
     message = StringField('Message', validators=[DataRequired()])
     submit = SubmitField('Submit')
 
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
-    print(request.method)
+    if 'user_id' not in session:
+        flash('Please log in to access recommendations.')
+        return redirect(url_for('login'))
+    
     form = ContactUsForm()
+    if form.validate_on_submit():
+        user_id = session['user_id']    
+        # Connect to the database
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
 
-    if request.method == 'POST' or form.validate_on_submit():
-        # Extract form data
-        print(form.validate_on_submit())
-        print("Inside conditional block")
-        email = form.email.data
-        subject = "Contact Form Submission"
-        msg = Message(subject, sender=app.config['MAIL_USERNAME'], recipients=[app.config['MAIL_USERNAME']])
-        msg.body = f"Message from {email}: {form.message.data}"
+        # Calculating total monthly debt
+        cursor.execute("SELECT Email FROM users WHERE UserID = ?", user_id)
+        email = cursor.fetchone()[0]
         
+        message = form.message.data
+        msg = Message("Contact Form Submission",
+                      sender=app.config['MAIL_USERNAME'],
+                      recipients=[app.config['MAIL_USERNAME']])
+        msg.body = f"Message from {email}:\n{message}"
         try:
             mail.send(msg)
             flash('Your message has been sent successfully!', 'success')
-            print("Email sent successfully")
         except Exception as e:
-            print("Error sending email:", e)
+            print("Error while sending message: ", e)
             flash(f'Error sending email: {str(e)}', 'error')
-
         return redirect(url_for('contact'))
-
     return render_template('contact_us.html', form=form)
 
 ################################################################
 # Calendar
-# @app.route('/calendar')
-# def calendar():
-#     # Assuming you have the user_id from the session
-#     user_id = session.get('user_id')
-#     if not user_id:
-#         return redirect(url_for('login'))
-    
-#     # Connect to the database
-#     conn = pyodbc.connect(conn_str)
-#     cursor = conn.cursor()
-    
-#     # Fetch both subscription and expense dates
-#     cursor.execute("""
-#         SELECT Date AS date FROM subscriptions WHERE UserID=?
-#         UNION
-#         SELECT DueDate AS date FROM expenses WHERE UserID=?
-#     """, (user_id, user_id))
-    
-#     # Fetch all dates from the cursor
-#     all_dates = [row.date for row in cursor.fetchall()]
-    
-#     # Close the connection
-#     cursor.close()
-#     conn.close()
-
-#     # Render the calendar template and pass the dates
-#     return render_template('calendar.html', all_dates=json.dumps(all_dates))
-
 @app.route('/calendar')
 def calendar():
     # Assuming you have the user_id from the session

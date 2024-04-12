@@ -6,7 +6,12 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout
 import yfinance as yf
 import sys
+import tensorflow as tf
 
+def tensorflow_warmup():
+    # Simple operation to initialize TensorFlow
+    tf.constant([1, 2, 3]) + tf.constant([4, 5, 6])
+tensorflow_warmup()
 def main(stock):
     # Define the stock symbol and time range
     start_date = '2023-01-01'

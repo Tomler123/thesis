@@ -1,9 +1,15 @@
 Bootstrap_Flask==2.2.0
 Flask==2.3.2
 WTForms==3.0.1
+Flask-SQLAlchemy==2.5.1
 Flask_WTF==1.2.1
+Flask-Mail==0.9.1
+matplotlib==3.4.3
 Werkzeug==3.0.0
-
-'DELETE THIS LINE AND WRITE IN TERMINAL
-python -m pip install -r requirements.txt
-'
+pyodbc==4.0.32
+pandas
+numpy
+scikit-learn
+tensorflow
+yfinance
+email_validator
