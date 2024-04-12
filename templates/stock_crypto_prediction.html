@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 {% block title %}WalletBuddyAI.com{% endblock %}
 {% block links %}
-<!-- <link rel="stylesheet" href="static/css/index.css"> -->
-<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css"> -->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/stock_crypto_prediction.css') }}">
 {% endblock %}
 {% block content %}
@@ -23,20 +21,15 @@
     {% if stock_name %}
         <div>
             <h2>Graph for {{ stock_name }}</h2>
+            <h3>Loss Plot</h3>
             <img src="{{ url_for('static', filename=loss_plot_path) }}" alt="Loss Plot">
+            <h3>Predictions Plot</h3>
             <img src="{{ url_for('static', filename=predictions_plot_path) }}" alt="Predictions Plot">
+            <h3>Extended Predictions</h3>
             <img src="{{ url_for('static', filename=extended_predictions_plot_path) }}" alt="Extended Predictions Plot">
         </div>
     {% endif %}
     <br>
-    <section>
-        <h1>Money Management Features</h1>
-        <h2>Understanding Your Financial Position</h2>
-        <p>Our AI-driven system provides a detailed analysis of your financial data, including income, savings, and expenditures. This offers you a clear understanding of your current financial health, helping you make informed decisions.</p>
-        <h2>Budgeting and Expense Tracking</h2>
-        <p>Effortlessly track your daily expenses and compare them against your budget. Our system not only helps you monitor your spending but also offers personalized advice on how to optimize your budget for better financial health.</p>
-        <h2>Debt and Loan Management</h2>
-        <p>Manage and strategize your debt repayment with our AI advisor. Input your loan details, and our system will suggest the most efficient repayment plan, helping you reduce your debts faster and more effectively.</p>
-    </section>
+    
 
 {% endblock %}
