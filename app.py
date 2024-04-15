@@ -21,6 +21,7 @@ import json
 import datetime
 import threading
 import os
+from itsdangerous import URLSafeTimedSerializer as Serializer
 # server = 'TOMLER'  # If a local instance, typically 'localhost\\SQLEXPRESS'
 # database = 'thesis'  # Your database name
 
@@ -39,6 +40,7 @@ app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'False').lower() in ('tru
 app.config['MAIL_USE_SSL'] = os.getenv('MAIL_USE_SSL', 'True').lower() in ('true', '1', 't')
 app.config['WTF_CSRF_ENABLED'] = True
 mail = Mail(app)
+serializer = Serializer(app.config['SECRET_KEY'])
 
 # Configure Database URI: 
 driver= '{ODBC Driver 17 for SQL Server}'
@@ -136,7 +138,8 @@ def signup():
         email = form.email.data
         hashed_password = generate_password_hash(form.password.data, method='pbkdf2:sha256')
         role = 'user'
-        profile_image = 'none'
+        profile_image = 'icon1.png'
+
         conn = pyodbc.connect(conn_str)
         cursor = conn.cursor()
 
@@ -159,6 +162,9 @@ def signup():
         conn.commit()
         cursor.close()
         conn.close()
+        
+        session['user_id'] = user_id
+
 
         flash('You have successfully signed up!', 'success')
         return redirect(url_for('account'))
@@ -203,6 +209,80 @@ def login():
 
 
     return render_template('login.html', form=form)
+
+# #########################################################################
+
+class ForgotPasswordForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    submit = SubmitField('Submit')
+
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+    app.config['MAIL_PORT'] = 587
+    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'walletbuddyai@gmail.com')
+    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_USERNAME', 'tmgq owra tjts hkfx')
+    app.config['MAIL_USE_TLS'] = True
+    app.config['MAIL_USE_SSL'] = False
+    app.config['MAIL_DEFAULT_SENDER'] = 'walletbuddyai@gmail.com'  # Update with your email address
+    mail = Mail(app)
+
+    form = ForgotPasswordForm()
+
+    if form.validate_on_submit():
+        email = form.email.data
+        print("\n################################################")
+        session['reset_email'] = form.email.data
+        print(session['reset_email'])
+        print("\n################################################")
+        # Generate a token with a 1-hour expiration time
+        token = serializer.dumps(email)
+
+        # Send email with password reset link
+        reset_link = url_for('reset_password', token=token, _external=True)
+        msg = Message('Password Reset Request', recipients=[email])
+        msg.body = f"Click the following link to reset your password: {reset_link}"
+        mail.send(msg)
+
+        flash('An email with instructions to reset your password has been sent to your email address.')
+        return redirect(url_for('login'))  # Redirect to the login page after sending the email
+
+    return render_template('forgot_password.html', form=form)
+
+class ResetPasswordForm(FlaskForm):
+    password = PasswordField('New Password', validators=[
+        DataRequired(),
+        Length(min=8, max=30),
+        Regexp(r'(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]', message='Password must contain at least one uppercase letter, one number, and one symbol.')
+    ])
+    confirm_password = PasswordField('Confirm New Password', validators=[
+        DataRequired(),
+        EqualTo('password', message='Passwords must match.')
+    ])
+    submit = SubmitField('Reset Password')
+
+@app.route('/reset_password', methods=['GET','POST'])
+def reset_password():
+    form = ResetPasswordForm()
+
+    if form.validate_on_submit():
+        # Get the new password from the form
+        new_password = form.password.data
+        reset_email = session.get('reset_email')
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
+        hashed_password = generate_password_hash(new_password, method='pbkdf2:sha256')
+        cursor.execute("UPDATE users SET Password = ? WHERE Email = ?", hashed_password, reset_email)
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        print("New Password:", new_password)
+        flash('Your password has been reset successfully. You can now log in with your new password.')
+        session.pop('reset_email', None)
+        return redirect(url_for('login'))  # Redirect to the login page after resetting the password
+
+    return render_template('reset_password.html', form=form)
 
 # #########################################################################
 # ACCOUNT AND LOGOUT MUST BE COMPLETED
