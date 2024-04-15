@@ -162,7 +162,7 @@ def signup():
         conn.commit()
         cursor.close()
         conn.close()
-        
+
         session['user_id'] = user_id
 
 
@@ -245,9 +245,13 @@ def forgot_password():
         mail.send(msg)
 
         flash('An email with instructions to reset your password has been sent to your email address.')
-        return redirect(url_for('login'))  # Redirect to the login page after sending the email
+        return redirect(url_for('forgot_password_confirm'))
 
     return render_template('forgot_password.html', form=form)
+
+@app.route('/forgot_password_confirm')
+def forgot_password_confirm():
+    return render_template('forgot_password_confirm.html')
 
 class ResetPasswordForm(FlaskForm):
     password = PasswordField('New Password', validators=[
