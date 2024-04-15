@@ -22,6 +22,7 @@ import datetime
 import threading
 import os
 from itsdangerous import URLSafeTimedSerializer as Serializer
+import secrets
 # server = 'TOMLER'  # If a local instance, typically 'localhost\\SQLEXPRESS'
 # database = 'thesis'  # Your database name
 
@@ -128,8 +129,19 @@ class SignUpForm(FlaskForm):
     ])
     submit = SubmitField('Sign Up')
 
+pending_users = {}
+
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
+    app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+    app.config['MAIL_PORT'] = 587
+    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'walletbuddyai@gmail.com')
+    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_USERNAME', 'tmgq owra tjts hkfx')
+    app.config['MAIL_USE_TLS'] = True
+    app.config['MAIL_USE_SSL'] = False
+    app.config['MAIL_DEFAULT_SENDER'] = 'walletbuddyai@gmail.com'  # Update with your email address
+    mail = Mail(app)
+    
     form = SignUpForm()
     
     if form.validate_on_submit():
@@ -139,6 +151,9 @@ def signup():
         hashed_password = generate_password_hash(form.password.data, method='pbkdf2:sha256')
         role = 'user'
         profile_image = 'icon1.png'
+        verification_token = secrets.token_urlsafe(32)
+
+        
 
         conn = pyodbc.connect(conn_str)
         cursor = conn.cursor()
@@ -149,27 +164,83 @@ def signup():
             flash('Email already registered. Please login or use a different email.', 'error')
             return redirect(url_for('signup'))
 
+        pending_users[email] = {
+            'name': name,
+            'last_name': last_name,
+            'email': email,
+            'password': hashed_password,
+            'role': role,
+            'profile_image': profile_image,
+            'verification_token': verification_token
+        }
+
         # If email does not exist, proceed with registration
-        cursor.execute("""
-            INSERT INTO users (Name, LastName, Email, Password, Role, ProfileImage)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, name, last_name, email, hashed_password, role, profile_image)
+        # cursor.execute("""
+        #     INSERT INTO users (Name, LastName, Email, Password, Role, ProfileImage)
+        #     VALUES (?, ?, ?, ?, ?, ?)
+        # """, name, last_name, email, hashed_password, role, profile_image)
 
         # Fetch the new user's ID
-        cursor.execute("SELECT UserID FROM users WHERE Email = ?", email)
-        user_id = cursor.fetchone()[0]
+        # cursor.execute("SELECT UserID FROM users WHERE Email = ?", email)
+        # user_id = cursor.fetchone()[0]
         
         conn.commit()
         cursor.close()
         conn.close()
 
-        session['user_id'] = user_id
+        verification_link = url_for('verify_email', token=verification_token, _external=True)
+        
 
+        # session['user_id'] = user_id
+        msg = Message('Verify Your Email', recipients=[email])
+        msg.body = f'Click the following link to verify your email: {verification_link}'
+        mail.send(msg)
 
         flash('You have successfully signed up!', 'success')
-        return redirect(url_for('account'))
+        return render_template('verify_email.html')
 
     return render_template('signup.html', form=form)
+
+# Define the verify_email route
+@app.route('/verify_email/<token>')
+def verify_email(token):
+    for user_email, user_info in pending_users.items():
+        if user_info['verification_token'] == token:
+            # Connect to the database
+            conn = pyodbc.connect(conn_str)
+            cursor = conn.cursor()
+
+            # If email does not exist, proceed with registration
+            cursor.execute("""
+                INSERT INTO users (Name, LastName, Email, Password, Role, ProfileImage)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, user_info['name'], user_info['last_name'], user_info['email'], 
+               user_info['password'], user_info['role'], user_info['profile_image'])
+
+            # Fetch the user's ID
+            cursor.execute("SELECT UserID FROM users WHERE Email = ?", user_info['email'])
+            user_id = cursor.fetchone()[0]
+
+            conn.commit()
+            cursor.close()
+            conn.close()
+
+            session['user_id'] = user_id
+
+            flash('Your email has been verified. You can now log in.', 'success')
+            del pending_users[user_email]  # Remove user from pending_users
+            return redirect(url_for('account'))
+
+    flash('Invalid verification token. Please try again or sign up.', 'error')
+    return redirect(url_for('signup'))
+
+# Helper function to send email
+def send_email(recipient, subject, body):
+    msg = Message(subject, recipients=[recipient])
+    msg.body = body
+    mail.send(msg)
+
+
 
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
