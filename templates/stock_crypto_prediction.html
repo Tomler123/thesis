@@ -22,11 +22,11 @@
         <div>
             <h2>Graph for {{ stock_name }}</h2>
             <h3>Loss Plot</h3>
-            <img src="{{ url_for('static', filename=loss_plot_path) }}" alt="Loss Plot">
+            <img src="data:image/png;base64,{{ loss_plot_base64 }}" alt="Loss Plot">
             <h3>Predictions Plot</h3>
-            <img src="{{ url_for('static', filename=predictions_plot_path) }}" alt="Predictions Plot">
+            <img src="data:image/png;base64,{{ predictions_plot_base64 }}" alt="Predictions Plot">
             <h3>Extended Predictions</h3>
-            <img src="{{ url_for('static', filename=extended_predictions_plot_path) }}" alt="Extended Predictions Plot">
+            <img src="data:image/png;base64,{{ extended_predictions_plot_base64 }}" alt="Extended Predictions Plot">
         </div>
     {% endif %}
     <br>

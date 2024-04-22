@@ -25,6 +25,7 @@ import threading
 import os
 from itsdangerous import URLSafeTimedSerializer as Serializer
 import secrets
+import queue
 # server = 'TOMLER'  # If a local instance, typically 'localhost\\SQLEXPRESS'
 # database = 'thesis'  # Your database name
 
@@ -92,23 +93,20 @@ def stock_crypto_prediction():
     if form.validate_on_submit():
         # Get the stock name from the form
         stock_name = form.stock_name.data
-        
+        result_queue = queue.Queue()
         # Call the main function from algo.py with stock_name
-        # It should save the images in the static/images/ directory
-        t =threading.Thread(target=algo.main,args=(stock_name,))
+        t =threading.Thread(target=algo.main, args=(stock_name, result_queue))
         t.start()
         t.join()
         # Construct paths to the images
-        loss_plot_path = os.getenv('IMAGE_PATH_LOSS', 'images/loss_plot.png')
-        predictions_plot_path = os.getenv('IMAGE_PATH_PREDICTIONS', 'images/predictions_plot.png')
-        extended_predictions_plot_path = os.getenv('IMAGE_PATH_EXTENDED', 'images/extended_predictions_plot.png')
+        loss_plot_base64, predictions_plot_base64, extended_predictions_plot_base64 = result_queue.get() if not result_queue.empty() else (None, None, None)
         
         # Render the template with the paths to the generated images
         return render_template('stock_crypto_prediction.html',
                                stock_name=stock_name,
-                               loss_plot_path=loss_plot_path,
-                               predictions_plot_path=predictions_plot_path,
-                               extended_predictions_plot_path=extended_predictions_plot_path,
+                               loss_plot_base64=loss_plot_base64,
+                               predictions_plot_base64=predictions_plot_base64,
+                               extended_predictions_plot_base64=extended_predictions_plot_base64,
                                form=form)
     
     # If it's a GET request or the form is not valid, render the form

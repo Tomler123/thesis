@@ -1,3 +1,5 @@
+import base64
+from io import BytesIO
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -12,7 +14,14 @@ def tensorflow_warmup():
     # Simple operation to initialize TensorFlow
     tf.constant([1, 2, 3]) + tf.constant([4, 5, 6])
 tensorflow_warmup()
-def main(stock):
+
+def plot_to_base64(plt):
+    buf = BytesIO()
+    plt.savefig(buf, format='png')
+    plt.close()
+    return base64.b64encode(buf.getvalue()).decode('utf-8')
+
+def main(stock, queue):
     # Define the stock symbol and time range
     start_date = '2023-01-01'
     end_date = '2024-01-01'
@@ -68,6 +77,7 @@ def main(stock):
     plt.legend()
     plt.savefig('static/images/loss_plot.png') # saving in images folder
     plt.savefig('loss_plot.png')  # Save the plot as an image
+    loss_plot_base64 = plot_to_base64(plt)
     plt.close()
 
     # Predictions
@@ -78,6 +88,7 @@ def main(stock):
     plt.legend()
     plt.savefig('predictions_plot.png')  # Save the plot as an image
     plt.savefig('static/images/predictions_plot.png') # save to images folder
+    predictions_plot_base64 = plot_to_base64(plt)
     plt.close()
 
     # Predict beyond the end date by 10 days
@@ -98,8 +109,10 @@ def main(stock):
     plt.legend()
     plt.savefig('static/images/extended_predictions_plot.png') # save to images folder
     plt.savefig('extended_predictions_plot.png')  # Save the plot as an image
+    extended_predictions_plot_base64 = plot_to_base64(plt)
     plt.close()
 
+    queue.put((loss_plot_base64, predictions_plot_base64, extended_predictions_plot_base64))
 
 # Define function to create input sequences and labels
 def create_sequences(data, seq_length):
