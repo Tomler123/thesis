@@ -55,4 +55,5 @@ for %%F in (%source4%) do (
     REM Loop through each source file and copy it to the current folder preserving directory structure
    
 rasa train
+REM rasa shell
 echo Files copied successfully.
