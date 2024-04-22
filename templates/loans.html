@@ -1,28 +1,50 @@
 {% extends "base.html" %}
 {% block links %}
-<meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/finances.css') }}">
 {% endblock %}
 {% block content %}
-    <h1>Loans Overview</h1>
-    <a href="{{ url_for('add_loan') }}" class="btn btn-primary">Add Loan</a>
-    <br><br>
-    <hr>
-    <h2>Borrowed Loans</h2>
-    <ul>
-        {% for loan in borrowed_loans %}
-        <li>{{ loan.LenderName }} - Amount: {{ loan.LoanAmount }} <a href="#" onclick="editLoan({{ loan.LoanID }})">&#160;&#160;&#160;&#160;&#160;Edit</a> | <a href="#" onclick="deleteLoan({{ loan.LoanID }})">Delete</a></li>        {% else %}
-        <p>No borrowed loans.</p>
-        {% endfor %}
-    </ul>
-    <hr>
-    <h2>Lent Loans</h2>
-    <ul>
-        {% for loan in lent_loans %}
-        <li>{{ loan.LenderName }} - Amount: {{ loan.LoanAmount }} <a href="#" onclick="editLoan({{ loan.LoanID }})">&#160;&#160;&#160;&#160;&#160;Edit</a> | <a href="#" onclick="deleteLoan({{ loan.LoanID }})">Delete</a></li>        {% else %}
-        <p>No lent loans.</p>
-        {% endfor %}
-    </ul>
-
+<h1>Loans Overview</h1>
+<a style="background-color: rgb(1, 40, 63); padding: 1em; border-radius: 15%; color: white;"  href="{{ url_for('add_loan') }}" class="btn btn-primary">Add Loan</a>
+<div class="section-container">
+    <div class="section-content">
+        <br><br>
+        <h2>Borrowed Loans</h2>
+        <ul>
+            {% for loan in borrowed_loans %}
+            <li>{{ loan.LenderName }} - Amount: {{ loan.LoanAmount }} <a href="#" onclick="editLoan({{ loan.LoanID }})">&#160;&#160;&#160;&#160;&#160;Edit</a> | <a href="#" onclick="deleteLoan({{ loan.LoanID }})">Delete</a></li>        {% else %}
+            <p>No borrowed loans.</p>
+            {% endfor %}
+        </ul>
+        <br>
+        <p><strong>Total Borrowed Loans: {{ total_borrowed_loans }}</strong></p>
+    </div>
+    {% if borrowed_loans_pie_chart_img %}
+    <div class="section-chart">
+        <img src="data:image/png;base64,{{ borrowed_loans_pie_chart_img }}" alt="Borrowed Loans Pie Chart" style="max-width:100%;">
+    </div>
+    {% endif %}
+</div>
+<hr>
+<br><br>
+<div class="section-container">
+    <div class="section-content">
+        <h2>Lent Loans</h2>
+        <ul>
+            {% for loan in lent_loans %}
+            <li>{{ loan.LenderName }} - Amount: {{ loan.LoanAmount }} <a href="#" onclick="editLoan({{ loan.LoanID }})">&#160;&#160;&#160;&#160;&#160;Edit</a> | <a href="#" onclick="deleteLoan({{ loan.LoanID }})">Delete</a></li>        {% else %}
+            <p>No lent loans.</p>
+            {% endfor %}
+        </ul>
+        <br>
+        <p><strong>Total Borrowed Loans: {{ total_lent_loans }}</strong></p>
+    </div>
+    {% if lent_loans_pie_chart_img %}
+    <div class="section-chart">
+        <img src="data:image/png;base64,{{ lent_loans_pie_chart_img }}" alt="Lent Loans Pie Chart" style="max-width:100%;">
+    </div>
+    {% endif %}
+</div>
 {% block script %}
 <script>
 function deleteLoan(loanId) {

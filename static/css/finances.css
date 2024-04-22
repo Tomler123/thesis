@@ -1,0 +1,15 @@
+.section-container {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 30px;
+}
+.section-content, .section-chart {
+    flex: 1; /* Each child takes up equal space */
+    margin: 0 20px; /* Adds spacing between the sections */
+}
+@media (max-width: 768px) {
+    .section-container {
+        flex-direction: column; /* Stack vertically on smaller screens */
+    }
+}

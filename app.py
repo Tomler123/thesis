@@ -1,4 +1,6 @@
 from flask import Flask, jsonify, redirect, request, render_template, url_for, session, flash, session
+import matplotlib
+matplotlib.use('Agg')  # Set the backend before importing pyplot
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
@@ -550,27 +552,22 @@ def view_finances():
 
 
 ################################################################
-# Create pie chart for saved data
-def income_pie_chart(income_data):
-    # Replacing NaN with 0
-    for key, value in income_data.items():
-        if math.isnan(value):
-            income_data[key] = 0
-    
-    # Check if all values are zero
-    if all(value == 0 for value in income_data.values()):
-        # Handle this case by creating a placeholder chart or message
-        # For example, return a specific image or a message indicating no data
-        pass
-    else:
-        fig = Figure()
-        axis = fig.add_subplot(1, 1, 1)
-        # Assuming 'income_data' is a dictionary with your data
-        axis.pie(
-            [income_data['Salary'], income_data['Bonuses'], income_data['Investment'], income_data['PassiveIncome'], income_data['Other']],
-            autopct='%1.1f%%'
-        )
-        return fig
+def generate_pie_chart(finances):
+    labels = [finance.Name for finance in finances]
+    sizes = [finance.Cost for finance in finances]
+    colors = plt.cm.Paired(range(len(labels)))
+
+    fig, ax = plt.subplots()
+    ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90, colors=colors)
+    ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+
+    img = io.BytesIO()
+    plt.savefig(img, format='png', bbox_inches='tight')
+    img.seek(0)
+    plt.close(fig)  # Explicitly close the figure after saving to memory
+
+    img_base64 = base64.b64encode(img.getvalue()).decode('utf-8')
+    return img_base64
 
 @app.route('/incomes')
 def incomes():
@@ -584,10 +581,15 @@ def incomes():
     cursor.execute("SELECT * FROM outcomes WHERE UserID = ? AND Type = 'Income'", user_id)
     incomes = cursor.fetchall()
 
+    total_incomes = sum(income.Cost for income in incomes)
+
+    # Generate pie charts if there are corresponding records
+    incomes_pie_chart_img = generate_pie_chart(incomes) if incomes else None
+    
     cursor.close()
     conn.close()
 
-    return render_template('incomes.html', incomes=incomes)
+    return render_template('incomes.html', incomes=incomes, incomes_pie_chart_img=incomes_pie_chart_img, total_incomes=total_incomes)
 
 class IncomeForm(FlaskForm):
     name = StringField('Name', validators=[InputRequired()])
@@ -700,11 +702,16 @@ def savings():
 
     cursor.execute("SELECT * FROM outcomes WHERE UserID = ? AND Type = 'Saving'", user_id)
     savings = cursor.fetchall()
+    
+    total_savings = sum(saving.Cost for saving in savings)
 
+    # Generate pie charts if there are corresponding records
+    savings_pie_chart_img = generate_pie_chart(savings) if savings else None
+    
     cursor.close()
     conn.close()
 
-    return render_template('saving.html', savings=savings)
+    return render_template('saving.html', savings=savings, total_savings=total_savings, savings_pie_chart_img=savings_pie_chart_img)
 
 class SavingForm(FlaskForm):
     name = StringField('Name', validators=[InputRequired()])
@@ -796,21 +803,6 @@ def delete_saving(saving_id):
     except Exception as e:
         return jsonify({'message': 'An error occurred while deleting the saving.'}), 500
 
-def saving_pie_chart(saving_data):
-    for key, value in saving_data.items():
-        if math.isnan(value):
-            saving_data[key] = 0    
-    if all(value == 0 for value in saving_data.values()):
-        pass
-    else:
-        fig = Figure()
-        axis = fig.add_subplot(1, 1, 1)
-        axis.pie(
-            [saving_data['Emergency'], saving_data['Retirement'], saving_data['Education'], saving_data['GoalSpecific'], saving_data['Health'], saving_data['Investment'], saving_data['Other']],
-            autopct='%1.1f%%'
-        )
-        return fig
-
 @app.route('/outcomes')
 def outcomes():
     if 'user_id' not in session:
@@ -823,10 +815,22 @@ def outcomes():
     cursor.execute("SELECT * FROM outcomes WHERE UserID = ?", user_id)
     outcomes = cursor.fetchall()
 
+    # Calculate totals
+    total_expenses = sum(outcome.Cost for outcome in outcomes if outcome.Type == 'Expense')
+    total_subscriptions = sum(outcome.Cost for outcome in outcomes if outcome.Type == 'Subscription')
+
+
+    expenses = [outcome for outcome in outcomes if outcome.Type == 'Expense']
+    subscriptions = [outcome for outcome in outcomes if outcome.Type == 'Subscription']
+
+    # Generate pie charts if there are corresponding records
+    expenses_pie_chart_img = generate_pie_chart(expenses) if expenses else None
+    subscriptions_pie_chart_img = generate_pie_chart(subscriptions) if subscriptions else None
+
     cursor.close()
     conn.close()
 
-    return render_template('outcomes.html', outcomes=outcomes)
+    return render_template('outcomes.html', outcomes=outcomes, expenses_pie_chart_img=expenses_pie_chart_img, subscriptions_pie_chart_img=subscriptions_pie_chart_img, total_expenses=total_expenses, total_subscriptions=total_subscriptions)
 
 class OutcomeForm(FlaskForm):
     name = StringField('Name', validators=[InputRequired()])
@@ -934,6 +938,23 @@ def delete_outcome(outcome_id):
 
 ################################################################
 # Loans
+def loans_pie_chart(loans):
+    labels = [loan.LenderName for loan in loans]
+    sizes = [loan.LoanAmount for loan in loans]
+    colors = plt.cm.Paired(range(len(labels)))
+
+    fig, ax = plt.subplots()
+    ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90, colors=colors)
+    ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+
+    img = io.BytesIO()
+    plt.savefig(img, format='png', bbox_inches='tight')
+    img.seek(0)
+    plt.close(fig)  # Explicitly close the figure after saving to memory
+
+    img_base64 = base64.b64encode(img.getvalue()).decode('utf-8')
+    return img_base64
+
 @app.route('/loans')
 def loans():
     if 'user_id' not in session:
@@ -945,14 +966,20 @@ def loans():
 
     cursor.execute("SELECT * FROM loans WHERE UserID = ? AND IsBorrower = 1", user_id)
     borrowed_loans = cursor.fetchall()
+    
+    borrowed_loans_pie_chart_img = loans_pie_chart(borrowed_loans) if borrowed_loans else None
+    total_borrowed_loans = sum(loan.LoanAmount for loan in borrowed_loans)
 
     cursor.execute("SELECT * FROM loans WHERE UserID = ? AND IsBorrower = 0", user_id)
     lent_loans = cursor.fetchall()
 
+    lent_loans_pie_chart_img = loans_pie_chart(lent_loans) if lent_loans else None
+    total_lent_loans = sum(loan.LoanAmount for loan in lent_loans)
+
     cursor.close()
     conn.close()
 
-    return render_template('loans.html', borrowed_loans=borrowed_loans, lent_loans=lent_loans)
+    return render_template('loans.html', borrowed_loans=borrowed_loans, lent_loans=lent_loans, lent_loans_pie_chart_img=lent_loans_pie_chart_img, borrowed_loans_pie_chart_img=borrowed_loans_pie_chart_img, total_borrowed_loans=total_borrowed_loans, total_lent_loans=total_lent_loans)
 
 class AddLoanForm(FlaskForm):
     lender_name = StringField('Lender/Borrower Name', validators=[InputRequired()])

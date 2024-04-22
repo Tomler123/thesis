@@ -1,20 +1,32 @@
 {% extends "base.html" %}
 {% block links %}
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/finances.css') }}">
 {% endblock %}
 {% block content %}
-    <h1>Savings</h1>
-    <a href="{{ url_for('add_saving') }}" class="btn btn-primary">Add Saving</a>
-    <br><br>
-    <h2>Saving Sources</h2>
-    <ul>
-        {% for saving in savings %}
-            <li>{{ saving.Name }}  -  Amount: <strong>{{ saving.Cost }}</strong> <a href="#" onclick="editSaving({{ saving.ID }})">&#160;&#160;&#160;&#160;&#160;Edit</a> | <a href="#" onclick="deleteOutcome({{ saving.ID }})">Delete</a></li>
-        {% else %}
-            <p>No Saving sources.</p>
-        {% endfor %}
-    </ul>
-    <hr>
+<div class="section-container">
+    <div class="section-content">
+        <h1>Savings</h1>
+        <a href="{{ url_for('add_saving') }}" class="btn btn-primary">Add Saving</a>
+        <br><br>
+        <h2>Saving Sources</h2>
+        <ul>
+            {% for saving in savings %}
+                <li>{{ saving.Name }}  -  Amount: <strong>{{ saving.Cost }}</strong> <a href="#" onclick="editSaving({{ saving.ID }})">&#160;&#160;&#160;&#160;&#160;Edit</a> | <a href="#" onclick="deleteOutcome({{ saving.ID }})">Delete</a></li>
+            {% else %}
+                <p>No Saving sources.</p>
+            {% endfor %}
+        </ul>
+        <br>
+        <p><strong>Total Savings: ${{ total_savings }}</strong></p>
+    </div>
+    {% if savings_pie_chart_img %}
+    <div class="section-chart">
+        <img src="data:image/png;base64,{{ savings_pie_chart_img }}" alt="Savings Pie Chart" style="max-width:100%;">
+    </div>
+    {% endif %}
+</div>
+<hr>
 {% block script %}
 <script>
 function deleteOutcome(outcomeId) {
