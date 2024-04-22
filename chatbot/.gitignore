@@ -1,0 +1,10 @@
+# Ignore Python bytecode files
+__pycache__/
+
+# Ignore Rasa model files
+models/
+
+# Ignore virtual environment
+venv/
+.rasa/
+.idea/

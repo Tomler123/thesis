@@ -1,6 +1,6 @@
 @echo off
 REM Create a virtual environment
-python3.7 -m venv venv
+python -m venv venv
 
 REM Activate the virtual environment
 call venv\Scripts\activate
@@ -13,9 +13,18 @@ pip install scikit-learn email_validator -force
 
 REM Inform the user
 echo Virtual environment setup complete.
-
-
+ 
 REM start chatbot enviroment
-REM call .\chatbot_prod\setupRasa.bat
+cd .\chatbot_prod  
+call .\setupRasa.bat
+
+
+cd ..\..
+
+echo Current directory:
+cd
+
+
 REM Start app.py
+call venv\Scripts\activate
 python app.py
