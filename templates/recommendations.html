@@ -4,110 +4,209 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/recommendations.css') }}">
 {% endblock %}
 {% block content %}
-    <h1>Financial Recommendations</h1>
-    <p>Based on your monthly income, we provide personalized savings and spending recommendations to help you manage your finances effectively.</p>
-
+<div class="form_cont" style="margin-top: 5em;">
+<h1>Financial Recommendations</h1>
+    <p>
+        Based on your monthly income, we provide personalized savings and spending recommendations to help you manage your finances effectively.
+        <br>If you want to get default spending recommendations, please remove all input fields with red <strong>Remove</strong> button.
+        <br>Otherwise, please input your own fields and give them priorities.
+    </p>
     <form class="form-group" action="{{ url_for('recommendations') }}" method="post">
         {{ form.csrf_token }}
-        <label for="savings_goal">How much of your income would you like to save each month?</label>
-        <input type="number" id="savings_goal" name="savings_goal" min="0" max="100" step="1" value="0" required>%<br>
-        <input class="button" type="submit" value="Get Recommendations">
+        <div id="categories">
+            <div>
+                <input class="input_text" type="text" name="category_name[]" placeholder="Category Name" required>
+                <input class="priority_input" type="number" name="priority[]" placeholder="Priority" required min="1" max="100" step="1">
+                <button type="button" class="button_remove" onclick="removeCategory(this)">Remove</button>
+            </div>
+        </div>
+        <button type="button" onclick="addCategory()" class="button">Add Category</button><br><br>
+        <label for="{{ form.savings_goal.id }}">{{ form.savings_goal.label }}</label>
+        {{ form.savings_goal(class='input_percentage') }}%
+        <input type="submit" class="button" value="Get Recommendations">
     </form>
-    
-    {% if error %}
-    <h2>{{ error }}</h2>
-    {% else %}
-    {% if recommendations %}
-    <p>Excluding fixed expenses, you can spend:<br>Daily : <strong>${{ "{:0.2f}".format(daily) }}</strong><br>Monthly : <strong>${{ "{:0.2f}".format(monthly) }}</strong></p>
-    {% if total_expected_loan > 0 %}
-    <p>You are expected to get <strong>{{ total_expected_loan }}</strong> loan this month as income.<br>Go to the <i>'Navigation Bar' => 'View Finances' => 'Loans'</i> for more information about loans.</p>
-    {% endif %}
-    <p></p>
-    <section id="recommendations-section">
-        <h2>Your Custom Financial Plan</h2>
-        <h3>Not Fixed</h3>
-        
-        <table>
-            <tr>
-                <th>Name</th>
-                <th>Daily</th>
-                <th>Monthly</th>
-            </tr>
-            {% for category, amount in recommendations.items() %}
-            <tr>
-                <td>{{ category.capitalize() }}</td>
-                <td>${{ "{:0.2f}".format(amount) }}</td>
-                <td>${{ "{:0.2f}".format(amount*30) }}</td>
-            </tr>
-            {% endfor %}
-            <tr>
-                <td><strong>Total</strong></td>
-                <td><strong>${{ "{:0.2f}".format(daily) }}</strong></td>
-                <td><strong>${{ "{:0.2f}".format(monthly) }}</strong></td>
-            </tr>
-        </table>
+</div>
+<br>
+<hr>
+<br>
+<div class="feedback">
+<h2>Feedback</h2>
+{% if error %}
+<h2>{{ error }}</h2>
+{% else %}
+{% if recommendations %}
+<hr>
+<p>Excluding fixed expenses, you can spend:<br><br></p>
+<ul style="list-style-type:circle">
+    <li style="margin-left: 2em">Daily : <strong>${{ "{:0.2f}".format(daily) }}</strong></li>
+    <li style="margin-left: 2em">Weekly : <strong>${{ "{:0.2f}".format(daily*7) }}</strong></li>
+    <li style="margin-left: 2em">Monthly : <strong>${{ "{:0.2f}".format(monthly) }}</strong></li>
+</ul>
+<br>
+<hr>
+<br>
+{% if total_expected_loan > 0 %}
+<p>
+    You are expected to get <strong>{{ total_expected_loan }}</strong> loan this month as <strong>income</strong>.<br>
+    You are expected to pay <strong>{{ total_monthly_debt }}</strong> loan this month as <strong>expense</strong>.<br>
+    <br>
+    Go to the <strong>'Navigation Bar' <span>&#8594;</span> 'View Finances' <span>&#8594;</span> 'Loans'</strong> for more information about loans.
+</p>
+{% endif %}
+</div>
 
-        <h3>Expenses</h3>
-        <table>
-            <tr>
-                <th>Expense Category</th>
-                <th>Monthly</th>
-                <th>Status</th>
-            </tr>
-            {% for category, amount in fixed_expenses.items() %}
-            <tr>
-                <td>{{ category.capitalize() }}</td>
-                <td>${{ "{:0.2f}".format(amount) }}</td>
-                <td>
-                    {% if fulfilled_status[category] == 'Fulfilled' %}
-                        <span class="status-green">Fulfilled</span>
-                    {% else %}
-                        <span class="status-red">Unfulfilled</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-            <tr>
-                <td><strong>Total</strong></td>
-                <td><strong>${{ "{:0.2f}".format(fixed) }}</strong></td>
-                <td><strong>N/A</strong></td>
-            </tr>
-        </table>
-        <h3>Subscriptions</h3>
-        <table>
-            <tr>
-                <th>Service</th>
-                <th>Monthly</th>
-                <th>Status</th>
-            </tr>
-            {% for category, amount in subscriptions.items() %}
-            <tr>
-                <td>{{ category.capitalize() }}</td>
-                <td>${{ "{:0.2f}".format(amount) }}</td>
-                <td>
-                    {% if fulfilled_status[category] == 'Fulfilled' %}
-                        <span class="status-green">Fulfilled</span>
-                    {% else %}
-                        <span class="status-red">Unfulfilled</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-            <tr>
-                <td><strong>Total</strong></td>
-                <td><strong>${{ "{:0.2f}".format(subscriptions_total) }}</strong></td>
-                <td><strong>N/A</strong></td>
-            </tr>
-        </table>
-        <br>
-        <br>
-        <h3>Debt</h3>
-        <table>
-            <td>Total Debt</td>
-            <td>{{ total_monthly_debt }}</td>
-            <td>N/A</td>
-        </table>
-    </section>
-    {% endif %}
-    {% endif %}
+<section id="recommendations-section">
+    <h2>Your Custom Financial Plan</h2>
+    <h3>Recommendations for expenses that are not fixed</h3>
+    
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Daily</th>
+            <th>Monthly</th>
+        </tr>
+        {% for category, amount in recommendations.items() %}
+        <tr>
+            <td>{{ category.capitalize() }}</td>
+            <td>${{ "{:0.2f}".format(amount) }}</td>
+            <td>${{ "{:0.2f}".format(amount*30) }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td><strong>Total</strong></td>
+            <td><strong>${{ "{:0.2f}".format(daily) }}</strong></td>
+            <td><strong>${{ "{:0.2f}".format(monthly) }}</strong></td>
+        </tr>
+    </table>
+    <br>
+    <hr>
+    <h3>Expenses</h3>
+    <table>
+        <tr>
+            <th>Expense Category</th>
+            <th>Monthly</th>
+            <th>Status</th>
+        </tr>
+        {% for category, amount in fixed_expenses.items() %}
+        <tr>
+            <td>{{ category.capitalize() }}</td>
+            <td>${{ "{:0.2f}".format(amount) }}</td>
+            <td>
+                {% if fulfilled_status[category] == 'Fulfilled' %}
+                    <span class="status-green">Fulfilled</span>
+                {% else %}
+                    <span class="status-red">Unfulfilled</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td><strong>Total</strong></td>
+            <td><strong>${{ "{:0.2f}".format(fixed) }}</strong></td>
+            <td><strong>N/A</strong></td>
+        </tr>
+    </table>
+    <br>
+    <hr>
+    <h3>Subscriptions</h3>
+    <table>
+        <tr>
+            <th>Service</th>
+            <th>Monthly</th>
+            <th>Status</th>
+        </tr>
+        {% for category, amount in subscriptions.items() %}
+        <tr>
+            <td>{{ category.capitalize() }}</td>
+            <td>${{ "{:0.2f}".format(amount) }}</td>
+            <td>
+                {% if fulfilled_status[category] == 'Fulfilled' %}
+                    <span class="status-green">Fulfilled</span>
+                {% else %}
+                    <span class="status-red">Unfulfilled</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td><strong>Total</strong></td>
+            <td><strong>${{ "{:0.2f}".format(subscriptions_total) }}</strong></td>
+            <td><strong>N/A</strong></td>
+        </tr>
+    </table>
+    <br>
+    <hr>
+    <br>
+    <h3>Borrowed Loans</h3>
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Monthly</th>
+            <th>Full Loan</th>
+        </tr>
+        {% for loan in borrowed_loans %}
+        <tr>
+            <td>{{ loan.name.capitalize() }}</td>
+            <td>${{ "{:0.2f}".format(loan.monthly) }}</td>
+            <td>${{ "{:0.2f}".format(loan.total) }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td><strong>Total</strong></td>
+            <td><strong>{{ "{:0.2f}".format(total_monthly_debt) }}</strong></td>
+            <td><strong>{{ "{:0.2f}".format(total_borrowed_loan_amount) }}</strong></td>
+        </tr>
+    </table>
+    <br>
+    <hr>
+    <h3>Lent Loans</h3>
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Monthly</th>
+            <th>Full Loan</th>
+        </tr>
+        {% for loan in lent_loans %}
+        <tr>
+            <td>{{ loan.name.capitalize() }}</td>
+            <td>${{ "{:0.2f}".format(loan.monthly) }}</td>
+            <td>${{ "{:0.2f}".format(loan.total) }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td><strong>Total</strong></td>
+            <td><strong>{{ "{:0.2f}".format(total_expected_loan) }}</strong></td>
+            <td><strong>{{ "{:0.2f}".format(total_lent_loan_amount) }}</strong></td>
+        </tr>
+    </table>
+    <br>
+    <br>
+
+</section>
+
+{% endif %}
+{% endif %}
+{% block script %}
+<script>
+    function addCategory() {
+    var container = document.getElementById("categories");
+    var inputs = container.querySelectorAll('input');
+    if (inputs[inputs.length - 1].value === "") {
+        alert("Please fill in the last category before adding a new one.");
+        return;
+    }
+
+    var newCategory = document.createElement("div");
+    newCategory.innerHTML = '<input class="input_text" type="text" name="category_name[]" placeholder="Category Name" required> ' +
+        '<input class="priority_input" type="number" name="priority[]" placeholder="Priority (as a percentage)" required min="1" max="100" step="1"> ' +
+        '<button type="button" class="button_remove" onclick="removeCategory(this)">Remove</button>';
+    container.appendChild(newCategory);
+    }
+
+    function removeCategory(button) {
+        var container = document.getElementById("categories");
+        container.removeChild(button.parentNode);
+    }
+</script>
+{% endblock %}
 {% endblock %}

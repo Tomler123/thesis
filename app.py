@@ -1232,7 +1232,7 @@ def delete_subscription(subscription_id):
         return jsonify({'message': 'An error occurred while deleting the subscription.'}), 500
 
 class RecommendationsForm(FlaskForm):
-    savings_goal = IntegerField('Savings Goal', validators=[NumberRange(min=0, max=100, message="Value must be between 0 and 100.")])
+    savings_goal = IntegerField('Enter the percentage of your income that you want to save', default=0, validators=[NumberRange(min=0, max=100, message="Value must be between 0 and 100.")])
     submit = SubmitField('Get Recommendations')
 
 @app.route('/recommendations', methods=['GET', 'POST'])
@@ -1263,6 +1263,45 @@ def recommendations():
         else:
             total_expected_loan = 0
 
+        cursor.execute("""
+            SELECT LenderName, MonthlyPayment, LoanAmount
+            FROM loans
+            WHERE UserID = ? AND IsBorrower = 0
+        """, user_id)
+        loan_data = cursor.fetchall()
+        lent_loans = []
+        
+        total_lent_loan_amount = 0
+        # Populate the fixed expenses dictionary with data from the outcomes table
+        for name, monthly, total in loan_data:
+            monthly = round(monthly, 2)
+            total = round(total, 2)
+            lent_loans.append({
+                'name': name,
+                'monthly': round(monthly, 2),
+                'total': round(total, 2)
+            })
+            total_lent_loan_amount += total
+
+        cursor.execute("""
+            SELECT LenderName, MonthlyPayment, LoanAmount
+            FROM loans
+            WHERE UserID = ? AND IsBorrower = 1
+        """, user_id)
+        loan_data = cursor.fetchall()
+        borrowed_loans = []
+        
+        total_borrowed_loan_amount = 0
+        # Populate the fixed expenses dictionary with data from the outcomes table
+        for name, monthly, total in loan_data:
+            monthly = round(monthly, 2)
+            total = round(total, 2)
+            borrowed_loans.append({
+                'name': name,
+                'monthly': round(monthly, 2),
+                'total': round(total, 2)
+            })
+            total_borrowed_loan_amount += total
         # Calculating total fixed expenses
         cursor.execute("""
             SELECT Name, Cost
@@ -1316,15 +1355,26 @@ def recommendations():
             savings_amount = total_income*(1-(savings_goal_percentage/100)) - (fixed_total + subscriptions_total)
             daily_spending_limit = round(savings_amount/30,2)
 
-            recommendations = {
+            category_names = request.form.getlist('category_name[]')
+            priorities = request.form.getlist('priority[]')
+            
+            if not any(category_names):
+                recommendations = {
                 'groceries': round(daily_spending_limit * 0.15, 2), 
                 'healthcare': round(daily_spending_limit * 0.05, 2), 
                 'transportation': round(daily_spending_limit * 0.1, 2), 
                 'personal': round(daily_spending_limit * 0.05, 2), 
                 'pets': round(daily_spending_limit * 0.03, 2), 
-                'entertainment': round(daily_spending_limit * 0.05, 2), 
-            }
+                'entertainment': round(daily_spending_limit * 0.05, 2),
+                }
+            else:
+                priority_dict = {name: float(priority) for name, priority in zip(category_names, priorities)}
 
+                total_priority = sum(priority_dict.values())
+                available_funds = total_income * (1 - (form.savings_goal.data / 100)) - fixed_total - subscriptions_total
+
+                recommendations = {name: round(available_funds * (priority / total_priority) / 30, 2) for name, priority in priority_dict.items()}
+            
             cursor.execute("""
                 SELECT Name, Fulfilled
                 FROM outcomes 
@@ -1354,11 +1404,12 @@ def recommendations():
                     fulfilled_status[name] = 'Fulfilled'
                 else:
                     fulfilled_status[name] = 'Unfulfilled'
-            print(total_monthly_debt)
             return render_template('recommendations.html', form=form, fixed_expenses=fixed_expenses, subscriptions=subscriptions,
                                    recommendations=recommendations, fixed=fixed_total, subscriptions_total = subscriptions_total,
                                    daily=daily_spending_limit, monthly=savings_amount,
-                                   total_expected_loan=total_expected_loan, fulfilled_status=fulfilled_status, total_monthly_debt=total_monthly_debt)
+                                   total_expected_loan=total_expected_loan, fulfilled_status=fulfilled_status, total_monthly_debt=total_monthly_debt,
+                                   total_borrowed_loan_amount=total_borrowed_loan_amount,
+                                   total_lent_loan_amount=total_lent_loan_amount, lent_loans=lent_loans, borrowed_loans=borrowed_loans)
     else:
             # GET request, just render the form
             return render_template('recommendations.html', form=form)

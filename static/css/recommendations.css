@@ -93,10 +93,7 @@ table {
   tr:hover {background-color: #ddd;}
 /* Responsive */
 @media (max-width: 768px) {
-    .container {
-        width: 95%;
-        padding: 10px;
-    }
+    
 }
 
 /* Additional styles for legend, charts, etc. */
@@ -112,8 +109,77 @@ table {
 }
 
 .legend .color-box {
-    width: 20px;
+    /* width: 20px; */
     height: 20px;
     display: inline-block;
     margin-right: 10px;
+}
+
+.form_cont {
+  background-color: #ffffff; /* White background */
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+  width: 50%;
+  margin: 20px auto;
+  margin-top: 5em;
+}
+
+.input_text {
+  width: 50%;
+  padding: 8px;
+  margin-right: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.priority_input {
+  width: 20%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+#categories div {
+  margin-bottom: 10px;
+}
+
+.button_remove {
+  background-color: #ff6347; /* Tomatored background */
+  color: white;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 5px;
+}
+
+.button_remove:hover {
+  background-color: #d9534f; /* Darker red */
+}
+
+#recommendations-section{
+  /* background-color: #ffffff; */
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+  width: 80%;
+  margin: 20px auto;
+}
+
+.feedback{
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+  width: 80%;
+  margin: 20px auto;
+}
+
+.content-wrap{
+  width: 100%;
+  margin: 0;
+}
+
+.input_percentage{
+  width: 5em;
 }
