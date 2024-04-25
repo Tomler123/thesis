@@ -1555,5 +1555,95 @@ def get_outcomes_status_by_day():
 
     return jsonify(day_fulfillment_status)
 
+@app.route('/transactions')
+def transactions():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    conn = pyodbc.connect(conn_str)
+    cursor = conn.cursor()
+
+    # Fetch transactions sorted by date
+    cursor.execute("SELECT TransactionID, Amount, Date, Category, Description FROM transactions WHERE UserID = ? ORDER BY Date DESC", user_id)
+    transactions = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('transactions.html', transactions=transactions)
+
+class TransactionForm(FlaskForm):
+    amount = DecimalField('Amount', validators=[DataRequired(), NumberRange(min=0)])
+    date = DateField('Date', format='%Y-%m-%d', validators=[DataRequired()])
+    category = StringField('Category', validators=[Length(min=0, max=30)])
+    description = StringField('Description', validators=[Length(min=0, max=30)])
+    submit = SubmitField('Submit')
+
+@app.route('/add_transaction', methods=['GET', 'POST'])
+def add_transaction():
+    if 'user_id' not in session:
+        flash('Please log in to add an income.')
+        return redirect(url_for('login'))
+
+    form = TransactionForm()
+    # Set default values when the form is initially presented
+    if request.method == 'GET':
+        form.date.data = datetime.date.today()
+        form.amount.data = 0
+    if form.validate_on_submit():
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO transactions (UserID, Amount, Date, Category, Description) VALUES (?, ?, ?, ?, ?)",
+                       (session['user_id'], form.amount.data, form.date.data, form.category.data, form.description.data))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return redirect(url_for('transactions'))
+    return render_template('add_transaction.html', form=form)
+
+@app.route('/edit_transaction/<int:transaction_id>', methods=['GET', 'POST'])
+def edit_transaction(transaction_id):
+    if 'user_id' not in session:
+        flash('Please log in to add an income.')
+        return redirect(url_for('login'))
+    
+    conn = pyodbc.connect(conn_str)
+    cursor = conn.cursor()
+    form = TransactionForm()
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            cursor.execute("UPDATE transactions SET Amount=?, Date=?, Category=?, Description=? WHERE TransactionID=? AND UserID=?",
+                           (form.amount.data, form.date.data, form.category.data, form.description.data, transaction_id, session['user_id']))
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return redirect(url_for('transactions'))
+    else:
+        # Fetch the current transaction details and pre-fill the form
+        cursor.execute("SELECT Amount, Date, Category, Description FROM transactions WHERE TransactionID=? AND UserID=?", (transaction_id, session['user_id']))
+        transaction = cursor.fetchone()
+        form.amount.data = transaction.Amount
+        form.date.data = transaction.Date
+        form.category.data = transaction.Category
+        form.description.data = transaction.Description
+    cursor.close()
+    conn.close()
+    return render_template('edit_transaction.html', form=form, transaction_id=transaction_id)
+
+@app.route('/delete_transaction/<int:transaction_id>', methods=['POST'])
+def delete_transaction(transaction_id):
+    if 'user_id' not in session:
+        flash('Please log in to add an income.')
+        return redirect(url_for('login'))
+
+    conn = pyodbc.connect(conn_str)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM transactions WHERE TransactionID=? AND UserID=?", (transaction_id, session['user_id']))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return redirect(url_for('transactions'))
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)

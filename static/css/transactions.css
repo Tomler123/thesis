@@ -1,0 +1,97 @@
+
+table {
+  margin-top: 20px;
+  background-color: #f9f9f9;
+  width: 60%; /* Set the table width to occupy 60% of the page */
+  margin: auto; /* Center the table on the page */
+  border-collapse: collapse;
+  margin-left: 0;
+}
+
+th, td {
+  text-align: left;
+  padding: 8px;
+  border: 1px solid #ddd;
+}
+
+th {
+  background-color: #4CAF50;
+  color: white;
+}
+
+tr:nth-child(even){background-color: #f2f2f2}
+
+/* Adding rounded corners to the first and last th for aesthetics */
+th:first-child {
+  border-top-left-radius: 10px;
+}
+
+th:last-child {
+  border-top-right-radius: 10px;
+}
+
+/* Styling for the table rows */
+tr:hover {background-color: #ddd;}
+
+/* Styling for the table data cells */
+td {
+  border-right: 1px solid #ddd;
+  border-left: 1px solid #ddd;
+}
+
+td:first-child {
+  border-left: none;
+}
+
+td:last-child {
+  border-right: none;
+  width: auto;
+}
+
+th:first-child, td:first-child {
+  width: 20%;
+}
+
+th:not(:first-child), td:not(:first-child) {
+  width: 20%;
+}
+
+tr:nth-child(even) {background-color: #f2f2f2}
+
+tr:hover {background-color: #ddd;}
+
+td {
+    text-align: center; /* Center align text in cells */
+    padding: 8px;
+}
+
+th, td {
+    border: 1px solid #ddd; /* Ensure uniform border */
+}
+
+.button-edit, .button-remove {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: 5px;
+}
+
+.button-edit {
+    background-color: #4CAF50; /* Green */
+    color: white;
+}
+
+.button-edit:hover {
+    background-color: #45a049; /* Darker green */
+}
+
+.button-remove {
+    background-color: #f44336; /* Red */
+    color: white;
+}
+
+.button-remove:hover {
+    background-color: #d32f2f; /* Darker red */
+}
