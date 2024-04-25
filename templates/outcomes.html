@@ -7,17 +7,34 @@
 <div class="section-container">
     <div class="section-content">
         <h1>Outcomes</h1>
-        <a href="{{ url_for('add_outcome') }}" class="btn btn-primary">Add Outcome</a>
+        <a style="background-color: rgb(1, 40, 63); padding: 1em; border-radius: 15%; color: white;" href="{{ url_for('add_outcome') }}" class="btn btn-primary">Add Outcome</a>
         <br><br>
         <h2>Expenses</h2>
-        <ul>
-            {% for outcome in outcomes if outcome.Type == 'Expense' %}
-            <li>{{ outcome.Name }}  -  Amount: <strong>{{ outcome.Cost }}</strong> <a href="#" onclick="editOutcome({{ outcome.ID }})">&#160;&#160;&#160;&#160;&#160;Edit</a> | <a href="#" onclick="deleteOutcome({{ outcome.ID }})">Delete</a></li>
-            {% else %}
-            <p>No Expenses.</p>
-            {% endfor %}
-        </ul>
-        <br>
+        
+        <table style="width: 80%;">
+            <tr>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Actions</th>
+            </tr>
+            {% for outcome in outcomes if outcome.Type == 'Expense'%}
+            <tr>
+                <td>
+                    {{ outcome.Name|truncate(15, true, '...') }}
+                </td>
+                <td>
+                    {{ outcome.Cost }}
+                </td>
+                <td>
+                    <button onclick="editOutcome({{ outcome.ID }})" class="button-edit">Edit</button>
+                    <button onclick="deleteOutcome({{ outcome.ID }})" class="button-remove">Remove</button>
+                </td>
+            </tr>
+                {% else %}
+                    <p><strong>Outcome not added</strong></p>
+                {% endfor %}
+        </table>
+        <br><br>
         <p><strong>Total Expenses: ${{ total_expenses }}</strong></p>
     </div>
     {% if expenses_pie_chart_img %}
@@ -32,15 +49,31 @@
 <div class="section-container">
     <div class="section-content">
         <h2>Subscriptions</h2>
-        <ul>
-            {% for outcome in outcomes if outcome.Type == 'Subscription' %}
-            <li>{{ outcome.Name }}  -  Amount: <strong>{{ outcome.Cost }}</strong> <a href="#" onclick="editOutcome({{ outcome.ID }})">&#160;&#160;&#160;&#160;&#160;Edit</a> | <a href="#" onclick="deleteOutcome({{ outcome.ID }})">Delete</a></li>
-            {% else %}
-            <p>No Subscriptions.</p>
-            {% endfor %}
-        </ul>
-        <br>
-        <p><strong>Total Expenses: ${{ total_expenses }}</strong></p>
+        <table style="width: 80%;">
+            <tr>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Actions</th>
+            </tr>
+            {% for outcome in outcomes if outcome.Type == 'Subscription'%}
+            <tr>
+                <td>
+                    {{ outcome.Name|truncate(15, true, '...') }}
+                </td>
+                <td>
+                    {{ outcome.Cost }}
+                </td>
+                <td>
+                    <button onclick="editOutcome({{ outcome.ID }})" class="button-edit">Edit</button>
+                    <button onclick="deleteOutcome({{ outcome.ID }})" class="button-remove">Remove</button>
+                </td>
+            </tr>
+                {% else %}
+                    <p><strong>Outcome not added</strong></p>
+                {% endfor %}
+        </table>
+        <br><br>
+        <p><strong>Total Subscriptions: ${{ total_subscriptions }}</strong></p>
     </div>
     {% if subscriptions_pie_chart_img %}
     <div class="section-chart">

@@ -7,17 +7,34 @@
 <div class="section-container">
     <div class="section-content">
         <h1>Savings</h1>
-        <a href="{{ url_for('add_saving') }}" class="btn btn-primary">Add Saving</a>
+        <a style="background-color: rgb(1, 40, 63); padding: 1em; border-radius: 15%; color: white;" href="{{ url_for('add_saving') }}" class="btn btn-primary">Add Saving</a>
         <br><br>
         <h2>Saving Sources</h2>
-        <ul>
+        
+        <table style="width: 80%;">
+            <tr>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Actions</th>
+            </tr>
             {% for saving in savings %}
-                <li>{{ saving.Name }}  -  Amount: <strong>{{ saving.Cost }}</strong> <a href="#" onclick="editSaving({{ saving.ID }})">&#160;&#160;&#160;&#160;&#160;Edit</a> | <a href="#" onclick="deleteOutcome({{ saving.ID }})">Delete</a></li>
-            {% else %}
-                <p>No Saving sources.</p>
-            {% endfor %}
-        </ul>
-        <br>
+            <tr>
+                <td>
+                    {{ saving.Name|truncate(15, true, '...') }}
+                </td>
+                <td>
+                    {{ saving.Cost }}
+                </td>
+                <td>
+                    <button onclick="editSaving({{ saving.ID }})" class="button-edit">Edit</button>
+                    <button onclick="deleteSaving({{ saving.ID }})" class="button-remove">Remove</button>
+                </td>
+            </tr>
+                {% else %}
+                    <p><strong>Saving not added</strong></p>
+                {% endfor %}
+        </table>
+        <br><br>
         <p><strong>Total Savings: ${{ total_savings }}</strong></p>
     </div>
     {% if savings_pie_chart_img %}
@@ -29,7 +46,7 @@
 <hr>
 {% block script %}
 <script>
-function deleteOutcome(outcomeId) {
+function deleteSaving(outcomeId) {
     if (confirm("Are you sure you want to delete this outcome?")) {
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content'); // Fetch CSRF token from meta tag
         fetch(`/delete_outcome/${outcomeId}`, {

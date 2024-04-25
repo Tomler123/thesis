@@ -2,6 +2,7 @@
 {% block links %}
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/finances.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/transactions.css') }}">
 {% endblock %}
 {% block content %}
 <h1>Loans Overview</h1>
@@ -10,13 +11,30 @@
     <div class="section-content">
         <br><br>
         <h2>Borrowed Loans</h2>
-        <ul>
+        <table style="width: 80%;">
+            <tr>
+                <th>Addressant</th>
+                <th>Amount</th>
+                <th>Actions</th>
+            </tr>
             {% for loan in borrowed_loans %}
-            <li>{{ loan.LenderName }} - Amount: {{ loan.LoanAmount }} <a href="#" onclick="editLoan({{ loan.LoanID }})">&#160;&#160;&#160;&#160;&#160;Edit</a> | <a href="#" onclick="deleteLoan({{ loan.LoanID }})">Delete</a></li>        {% else %}
-            <p>No borrowed loans.</p>
-            {% endfor %}
-        </ul>
-        <br>
+            <tr>
+                <td>
+                    {{ loan.LenderName|truncate(15, true, '...') }}
+                </td>
+                <td>
+                    {{ loan.LoanAmount }}
+                </td>
+                <td>
+                    <button onclick="editLoan({{ loan.LoanID }})" class="button-edit">Edit</button>
+                    <button onclick="deleteLoan({{ loan.LoanID }})" class="button-remove">Remove</button>
+                </td>
+            </tr>
+                {% else %}
+                    <p><strong>No borrowed loans</strong></p>
+                {% endfor %}
+        </table>
+        <br><br>
         <p><strong>Total Borrowed Loans: {{ total_borrowed_loans }}</strong></p>
     </div>
     {% if borrowed_loans_pie_chart_img %}
@@ -25,18 +43,36 @@
     </div>
     {% endif %}
 </div>
+<br>
 <hr>
 <br><br>
 <div class="section-container">
     <div class="section-content">
         <h2>Lent Loans</h2>
-        <ul>
+        <table style="width: 80%;">
+            <tr>
+                <th>Addressant</th>
+                <th>Amount</th>
+                <th>Actions</th>
+            </tr>
             {% for loan in lent_loans %}
-            <li>{{ loan.LenderName }} - Amount: {{ loan.LoanAmount }} <a href="#" onclick="editLoan({{ loan.LoanID }})">&#160;&#160;&#160;&#160;&#160;Edit</a> | <a href="#" onclick="deleteLoan({{ loan.LoanID }})">Delete</a></li>        {% else %}
-            <p>No lent loans.</p>
-            {% endfor %}
-        </ul>
-        <br>
+            <tr>
+                <td>
+                    {{ loan.LenderName|truncate(15, true, '...') }}
+                </td>
+                <td>
+                    {{ loan.LoanAmount }}
+                </td>
+                <td>
+                    <button onclick="editLoan({{ loan.LoanID }})" class="button-edit">Edit</button>
+                    <button onclick="deleteLoan({{ loan.LoanID }})" class="button-remove">Remove</button>
+                </td>
+            </tr>
+                {% else %}
+                    <p><strong>No borrowed loans</strong></p>
+                {% endfor %}
+        </table>
+        <br><br>
         <p><strong>Total Borrowed Loans: {{ total_lent_loans }}</strong></p>
     </div>
     {% if lent_loans_pie_chart_img %}
