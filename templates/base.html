@@ -12,6 +12,8 @@
     {% block links %}{% endblock %}
     <title>{% block title %}{% endblock %}</title>
     {% block styles %}{% endblock %}
+    <script src="{{ url_for('static', filename='js/chatbot.js') }}" defer></script>
+
 </head>
 <body>
 <div class="page-container">
@@ -176,7 +178,6 @@
 </div>
     <!--=============== MAIN JS ===============-->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
     {% block script %}{% endblock %}
 </body>
 </html>
