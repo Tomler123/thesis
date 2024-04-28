@@ -9,7 +9,8 @@ Werkzeug==3.0.0
 pyodbc==4.0.32
 pandas
 numpy
-scikit-learn
-tensorflow
 yfinance
 email_validator
+flask_cors
+# scikit-learn
+# tensorflow

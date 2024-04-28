@@ -4,10 +4,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/finances.css') }}">
 {% endblock %}
 {% block content %}
+<h1>Outcomes</h1>
+<a style="background-color: rgb(1, 40, 63); padding: 1em; border-radius: 15%; color: white;" href="{{ url_for('add_outcome') }}" class="btn btn-primary">Add Outcome</a>
 <div class="section-container">
     <div class="section-content">
-        <h1>Outcomes</h1>
-        <a style="background-color: rgb(1, 40, 63); padding: 1em; border-radius: 15%; color: white;" href="{{ url_for('add_outcome') }}" class="btn btn-primary">Add Outcome</a>
         <br><br>
         <h2>Expenses</h2>
         

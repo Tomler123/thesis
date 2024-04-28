@@ -1,0 +1,20 @@
+version: '3.8'
+services:
+  flask-app:
+    build: .
+    container_name: flask-app
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      - rasa-service
+
+  rasa-service:
+    build:
+      context: ./chatbot_prod
+    container_name: rasa-service
+    ports:
+      - "5005:5005"
+    volumes:
+      - ./chatbot_prod:/app

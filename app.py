@@ -1,5 +1,7 @@
 from flask import Flask, jsonify, redirect, request, render_template, url_for, session, flash, session
+from flask_cors import CORS
 import matplotlib
+import requests
 matplotlib.use('Agg')  # Set the backend before importing pyplot
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
@@ -17,7 +19,7 @@ from wtforms import BooleanField, StringField, PasswordField, SubmitField, valid
 from wtforms.validators import DataRequired, Email, Length, EqualTo, Regexp, NumberRange, InputRequired
 from flask_mail import Mail, Message
 import math
-import algo
+# import algo
 from flask_wtf.csrf import CSRFProtect
 import json
 import datetime
@@ -26,6 +28,7 @@ import os
 from itsdangerous import URLSafeTimedSerializer as Serializer
 import secrets
 import queue
+import logging
 # server = 'TOMLER'  # If a local instance, typically 'localhost\\SQLEXPRESS'
 # database = 'thesis'  # Your database name
 
@@ -35,6 +38,8 @@ import queue
 # Tomleras database route
 # C:\Program Files (x86)\Microsoft SQL Server Management Studio 19
 app = Flask(__name__)
+CORS(app)
+logging.basicConfig(level=logging.DEBUG)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'a_default_secret_key')
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
 app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 465))
@@ -87,30 +92,31 @@ class StockPredictionForm(FlaskForm):
 
 @app.route('/stock_crypto_prediction', methods=['GET', 'POST'])
 def stock_crypto_prediction():
-    # Create an instance of the form class
-    form = StockPredictionForm()
+    # # Create an instance of the form class
+    # form = StockPredictionForm()
 
-    if form.validate_on_submit():
-        # Get the stock name from the form
-        stock_name = form.stock_name.data
-        result_queue = queue.Queue()
-        # Call the main function from algo.py with stock_name
-        t =threading.Thread(target=algo.main, args=(stock_name, result_queue))
-        t.start()
-        t.join()
-        # Construct paths to the images
-        loss_plot_base64, predictions_plot_base64, extended_predictions_plot_base64 = result_queue.get() if not result_queue.empty() else (None, None, None)
+    # if form.validate_on_submit():
+    #     # Get the stock name from the form
+    #     stock_name = form.stock_name.data
+    #     result_queue = queue.Queue()
+    #     # Call the main function from algo.py with stock_name
+    #     t =threading.Thread(target=algo.main, args=(stock_name, result_queue))
+    #     t.start()
+    #     t.join()
+    #     # Construct paths to the images
+    #     loss_plot_base64, predictions_plot_base64, extended_predictions_plot_base64 = result_queue.get() if not result_queue.empty() else (None, None, None)
         
-        # Render the template with the paths to the generated images
-        return render_template('stock_crypto_prediction.html',
-                               stock_name=stock_name,
-                               loss_plot_base64=loss_plot_base64,
-                               predictions_plot_base64=predictions_plot_base64,
-                               extended_predictions_plot_base64=extended_predictions_plot_base64,
-                               form=form)
+    #     # Render the template with the paths to the generated images
+    #     return render_template('stock_crypto_prediction.html',
+    #                            stock_name=stock_name,
+    #                            loss_plot_base64=loss_plot_base64,
+    #                            predictions_plot_base64=predictions_plot_base64,
+    #                            extended_predictions_plot_base64=extended_predictions_plot_base64,
+    #                            form=form)
     
-    # If it's a GET request or the form is not valid, render the form
-    return render_template('stock_crypto_prediction.html', form=form)
+    # # If it's a GET request or the form is not valid, render the form
+    # return render_template('stock_crypto_prediction.html', form=form)
+    return render_template('home.html')
 
 ################################################################
 # Login Signup
@@ -1645,5 +1651,36 @@ def delete_transaction(transaction_id):
     conn.close()
     return redirect(url_for('transactions'))
 
+@app.route('/chatbot')
+def chatbot():
+    return render_template('chatbot.html')
+
+@app.route('/get_response', methods=['POST'])
+def get_response():
+    logging.debug("Received POST to /get_response")
+    data = request.get_json()
+    logging.debug(f"Data received from frontend: {data}")
+
+    if not data or 'message' not in data:
+        logging.error("No message found in received data")
+        return jsonify({'error': 'Bad Request, message missing in JSON'}), 400
+
+    user_message = data['message']
+    logging.debug(f"Sending message to Rasa: {user_message}")
+
+    try:
+        response = requests.post('http://127.0.0.1:5005/webhooks/rest/webhook', json={"sender": "user", "message": user_message})
+        response.raise_for_status()
+        rasa_response = response.json()
+        if rasa_response and isinstance(rasa_response, list) and 'text' in rasa_response[0]:
+            logging.debug(f"Received response from Rasa: {rasa_response}")
+            return jsonify({'message': rasa_response[0]['text']})
+        else:
+            logging.error("Unexpected response format from Rasa")
+            return jsonify({'error': 'Unexpected response format from Rasa'}), 500
+    except requests.RequestException as e:
+        logging.error(f"Failed to send message to Rasa: {e}")
+        return jsonify({'error': str(e)}), 500
+    
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)
