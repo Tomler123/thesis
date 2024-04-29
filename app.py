@@ -308,10 +308,7 @@ def forgot_password():
 
     if form.validate_on_submit():
         email = form.email.data
-        print("\n################################################")
         session['reset_email'] = form.email.data
-        print(session['reset_email'])
-        print("\n################################################")
         # Generate a token with a 1-hour expiration time
         token = serializer.dumps(email)
 

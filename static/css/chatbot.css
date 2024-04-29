@@ -84,7 +84,7 @@
     max-width: 80%;
     clear: both;
     align-self: flex-end;
-    text-align: right;
+    text-align: left;
 }
 
 #chatbox {
