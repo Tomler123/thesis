@@ -7,6 +7,9 @@ WORKDIR /app
 # Copy your Rasa project into the container
 COPY . /app
 
+# Optionally, train the Rasa model when building the image
+# RUN rasa train
+
 # Expose the Rasa port
 EXPOSE 5005
 

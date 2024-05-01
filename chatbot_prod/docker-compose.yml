@@ -1,0 +1,9 @@
+services:
+  rasa-chatbot:
+    build:
+      context: ./path_to_rasa_project
+      dockerfile: Dockerfile
+    ports:
+      - "5005:5005"
+    volumes:
+      - ./path_to_rasa_project:/app

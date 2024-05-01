@@ -66,54 +66,20 @@
                             </a>
                         </li>
                         <li>
-                            <a href="{{url_for('recommendations')}}" class="dropdown__link">
-                            <i class="ri-pie-chart-line"></i> Recommendations
-                            </a>
-                        </li>
-                        <li>
                             <a href="{{url_for('transactions')}}" class="dropdown__link">
                             <i class="ri-pie-chart-line"></i> Transactions
                             </a>
                         </li>
-                        
-                        
-                        <!--=============== DROPDOWN SUBMENU ===============-->
-                        <!-- <li class="dropdown__subitem">
-                            <div class="dropdown__link">
-                            <i class="ri-bar-chart-line"></i> Edit <i class="ri-add-line dropdown__add"></i>
-                            </div>
-
-                            <ul class="dropdown__submenu">
-      
-                            
-                            </ul>
-                        </li> -->
                     </ul>
                 </li>
                   
-                <li><a href="{{url_for('view_finances')}}" class="nav__link">View Finances</a></li>
-
-                <!--=============== DROPDOWN 2 ===============-->
-                <li class="dropdown__item">
-                    <div class="nav__link">
-                        Predictions <i class="ri-arrow-down-s-line dropdown__arrow"></i>
-                    </div>
-
-                    <ul class="dropdown__menu">
-                        <li>
-                            <a href="stock_crypto_prediction" class="dropdown__link">
-                            <i class="ri-user-line"></i> Stock Prediction
-                            </a>
-                        </li>
-
-                        <li>
-                            <a href="stock_crypto_prediction" class="dropdown__link">
-                            <i class="ri-lock-line"></i> Crypto Prediction
-                            </a>
-                        </li>
-
-                    </ul>
-                </li>
+                <li><a href="{{url_for('recommendations')}}" class="nav__link">Recommendations</a></li>
+                
+                <li><a href="{{url_for('home')}}" class="nav__link">Advices</a></li>
+                
+                <li><a href="{{url_for('view_finances')}}" class="nav__link">Overview</a></li>
+                
+                <li><a href="{{url_for('stock_crypto_prediction')}}" class="nav__link">Stocks</a></li>
 
                 <li><a href="{{url_for('contact')}}" class="nav__link">Contact</a></li>
                 

@@ -100,7 +100,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /*=============== REUSABLE CSS CLASSES ===============*/
 .container {
-  max-width: 1120px;
+  max-width: 80%;
   margin-inline: 1.5rem;
 }
 
@@ -205,7 +205,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .footer-section ul li a:hover {
-    color: var(--black-color-light); /* Lighten the link on hover */
+    color: rgb(155, 155, 155); /* Lighten the link on hover */
 }
 
 .footer-bottom {
