@@ -2,5 +2,4 @@ __pycache__/
 venv/
 chatbot_prod/prod/
 setup.bat
-chatbot_prod/venv/
 chatbot_prod/setupRasa.bat
