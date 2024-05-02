@@ -1,4 +1,4 @@
 unixodbc
 unixodbc-dev
-python3.10-pyodbc  # Adjust the Python version if needed
+python3.10-pyodbc
 libsqliteodbc
