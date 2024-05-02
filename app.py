@@ -5,9 +5,8 @@ import requests
 matplotlib.use('Agg')  # Set the backend before importing pyplot
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
-from flask_sqlalchemy import SQLAlchemy
+# from flask_sqlalchemy import SQLAlchemy
 import io
 from io import BytesIO
 import base64
@@ -15,7 +14,7 @@ import pyodbc
 import urllib
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_wtf import FlaskForm
-from wtforms import BooleanField, StringField, PasswordField, SubmitField, validators, SelectField, FloatField, IntegerField, DateField, DecimalField, TextAreaField
+from wtforms import StringField, PasswordField, SubmitField, validators, SelectField, FloatField, IntegerField, DateField, DecimalField, TextAreaField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, Regexp, NumberRange, InputRequired
 from flask_mail import Mail, Message
 import math

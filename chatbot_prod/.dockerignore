@@ -1,7 +1,0 @@
-__pycache__
-*.pyc
-venv/
-.venv/
-.git/
-.vscode/
-node_modules/

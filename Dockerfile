@@ -1,26 +1,32 @@
-FROM python:3.8-slim-buster
+# Use an official Python runtime as a parent image (multi-stage build)
+FROM python:3.10-slim as builder
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    unixodbc-dev \
-    default-libmysqlclient-dev \
-    build-essential
+# Set the working directory in the container
+WORKDIR /usr/src/app
 
-WORKDIR /app
+# Copy the current directory contents into the container at /usr/src/app
+COPY . .
 
-COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
-RUN apt-get update && apt-get install -y gnupg2 curl
+# Install any needed packages specified in requirements.txt
+RUN pip install --user -r requirements.txt
 
-RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
-RUN curl https://packages.microsoft.com/config/debian/10/prod.list > /etc/apt/sources.list.d/mssql-release.list
-RUN apt-get update
-RUN ACCEPT_EULA=Y apt-get install -y msodbcsql17
+# Use a second stage to create a slim final image
+FROM python:3.10-slim
 
-COPY . /app
+# Copy only the necessary from builder
+COPY --from=builder /root/.local /root/.local
 
-EXPOSE 8000
+# Set the working directory in the container
+WORKDIR /usr/src/app
 
-CMD ["python", "app.py"]
+# Copy only the application code needed for production
+COPY . .
+
+# Make port 80 available to the world outside this container
+EXPOSE 80
+
+# Define environment variable
+ENV PATH=/root/.local:$PATH
+
+# Run the application
+CMD ["gunicorn", "--config", "gunicorn_config.py", "app:app"]
