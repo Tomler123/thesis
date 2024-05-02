@@ -1,0 +1,1 @@
+worker: gunicorn -b 0.0.0.0:8080 rasa_core.run -c config.yml --enable-api --cors '*' --debug

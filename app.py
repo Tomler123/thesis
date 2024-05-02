@@ -78,23 +78,13 @@ def home():
     return render_template('home.html')
 
 ################################################################
-
-################################################################
-# ??????????????????????
-
-@app.route('/financial-position')
-def financial_position():    
-    return render_template('financial-position.html')
-
-################################################################
-# ??????????????????????
 # Define form class
 class StockPredictionForm(FlaskForm):
     stock_name = StringField('Stock Name', validators=[DataRequired()])
     submit = SubmitField('Get Graph')
 
-@app.route('/stock_crypto_prediction', methods=['GET', 'POST'])
-def stock_crypto_prediction():
+@app.route('/stock_prediction', methods=['GET', 'POST'])
+def stock_prediction():
     # # Create an instance of the form class
     # form = StockPredictionForm()
 
@@ -110,7 +100,7 @@ def stock_crypto_prediction():
     #     loss_plot_base64, predictions_plot_base64, extended_predictions_plot_base64 = result_queue.get() if not result_queue.empty() else (None, None, None)
         
     #     # Render the template with the paths to the generated images
-    #     return render_template('stock_crypto_prediction.html',
+    #     return render_template('stock_prediction.html',
     #                            stock_name=stock_name,
     #                            loss_plot_base64=loss_plot_base64,
     #                            predictions_plot_base64=predictions_plot_base64,
@@ -118,7 +108,7 @@ def stock_crypto_prediction():
     #                            form=form)
     
     # # If it's a GET request or the form is not valid, render the form
-    # return render_template('stock_crypto_prediction.html', form=form)
+    # return render_template('stock_prediction.html', form=form)
     return render_template('home.html')
 
 ################################################################
@@ -248,8 +238,6 @@ def send_email(recipient, subject, body):
     msg = Message(subject, recipients=[recipient])
     msg.body = body
     mail.send(msg)
-
-
 
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
@@ -554,7 +542,6 @@ def view_finances():
     
     return render_template('view_finances.html', expenses=expenses, expenses_graph=expenses_graph, incomes=incomes, incomes_graph=incomes_graph, savings=savings, savings_graph=savings_graph, subscriptions=subscriptions, subscriptions_graph=subscriptions_graph)
 
-
 ################################################################
 def generate_pie_chart(finances):
     labels = [finance.Name for finance in finances]
@@ -599,6 +586,7 @@ class IncomeForm(FlaskForm):
     name = StringField('Name', validators=[InputRequired()])
     cost = FloatField('Cost', validators=[InputRequired(), NumberRange(min=0)])
     day = IntegerField('Day', validators=[InputRequired(), NumberRange(min=1, max=31)])
+
 @app.route('/add_income', methods=['GET', 'POST'])
 def add_income():
     if 'user_id' not in session:
@@ -694,7 +682,6 @@ def delete_income(income_id):
     except Exception as e:
         return jsonify({'message': 'An error occurred while deleting the income.'}), 500
 
-# THIS ONE HAS TO BE KEPT
 @app.route('/saving')
 def savings():
     if 'user_id' not in session:
@@ -720,6 +707,7 @@ def savings():
 class SavingForm(FlaskForm):
     name = StringField('Name', validators=[InputRequired()])
     cost = FloatField('Cost', validators=[InputRequired(), NumberRange(min=0)])
+
 @app.route('/add_saving', methods=['GET', 'POST'])
 def add_saving():
     if 'user_id' not in session:
@@ -1651,10 +1639,6 @@ def delete_transaction(transaction_id):
     conn.close()
     return redirect(url_for('transactions'))
 
-@app.route('/chatbot')
-def chatbot():
-    return render_template('chatbot.html')
-
 @app.route('/get_response', methods=['POST'])
 def get_response():
     logging.debug("Received POST to /get_response")
@@ -1681,6 +1665,6 @@ def get_response():
     except requests.RequestException as e:
         logging.error(f"Failed to send message to Rasa: {e}")
         return jsonify({'error': str(e)}), 500
-    
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)

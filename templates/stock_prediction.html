@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block title %}WalletBuddyAI.com{% endblock %}
 {% block links %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/stock_crypto_prediction.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/stock_prediction.css') }}">
 {% endblock %}
 {% block content %}
     <h1>WalletBuddyAI.com</h1>
     <!-- Input form for stock graph -->
-    <form action="{{ url_for('stock_crypto_prediction') }}" method="post">
+    <form action="{{ url_for('stock_prediction') }}" method="post">
         {{ form.csrf_token }}
         <div class="form-group">
             {{ form.stock_name.label }}

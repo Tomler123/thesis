@@ -1,11 +1,11 @@
 @echo off
 REM Set up virtual environment for Flask and install dependencies
-python -m venv venv
-call venv\Scripts\activate
-
+REM python -m venv venv
+REM call venv\Scripts\activate
 REM Install TensorFlow and other dependencies
 pip install --upgrade pip
-REM rempip install tensorflow -force
+python -m pip install -r requirements.txt
+REM pip install tensorflow -force
 pip install flask matplotlib flask_sqlalchemy pyodbc flask_wtf wtforms flask_mail numpy pandas yfinance -force
 REM pip install scikit-learn -force
 pip install email_validator -force

@@ -8,10 +8,10 @@ if not exist "prod\venv" (
     cd prod
 )
 
-call venv\Scripts\activate
+REM call venv\Scripts\activate
 pip install --upgrade pip
 pip install rasa
-
+python -m pip install -r requirements.txt
 REM Copy necessary Rasa configuration files
 echo Copying Rasa configuration files...
 xcopy "..\..\chatbot\config.yml" "config.yml" /y
