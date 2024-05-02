@@ -1,0 +1,4 @@
+tests/
+*.md
+docs/
+examples/
