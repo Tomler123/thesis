@@ -1,17 +1,17 @@
 @echo off
 REM Set up virtual environment specifically for Rasa
 if not exist "prod\venv" (
-    mkdir prod
-    cd prod
-    python -m venv venv
+    mkdir prod
+    cd prod
+    python -m venv venv
 ) else (
-    cd prod
+    cd prod
 )
 
-REM call venv\Scripts\activate
+call venv\Scripts\activate
 pip install --upgrade pip
 pip install rasa
-python -m pip install -r requirements.txt
+
 REM Copy necessary Rasa configuration files
 echo Copying Rasa configuration files...
 xcopy "..\..\chatbot\config.yml" "config.yml" /y

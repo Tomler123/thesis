@@ -1,19 +1,27 @@
 @echo off
+REM Set up virtual environment for Flask and install dependencies
+python -m venv venv
+call venv\Scripts\activate
 
-REM Install TensorFlow and other dependencies (if needed, adjust based on your actual requirements.txt)
+REM Install TensorFlow and other dependencies
 pip install --upgrade pip
-python -m pip install -r requirements.txt
+REM rempip install tensorflow -force
+pip install flask matplotlib flask_sqlalchemy pyodbc flask_wtf wtforms flask_mail numpy pandas yfinance -force
+REM pip install scikit-learn -force
+pip install email_validator -force
+
 
 REM Inform the user that Flask dependencies are installed
 echo Flask dependencies installation complete.
 
-REM Start Flask app (modify the command to suit your execution environment on Heroku)
-python app.py
+REM Start Flask app in a new command window
+start "Flask App" cmd /k "cd C:\Users\nikol\Desktop\Thesis_Uni\thesis && call venv\Scripts\activate && echo Starting Flask app... && python app.py"
 
-REM (Optional) Go into the chatbot production setup directory and setup Rasa
-REM This section can be removed if you choose not to deploy Rasa on Heroku
+REM Go into the chatbot production setup directory and setup Rasa
+cd chatbot_prod
+call setupRasa.bat
 
-REM Start Rasa server (modify the command to suit your execution environment on Heroku)
-REM rasa run --enable-api --cors '*' --debug  # (Example Rasa command)
+REM Start Rasa server in a new command window from the prod directory where it's set up
+start "Rasa Server" cmd /k "cd C:\Users\nikol\Desktop\Thesis_Uni\thesis\chatbot_prod\prod && call venv\Scripts\activate && echo Starting Rasa server... && rasa run --enable-api --cors '*' --debug"
 
-echo Setup complete. Flask and Rasa are running (if Rasa is included).
+echo Setup complete. Flask and Rasa are running.
