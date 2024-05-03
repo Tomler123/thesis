@@ -28,9 +28,29 @@ from itsdangerous import URLSafeTimedSerializer as Serializer
 import secrets
 import queue
 import logging
+import yaml
+from chatterbot import ChatBot
+from chatterbot.trainers import ListTrainer
+import spacy
+from dotenv import load_dotenv
 # from rasa.core.agent import Agent
 # from rasa.core.interpreter import RasaNLUInterpreter
+load_dotenv()
+spacy.load('en_core_web_sm')
+chatbot = ChatBot('WebsiteNavigationBot',
+                  storage_adapter='chatterbot.storage.SQLStorageAdapter',
+                  logic_adapters=[
+                      {'import_path': 'chatterbot.logic.BestMatch'}
+                  ])
 
+# Load training data
+with open("./data/website_navigation.yml", 'r', encoding='utf-8') as f:
+    data = yaml.safe_load(f)
+
+# Train the chatbot with the loaded conversations
+trainer = ListTrainer(chatbot)
+for conversation in data['conversations']:
+    trainer.train(conversation)
 # server = 'TOMLER'  # If a local instance, typically 'localhost\\SQLEXPRESS'
 # database = 'thesis'  # Your database name
 
@@ -1638,7 +1658,7 @@ def delete_transaction(transaction_id):
     conn.close()
     return redirect(url_for('transactions'))
 
-@app.route('/get_response', methods=['POST'])
+@app.route("/get_response", methods=['POST'])
 def get_response():
     logging.debug("Received POST to /get_response")
     data = request.get_json()
@@ -1649,21 +1669,10 @@ def get_response():
         return jsonify({'error': 'Bad Request, message missing in JSON'}), 400
 
     user_message = data['message']
-    logging.debug(f"Sending message to Rasa: {user_message}")
+    logging.debug(f"Received user message: {user_message}")
+    response = chatbot.get_response(user_message)
 
-    try:
-        response = requests.post('http://127.0.0.1:5005/webhooks/rest/webhook', json={"sender": "user", "message": user_message})
-        response.raise_for_status()
-        rasa_response = response.json()
-        if rasa_response and isinstance(rasa_response, list) and 'text' in rasa_response[0]:
-            logging.debug(f"Received response from Rasa: {rasa_response}")
-            return jsonify({'message': rasa_response[0]['text']})
-        else:
-            logging.error("Unexpected response format from Rasa")
-            return jsonify({'error': 'Unexpected response format from Rasa'}), 500
-    except requests.RequestException as e:
-        logging.error(f"Failed to send message to Rasa: {e}")
-        return jsonify({'error': str(e)}), 500
+    return jsonify({'message': str(response)})
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)

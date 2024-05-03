@@ -1,32 +1,52 @@
-# Use an official Python runtime as a parent image (multi-stage build)
-FROM python:3.10-slim as builder
+# Use an official Python runtime as a parent image
+FROM python:3.8-slim
 
-# Set the working directory in the container
-WORKDIR /usr/src/app
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    unixodbc-dev \
+    libffi-dev \
+    libpq-dev \
+    git \
+    nano \
+    curl \
+    apt-transport-https \
+    gnupg \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy the current directory contents into the container at /usr/src/app
+# Microsoft SQL Server ODBC Driver and prerequisites
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+    && curl https://packages.microsoft.com/config/debian/10/prod.list > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y msodbcsql17 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory in the container to /app
+WORKDIR /app
+
+# Copy the requirements.txt file into the container at /app
+COPY requirements.txt ./
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt \
+    && pip install spacy \
+    && python -m nltk.downloader stopwords \
+    && python -m spacy download en_core_web_sm
+
+# Apply the manual patch for DATA_DIRECTORY in chatterbot_corpus
+RUN echo "DATA_DIRECTORY = '/usr/local/lib/python3.8/site-packages/chatterbot_corpus/data'" >> /usr/local/lib/python3.8/site-packages/chatterbot_corpus/corpus.py
+
+# Copy the rest of the application into the container at /app
 COPY . .
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --user -r requirements.txt
-
-# Use a second stage to create a slim final image
-FROM python:3.10-slim
-
-# Copy only the necessary from builder
-COPY --from=builder /root/.local /root/.local
-
-# Set the working directory in the container
-WORKDIR /usr/src/app
-
-# Copy only the application code needed for production
-COPY . .
-
-# Make port 80 available to the world outside this container
-EXPOSE 80
+# Make port 8000 available to the world outside this container
+EXPOSE 8000
 
 # Define environment variable
-ENV PATH=/root/.local:$PATH
+ENV NAME World
 
-# Run the application
-CMD ["gunicorn", "--config", "gunicorn_config.py", "app:app"]
+# Run app.py when the container launches
+CMD ["python", "app.py"]
