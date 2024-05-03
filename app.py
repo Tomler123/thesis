@@ -62,15 +62,17 @@ for conversation in data['conversations']:
 app = Flask(__name__)
 CORS(app)
 logging.basicConfig(level=logging.DEBUG)
+
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_USERNAME'] = 'walletbuddyai@gmail.com'
+app.config['MAIL_PASSWORD'] = 'tmgq owra tjts hkfx'
+app.config['MAIL_DEFAULT_SENDER'] = 'walletbuddyai@gmail.com'
+
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'a_default_secret_key')
-app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
-app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 465))
-app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'walletbuddyai@gmail.com')
-app.config['MAIL_PASSWORD'] = os.getenv('MAIL_USERNAME', 'tmgq owra tjts hkfx')
-app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'False').lower() in ('true', '1', 't')
-app.config['MAIL_USE_SSL'] = os.getenv('MAIL_USE_SSL', 'True').lower() in ('true', '1', 't')
-app.config['WTF_CSRF_ENABLED'] = True
-mail = Mail(app)
+
+app.config['WTF_CSRF_ENABLED'] = os.getenv('WTF_CSRF_ENABLED')
+
+
 serializer = Serializer(app.config['SECRET_KEY'])
 
 # Configure Database URI: 
@@ -149,15 +151,13 @@ class SignUpForm(FlaskForm):
 
 pending_users = {}
 
+
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    # app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
-    app.config['MAIL_PORT'] = int(os.getenv('MAIL_SIGNUP_PORT', 587))
-    # app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'walletbuddyai@gmail.com')
-    # app.config['MAIL_PASSWORD'] = os.getenv('MAIL_USERNAME', 'tmgq owra tjts hkfx')
-    app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS_SIGNUP', 'True').lower() in ['true', '1', 't']
-    app.config['MAIL_USE_SSL'] = os.getenv('MAIL_USE_SSL_SIGNUP', 'False').lower() in ['true', '1', 't']
-    app.config['MAIL_DEFAULT_SENDER'] = 'walletbuddyai@gmail.com'
+  # Update with your email address
+    app.config['MAIL_PORT'] = 587
+    app.config['MAIL_USE_TLS'] = True
+    app.config['MAIL_USE_SSL'] = False
     mail = Mail(app)
     
     form = SignUpForm()
@@ -191,16 +191,6 @@ def signup():
             'profile_image': profile_image,
             'verification_token': verification_token
         }
-
-        # If email does not exist, proceed with registration
-        # cursor.execute("""
-        #     INSERT INTO users (Name, LastName, Email, Password, Role, ProfileImage)
-        #     VALUES (?, ?, ?, ?, ?, ?)
-        # """, name, last_name, email, hashed_password, role, profile_image)
-
-        # Fetch the new user's ID
-        # cursor.execute("SELECT UserID FROM users WHERE Email = ?", email)
-        # user_id = cursor.fetchone()[0]
         
         conn.commit()
         cursor.close()
@@ -208,8 +198,6 @@ def signup():
 
         verification_link = url_for('verify_email', token=verification_token, _external=True)
         
-
-        # session['user_id'] = user_id
         msg = Message('Verify Your Email', recipients=[email])
         msg.body = f'Click the following link to verify your email: {verification_link}'
         mail.send(msg)
@@ -305,13 +293,13 @@ class ForgotPasswordForm(FlaskForm):
 
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
-    app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+    app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
+    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_USERNAME')
     app.config['MAIL_PORT'] = 587
-    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'walletbuddyai@gmail.com')
-    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_USERNAME', 'tmgq owra tjts hkfx')
     app.config['MAIL_USE_TLS'] = True
     app.config['MAIL_USE_SSL'] = False
-    app.config['MAIL_DEFAULT_SENDER'] = 'walletbuddyai@gmail.com'  # Update with your email address
+    app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')  # Update with your email address
     mail = Mail(app)
 
     form = ForgotPasswordForm()
@@ -1436,6 +1424,10 @@ class ContactUsForm(FlaskForm):
 
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
+    app.config['MAIL_PORT'] = 465
+    app.config['MAIL_USE_TLS'] = False
+    app.config['MAIL_USE_SSL'] = True
+    mail = Mail(app)
     if 'user_id' not in session:
         flash('Please log in to access recommendations.')
         return redirect(url_for('login'))
@@ -1675,6 +1667,6 @@ def get_response():
     return jsonify({'message': str(response)})
 
 if __name__ == '__main__':
-    # app.run(debug=True, host='0.0.0.0', port=8000)
-    port = int(os.environ.get("PORT", 8000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(debug=True, host='0.0.0.0', port=8000)
+    # port = int(os.environ.get("PORT", 8000))
+    # app.run(host='0.0.0.0', port=port)
