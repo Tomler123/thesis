@@ -23,7 +23,7 @@
                     {{ saving.Name|truncate(15, true, '...') }}
                 </td>
                 <td>
-                    {{ saving.Cost }}
+                    Ft {{ saving.Cost }}
                 </td>
                 <td>
                     <button onclick="editSaving({{ saving.ID }})" class="button-edit">Edit</button>
@@ -35,7 +35,7 @@
                 {% endfor %}
         </table>
         <br><br>
-        <p><strong>Total Savings: ${{ total_savings }}</strong></p>
+        <p><strong>Total Savings: Ft {{ total_savings }}</strong></p>
     </div>
     {% if savings_pie_chart_img %}
     <div class="section-chart">
@@ -49,13 +49,13 @@
 function deleteSaving(outcomeId) {
     if (confirm("Are you sure you want to delete this outcome?")) {
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content'); // Fetch CSRF token from meta tag
-        fetch(`/delete_outcome/${outcomeId}`, {
+        fetch(`/delete_outcome/Ft {outcomeId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'X-CSRFToken': csrfToken // Include CSRF token in the request headers
             },
-            body: `outcome_id=${outcomeId}`
+            body: `outcome_id=Ft {outcomeId}`
         })
         .then(() => {
             // Reload the page to reflect changes

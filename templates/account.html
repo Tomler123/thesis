@@ -12,8 +12,8 @@
             <!-- Display user's current profile image -->
             <img src="{{ url_for('static', filename='icons/' + user.ProfileImage) }}" alt="Profile Icon">
         </div>
-        <h2>Welcome, {{ user.Name }}!</h2>
-        <p>Email: {{ user.Email }}</p>
+        <h2 style="max-width: fit-content;">Welcome, {{ user.Name }}!</h2>
+        <p style="max-width: fit-content;">Email: {{ user.Email }}</p>
         <!-- Button to open icon selection popup -->
     </div>
 

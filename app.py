@@ -141,7 +141,7 @@ class SignUpForm(FlaskForm):
     password = PasswordField('Password', validators=[
         DataRequired(),
         Length(min=8, max=30),
-        Regexp(r'(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]', message='Password must contain at least one uppercase letter, one number, and one symbol.')
+        Regexp(r'(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[,./\'\[\]!@#$%^&*(){}<>?:"])[A-Za-z\d,./\'\[\]!@#$%^&*(){}<>?:"]+', message='Password must contain at least one uppercase letter, one number, and one symbol.')
     ])
     confirm_password = PasswordField('Confirm Password', validators=[
         DataRequired(),
@@ -155,6 +155,9 @@ pending_users = {}
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
   # Update with your email address
+    # app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+    # app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'walletbuddyai@gmail.com')
+    # app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'tmgq owra tjts hkfx')
     app.config['MAIL_PORT'] = 587
     app.config['MAIL_USE_TLS'] = True
     app.config['MAIL_USE_SSL'] = False
@@ -325,7 +328,7 @@ class ResetPasswordForm(FlaskForm):
     password = PasswordField('New Password', validators=[
         DataRequired(),
         Length(min=8, max=30),
-        Regexp(r'(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]', message='Password must contain at least one uppercase letter, one number, and one symbol.')
+        Regexp(r'(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[,./\'\[\]!@#$%^&*(){}<>?:"])[A-Za-z\d,./\'\[\]!@#$%^&*(){}<>?:"]+', message='Password must contain at least one uppercase letter, one number, and one symbol.')
     ])
     confirm_password = PasswordField('Confirm New Password', validators=[
         DataRequired(),
@@ -1104,129 +1107,6 @@ def delete_loan(loan_id):
 
 ################################################################
 # Subscriptions
-@app.route('/subscriptions')
-def subscriptions():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
-    user_id = session['user_id']
-    conn = pyodbc.connect(conn_str)
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM subscriptions WHERE UserID = ?", user_id)
-    subscriptions = cursor.fetchall()
-
-    cursor.close()
-    conn.close()
-
-    return render_template('subscriptions.html', subscriptions=subscriptions)
-
-class SubscriptionForm(FlaskForm):
-    name = StringField('Service Name', validators=[InputRequired()])
-    cost = DecimalField('Cost (Monthly)', validators=[InputRequired(), NumberRange(min=0)])
-    date = DecimalField('Date (Day of month)', validators=[InputRequired(), NumberRange(min=1, max=31)])
-
-@app.route('/add_subscription', methods=['GET', 'POST'])
-def add_subscription():
-    if 'user_id' not in session:
-        flash('Please log in to add a subscription.')
-        return redirect(url_for('login'))
-
-    form = SubscriptionForm()
-
-    if form.validate_on_submit():
-        name = form.name.data
-        cost = form.cost.data
-        date = form.date.data
-        user_id = session['user_id']
-
-        current_year = datetime.date.today().year
-        current_month = datetime.date.today().month
-        print(current_year)
-        print(current_month)
-        
-        # Add subscription to database
-        query = """INSERT INTO subscriptions (UserID, Name, Cost, Date)
-                   VALUES (?, ?, ?, ?)"""
-        with pyodbc.connect(conn_str) as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(query, (user_id, name, cost, date))
-                conn.commit()
-                
-                # Insert a row into fulfilled_subscriptions
-                subscription_id = cursor.execute("SELECT @@IDENTITY").fetchval()
-                insert_fulfilled_query = """INSERT INTO fulfilled_subscriptions (SubscriptionID, Fulfilled, Year, Month)
-                                            VALUES (?, ?, ?, ?)"""
-                cursor.execute(insert_fulfilled_query, (subscription_id, 0, current_year, current_month))
-                conn.commit()
-
-        flash('Subscription added successfully!')
-        return redirect(url_for('subscriptions'))  # Redirect to the subscriptions overview page
-
-    return render_template('add_subscription.html', form=form)
-
-class EditSubscriptionForm(FlaskForm):
-    name = StringField('Name', validators=[DataRequired()])
-    cost = DecimalField('Cost', validators=[DataRequired()])
-    submit = SubmitField('Update')
-
-@app.route('/edit_subscription/<int:subscription_id>', methods=['GET', 'POST'])
-def edit_subscription(subscription_id):
-    if not session.get('user_id'):
-        flash('Please log in to edit records.')
-        return redirect(url_for('login'))
-
-    conn = pyodbc.connect(conn_str)
-    cursor = conn.cursor()
-
-    form = EditSubscriptionForm()
-
-    try:
-        if request.method == 'POST' and form.validate_on_submit():
-            name = form.name.data
-            cost = form.cost.data
-            
-            update_query = """UPDATE subscriptions SET Name=?, Cost=? WHERE SubscriptionID=?"""
-            cursor.execute(update_query, (name, cost, subscription_id))
-            conn.commit()
-            flash('Subscription updated successfully!')
-            return redirect(url_for('subscriptions'))
-        else:
-            cursor.execute("SELECT * FROM subscriptions WHERE SubscriptionID=?", (subscription_id,))
-            subscription = cursor.fetchone()
-            if subscription:
-                form.name.data = subscription.Name
-                form.cost.data = subscription.Cost
-                return render_template('edit_subscription.html', form=form)
-            else:
-                flash('Subscription not found.')
-                return redirect(url_for('subscriptions'))
-    except Exception as e:
-        flash(f'An error occurred: {e}')
-    finally:
-        cursor.close()
-        conn.close()
-
-    return render_template('edit_subscription.html', form=form)
-
-@app.route('/delete_subscription/<int:subscription_id>', methods=['POST'])
-def delete_subscription(subscription_id):
-    if 'user_id' not in session:
-        return jsonify({'message': 'Please log in to delete subscriptions.'}), 401
-    
-    try:
-        user_id = session['user_id']
-        # Ensure that the user deleting the subscription is the owner
-        conn = pyodbc.connect(conn_str)
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM subscriptions WHERE SubscriptionID = ? AND UserID = ?", (subscription_id, user_id))
-        conn.commit()
-        cursor.close()
-        conn.close()
-        flash('Subscription deleted successfully!')
-        return redirect(url_for('subscriptions'))
-    except Exception as e:
-        return jsonify({'message': 'An error occurred while deleting the subscription.'}), 500
 
 class RecommendationsForm(FlaskForm):
     savings_goal = IntegerField('Enter the percentage of your income that you want to save', default=0, validators=[NumberRange(min=0, max=100, message="Value must be between 0 and 100.")])

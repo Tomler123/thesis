@@ -21,7 +21,7 @@
                 {% for income in incomes %}
                 <tr>
                     <td>{{ income.Name }}</td>
-                    <td>{{ income.Cost }}</td>
+                    <td>Ft {{ income.Cost }}</td>
                 </tr>
                 {% endfor %}
             </table>
@@ -46,7 +46,7 @@
                 {% for expense in expenses %}
                 <tr>
                     <td>{{ expense.Name }}</td>
-                    <td>{{ expense.Cost }}</td>
+                    <td>Ft {{ expense.Cost }}</td>
                 </tr>
                 {% endfor %}
             </table>
@@ -71,7 +71,7 @@
                 {% for subscription in subscriptions %}
                 <tr>
                     <td>{{ subscription.Name }}</td>
-                    <td>{{ subscription.Cost }}</td>
+                    <td>Ft {{ subscription.Cost }}</td>
                 </tr>
                 {% endfor %}
             </table>
@@ -96,7 +96,7 @@
                 {% for saving in savings %}
                 <tr>
                     <td>{{ saving.Name }}</td>
-                    <td>{{ saving.Cost }}</td>
+                    <td>Ft {{ saving.Cost }}</td>
                 </tr>
                 {% endfor %}
             </table>

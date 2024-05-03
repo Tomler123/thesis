@@ -26,6 +26,7 @@
     border-radius: 4px;
     cursor: pointer;
     font-size: 16px;
+    max-width: 80%;
 }
 
 .button:hover {
