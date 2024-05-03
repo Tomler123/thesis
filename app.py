@@ -151,13 +151,13 @@ pending_users = {}
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
-    app.config['MAIL_PORT'] = 587
-    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'walletbuddyai@gmail.com')
-    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_USERNAME', 'tmgq owra tjts hkfx')
-    app.config['MAIL_USE_TLS'] = True
-    app.config['MAIL_USE_SSL'] = False
-    app.config['MAIL_DEFAULT_SENDER'] = 'walletbuddyai@gmail.com'  # Update with your email address
+    # app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+    app.config['MAIL_PORT'] = int(os.getenv('MAIL_SIGNUP_PORT', 587))
+    # app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'walletbuddyai@gmail.com')
+    # app.config['MAIL_PASSWORD'] = os.getenv('MAIL_USERNAME', 'tmgq owra tjts hkfx')
+    app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS_SIGNUP', 'True').lower() in ['true', '1', 't']
+    app.config['MAIL_USE_SSL'] = os.getenv('MAIL_USE_SSL_SIGNUP', 'False').lower() in ['true', '1', 't']
+    app.config['MAIL_DEFAULT_SENDER'] = 'walletbuddyai@gmail.com'
     mail = Mail(app)
     
     form = SignUpForm()
