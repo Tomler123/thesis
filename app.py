@@ -155,9 +155,6 @@ pending_users = {}
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
   # Update with your email address
-    # app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
-    # app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'walletbuddyai@gmail.com')
-    # app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'tmgq owra tjts hkfx')
     app.config['MAIL_PORT'] = 587
     app.config['MAIL_USE_TLS'] = True
     app.config['MAIL_USE_SSL'] = False
@@ -242,12 +239,6 @@ def verify_email(token):
 
     flash('Invalid verification token. Please try again or sign up.', 'error')
     return redirect(url_for('signup'))
-
-# Helper function to send email
-def send_email(recipient, subject, body):
-    msg = Message(subject, recipients=[recipient])
-    msg.body = body
-    mail.send(msg)
 
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
