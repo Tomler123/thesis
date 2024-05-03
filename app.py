@@ -63,10 +63,10 @@ app = Flask(__name__)
 CORS(app)
 logging.basicConfig(level=logging.DEBUG)
 
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_USERNAME'] = 'walletbuddyai@gmail.com'
-app.config['MAIL_PASSWORD'] = 'tmgq owra tjts hkfx'
-app.config['MAIL_DEFAULT_SENDER'] = 'walletbuddyai@gmail.com'
+app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
 
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'a_default_secret_key')
 
@@ -77,10 +77,10 @@ serializer = Serializer(app.config['SECRET_KEY'])
 
 # Configure Database URI: 
 driver= '{ODBC Driver 17 for SQL Server}'
-server = os.getenv('SQL_SERVER', 'walletbuddyai.database.windows.net')
-database = os.getenv('SQL_DATABASE', 'walletbuddyai')
-username = os.getenv('SQL_USER', 'toma_sulava_sulaberidze')
-password = os.getenv('SQL_PASSWORD', 'Tomler123,./')
+server = os.getenv('SQL_SERVER')
+database = os.getenv('SQL_DATABASE')
+username = os.getenv('SQL_USER')
+password = os.getenv('SQL_PASSWORD')
 
 
 conn_str = f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}'
@@ -293,13 +293,9 @@ class ForgotPasswordForm(FlaskForm):
 
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
-    app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
-    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
-    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_USERNAME')
     app.config['MAIL_PORT'] = 587
     app.config['MAIL_USE_TLS'] = True
     app.config['MAIL_USE_SSL'] = False
-    app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')  # Update with your email address
     mail = Mail(app)
 
     form = ForgotPasswordForm()
@@ -1427,6 +1423,11 @@ def contact():
     app.config['MAIL_PORT'] = 465
     app.config['MAIL_USE_TLS'] = False
     app.config['MAIL_USE_SSL'] = True
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+    app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
+    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+    app.config['WTF_CSRF_ENABLED'] = os.getenv('WTF_CSRF_ENABLED')
     mail = Mail(app)
     if 'user_id' not in session:
         flash('Please log in to access recommendations.')
