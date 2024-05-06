@@ -9,6 +9,8 @@
     <div class="section-content">
         <h1>Transactions</h1>
         <a style="background-color: rgb(1, 40, 63); padding: 1em; border-radius: 15%; color: white;" href="{{ url_for('add_transaction') }}" class="btn btn-primary">Add Transaction</a>
+        <button style="background-color: green; padding: 1em; border-radius: 15%; color: white; margin-left: 10px; font-size: 1em;" onclick="predictNextMonth()" class="btn btn-success">Predict Next Month</button>
+        <div id="predictionResult" style="margin-top: 20px;"></div>
         <br><br>
         <table>
             <tr>
@@ -21,7 +23,7 @@
             {% for transaction in transactions %}
             <tr>
                 <td>{{ transaction.Date.strftime('%Y-%m-%d') }}</td>
-                <td>${{ "%.2f"|format(transaction.Amount) }}</td>
+                <td>Ft {{ "%.2f"|format(transaction.Amount) }}</td>
                 <td>
                     {% if transaction.Category %}
                         {{ transaction.Category }}
@@ -58,7 +60,7 @@
     
     function removeTransaction(transactionId) {
         if (confirm('Are you sure you want to delete this transaction?')) {
-            fetch(`/delete_transaction/${transactionId}`, {
+            fetch(`/delete_transaction/Ft {transactionId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -72,6 +74,32 @@
                 }
             });
         }
+    }
+    function predictNextMonth() {
+        document.getElementById('predictionResult').innerHTML = 'Calculating prediction...';
+        fetch('/predict_next_month', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const prediction = parseFloat(data.prediction).toFixed(2);
+                const totalIncome = parseFloat(data.total_income).toFixed(2);
+                let message = `Prediction for next month: $${prediction}`;
+                
+                if (prediction < 0) {
+                    message = "According to the AI calculations, in next month you will spend a negative amount of money. This can be caused by insufficient data, which decreases calculation results, or you have been spending less and less each month, which means your spending habits are really good.";
+                } else if(prediction > totalIncome){
+                    message += `. If you continue spending like this, you will spend more than your total income, which is Ft ${totalIncome}.`;
+                }
+                document.getElementById('predictionResult').innerHTML = message;
+                
+            } else {
+                document.getElementById('predictionResult').innerHTML = 'Error: ' + data.message;
+            }
+        });
     }
 </script>    
 {% endblock %}

@@ -33,8 +33,10 @@ from chatterbot import ChatBot
 from chatterbot.trainers import ListTrainer
 import spacy
 from dotenv import load_dotenv
-# from rasa.core.agent import Agent
-# from rasa.core.interpreter import RasaNLUInterpreter
+import transaction_algo
+from dateutil.relativedelta import relativedelta
+import numpy as np
+
 load_dotenv()
 spacy.load('en_core_web_sm')
 chatbot = ChatBot('WebsiteNavigationBot',
@@ -300,6 +302,17 @@ def forgot_password():
         # Generate a token with a 1-hour expiration time
         token = serializer.dumps(email)
 
+        # checking if the user is registered
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT Email from users WHERE Email = ?", email)
+        user = cursor.fetchone()
+        
+        if user is None:
+            flash('No account with that email address exists.', 'error')
+            return render_template('forgot_password.html', form=form)
+        
         # Send email with password reset link
         reset_link = url_for('reset_password', token=token, _external=True)
         msg = Message('Password Reset Request', recipients=[email])
@@ -343,7 +356,6 @@ def reset_password():
         cursor.close()
         conn.close()
         
-        print("New Password:", new_password)
         flash('Your password has been reset successfully. You can now log in with your new password.')
         session.pop('reset_email', None)
         return redirect(url_for('login'))  # Redirect to the login page after resetting the password
@@ -1324,7 +1336,6 @@ def contact():
             mail.send(msg)
             flash('Your message has been sent successfully!', 'success')
         except Exception as e:
-            print("Error while sending message: ", e)
             flash(f'Error sending email: {str(e)}', 'error')
         return redirect(url_for('contact'))
     return render_template('contact_us.html', form=form)
@@ -1521,6 +1532,70 @@ def delete_transaction(transaction_id):
     cursor.close()
     conn.close()
     return redirect(url_for('transactions'))
+
+@app.route('/predict_next_month', methods=['GET'])
+def predict_next_month():
+    if 'user_id' not in session:
+        return json.dumps({'success': False, 'message': 'User not logged in'}), 401
+
+    user_id = session['user_id']
+    conn = pyodbc.connect(conn_str)
+    cursor = conn.cursor()
+
+    # Get the earliest transaction date
+    cursor.execute("SELECT MIN(Date) FROM transactions WHERE UserID = ?", user_id)
+    min_date_row = cursor.fetchone()
+    if not min_date_row or not min_date_row[0]:
+        return json.dumps({'success': False, 'message': 'No transactions found.'}), 404
+    
+    cursor.execute("""
+            SELECT SUM(Cost) AS total_income FROM outcomes 
+            WHERE UserID = ? AND Type = 'Income'
+            """, (user_id,))
+    result = cursor.fetchone()
+    total_income = result.total_income if result.total_income else 0
+    
+    # Calculate the number of months since the earliest transaction
+    earliest_date = min_date_row[0]
+    months_count = (datetime.date.today().year - earliest_date.year) * 12 + (datetime.date.today().month - earliest_date.month + 1)
+    
+    # Prepare month labels and sums
+    months = list(map(str, range(1, months_count + 1)))
+    sums = [0] * months_count  # Default sums to zero
+
+    # Iterate over each month since the earliest transaction and calculate sums
+    for i in range(months_count):
+        month = (earliest_date.month - 1 + i) % 12 + 1
+        year = earliest_date.year + ((earliest_date.month - 1 + i) // 12)
+        cursor.execute("SELECT SUM(Amount) FROM transactions WHERE UserID = ? AND YEAR(Date) = ? AND MONTH(Date) = ?", (user_id, year, month))
+        sum_result = cursor.fetchone()
+        if sum_result and sum_result[0] is not None:
+            sums[i] = float(sum_result[0])
+    
+    cursor.close()
+    conn.close()
+
+    # Convert months and sums to space-separated strings
+    month_str = ' '.join(map(str, months))
+    sum_str = ' '.join(map(lambda x: f"{x:.1f}", sums))  # Format floats to one decimal place
+
+    # Call your prediction algorithm
+    try:
+        # Assuming your function can take lists of months and their corresponding sums
+        prediction = transaction_algo.main(month_str, sum_str)
+
+        return json.dumps({
+            'success': True, 
+            'prediction': float(prediction), 
+            'total_income': total_income
+        }), 200
+    except Exception as e:
+        return json.dumps({'success': False, 'message': str(e)}), 500
+
+
+
+
+
 
 @app.route("/get_response", methods=['POST'])
 def get_response():
