@@ -1,14 +1,11 @@
 from flask import Flask, jsonify, redirect, request, render_template, url_for, session, flash, session
 from flask_cors import CORS
 import matplotlib
-import requests
 matplotlib.use('Agg')  # Set the backend before importing pyplot
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
-# from flask_sqlalchemy import SQLAlchemy
 import io
-from io import BytesIO
 import base64
 import pyodbc
 import urllib
@@ -18,15 +15,12 @@ from wtforms import StringField, PasswordField, SubmitField, validators, SelectF
 from wtforms.validators import DataRequired, Email, Length, EqualTo, Regexp, NumberRange, InputRequired
 from flask_mail import Mail, Message
 import math
-# import algo
 from flask_wtf.csrf import CSRFProtect
 import json
 import datetime
-import threading
 import os
 from itsdangerous import URLSafeTimedSerializer as Serializer
 import secrets
-import queue
 import logging
 import yaml
 from chatterbot import ChatBot
@@ -34,17 +28,26 @@ from chatterbot.trainers import ListTrainer
 import spacy
 from dotenv import load_dotenv
 import transaction_algo
-from dateutil.relativedelta import relativedelta
-import numpy as np
+# import threading
+# import queue
+# import requests
+# from io import BytesIO
+# import algo
+# from flask_sqlalchemy import SQLAlchemy
 
 load_dotenv()
 spacy.load('en_core_web_sm')
-chatbot = ChatBot('WebsiteNavigationBot',
-                  storage_adapter='chatterbot.storage.SQLStorageAdapter',
-                  logic_adapters=[
-                      {'import_path': 'chatterbot.logic.BestMatch'}
-                  ])
-
+chatbot = ChatBot(
+    'WebsiteNavigationBot',
+    logic_adapters=[
+        {
+            'import_path': 'chatterbot.logic.BestMatch',
+            'default_response': 'I am not sure how to respond to that.',
+            'maximum_similarity_threshold': 0.90
+        }
+    ],
+    storage_adapter='chatterbot.storage.SQLStorageAdapter',
+)
 # Load training data
 with open("./data/website_navigation.yml", 'r', encoding='utf-8') as f:
     data = yaml.safe_load(f)
@@ -53,14 +56,7 @@ with open("./data/website_navigation.yml", 'r', encoding='utf-8') as f:
 trainer = ListTrainer(chatbot)
 for conversation in data['conversations']:
     trainer.train(conversation)
-# server = 'TOMLER'  # If a local instance, typically 'localhost\\SQLEXPRESS'
-# database = 'thesis'  # Your database name
 
-# For Windows Authentication
-# conn_str = f'DRIVER={{SQL Server}};SERVER={server};DATABASE={database};TRUSTED_CONNECTION=yes'
-
-# Tomleras database route
-# C:\Program Files (x86)\Microsoft SQL Server Management Studio 19
 app = Flask(__name__)
 CORS(app)
 logging.basicConfig(level=logging.DEBUG)
@@ -152,7 +148,6 @@ class SignUpForm(FlaskForm):
     submit = SubmitField('Sign Up')
 
 pending_users = {}
-
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -1443,6 +1438,32 @@ def get_outcomes_status_by_day():
 
     return jsonify(day_fulfillment_status)
 
+@app.route('/reset_finances', methods=['POST'])
+def reset_finances():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+
+    try:
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
+
+        # Update the `Fulfilled` status for "Subscription" and "Expense"
+        cursor.execute("""
+            UPDATE outcomes
+            SET Fulfilled = 0
+            WHERE UserID = ? AND Type IN ('Subscription', 'Expense', 'Income')
+            """, (user_id,))
+
+        conn.commit()
+        return jsonify({'success': True, 'message': 'All subscriptions and expenses have been reset.'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
 @app.route('/transactions')
 def transactions():
     if 'user_id' not in session:
@@ -1592,11 +1613,6 @@ def predict_next_month():
     except Exception as e:
         return json.dumps({'success': False, 'message': str(e)}), 500
 
-
-
-
-
-
 @app.route("/get_response", methods=['POST'])
 def get_response():
     logging.debug("Received POST to /get_response")
@@ -1610,6 +1626,7 @@ def get_response():
     user_message = data['message']
     logging.debug(f"Received user message: {user_message}")
     response = chatbot.get_response(user_message)
+    logging.debug(f"Chatbot response: {response.text}")
 
     return jsonify({'message': str(response)})
 

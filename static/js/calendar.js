@@ -89,12 +89,18 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         const wrap = document.querySelector('.wrap');
         const highlightedDates = JSON.parse(wrap.getAttribute('data-outcome-dates'));
-        renderCalendar(highlightedDates);
+
+        fetchSubscriptionStatusByDay().then(statusByDay => {
+            renderCalendar(highlightedDates, statusByDay);
+        });
     });
 } else {
     const wrap = document.querySelector('.wrap');
     const highlightedDates = JSON.parse(wrap.getAttribute('data-outcome-dates'));
-    renderCalendar(highlightedDates);
+
+    fetchSubscriptionStatusByDay().then(statusByDay => {
+        renderCalendar(highlightedDates, statusByDay);
+    });
 }
 renderCalendar(highlightedDates);
 
@@ -106,6 +112,9 @@ document.addEventListener('click', function(event) {
     if (!clickInsideDetails && !clickOnHighlightedDay) {
       detailsElement.style.display = 'none';
     }
+    fetchSubscriptionStatusByDay().then(statusByDay => {
+        renderCalendar(highlightedDates, statusByDay);
+    });
 });
 
 prevNextIcon.forEach(icon => { // getting prev and next icons
@@ -122,12 +131,10 @@ prevNextIcon.forEach(icon => { // getting prev and next icons
         fetchSubscriptionStatusByDay().then(statusByDay => {
             renderCalendar(highlightedDates, statusByDay);
         });
-        // renderCalendar(highlightedDates); // Call renderCalendar with highlightedDates
+
     });
 });
 
-// Mock function to simulate fetching outcome data
-// Replace this with actual fetching logic from your server
 function getSubscriptions(day) {
     return fetch('/get_outcomes', {
         method: 'POST',
@@ -190,5 +197,37 @@ function fetchSubscriptionStatusByDay() {
 document.addEventListener('DOMContentLoaded', () => {
     const wrap = document.querySelector('.wrap');
     highlightedDates = JSON.parse(wrap.getAttribute('data-outcome-dates') || '[]');
-    renderCalendar(highlightedDates);
+
+    fetchSubscriptionStatusByDay().then(statusByDay => {
+        renderCalendar(highlightedDates, statusByDay);
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const resetButton = document.getElementById('reset-finances-btn');
+    
+    resetButton.addEventListener('click', function() {
+        if (confirm('Are you sure you want to reset the fulfillment status for finances?')) {
+            fetch('/reset_finances', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    fetchSubscriptionStatusByDay().then(statusByDay => {
+                        renderCalendar(highlightedDates, statusByDay);
+                    });
+                } else {
+                    console.error('Failed to reset finances: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error resetting finances: ' + error);
+            });
+        }
+    });
 });

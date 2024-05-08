@@ -10,7 +10,9 @@
 <script src="{{url_for('static', filename='js/calendar.js')}}" defer></script>
 {% endblock %}
 {% block content %}
+<button style="background-color: rgb(8, 0, 53); padding: 1em; border-radius: 15%; color: white; margin-left: 10px; font-size: 1em;" type="button" id="reset-finances-btn" class="button">Reset Finance Status</button>
 <div class="calendar-layout">
+
     <div class="wrap" data-outcome-dates="{{ all_dates }}">
         <div class="head">
         <p class="current-date"></p>
