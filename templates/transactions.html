@@ -87,7 +87,7 @@
             if (data.success) {
                 const prediction = parseFloat(data.prediction).toFixed(2);
                 const totalIncome = parseFloat(data.total_income).toFixed(2);
-                let message = `Prediction for next month: $${prediction}`;
+                let message = `Prediction for next month: Ft ${prediction}`;
                 
                 if (prediction < 0) {
                     message = "According to the AI calculations, in next month you will spend a negative amount of money. This can be caused by insufficient data, which decreases calculation results, or you have been spending less and less each month, which means your spending habits are really good.";
