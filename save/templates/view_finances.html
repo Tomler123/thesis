@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}View Finances{% endblock %}
+{% block links %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/view_finances.css') }}">
+{% endblock %}
+{% block content %}
+    <h1>Financial Overview</h1>
+    
+    <section class="section-container">
+        <div class="graph-container">
+            <!-- Placeholder for graph; you'll replace this with your actual graph -->
+            <img src="data:image/png;base64,{{ incomes_graph }}" alt="Incomes Graph">
+        </div>
+        <div class="table-container">
+            <h2>Incomes</h2>
+            <table>
+                <tr>
+                    <th>Name</th>
+                    <th>Amount</th>
+                </tr>
+                {% for income in incomes %}
+                <tr>
+                    <td>{{ income.Name }}</td>
+                    <td>Ft {{ income.Cost }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            <br>
+        </div>
+    </section>
+    <br>
+    <hr>
+    <br>
+    <section class="section-container">
+        <div class="graph-container">
+            <!-- Placeholder for graph; you'll replace this with your actual graph -->
+            <img src="data:image/png;base64,{{ expenses_graph }}" alt="Expenses Graph">
+        </div>
+        <div class="table-container">
+            <h2>Expenses</h2>
+            <table>
+                <tr>
+                    <th>Name</th>
+                    <th>Amount</th>
+                </tr>
+                {% for expense in expenses %}
+                <tr>
+                    <td>{{ expense.Name }}</td>
+                    <td>Ft {{ expense.Cost }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            <br>
+        </div>
+    </section>
+    <br>
+    <hr>
+    <br>
+    <section class="section-container">
+        <div class="graph-container">
+            <!-- Placeholder for graph; you'll replace this with your actual graph -->
+            <img src="data:image/png;base64,{{ subscriptions_graph }}" alt="Subscriptions Graph">
+        </div>
+        <div class="table-container">
+            <h2>Subscriptions</h2>
+            <table>
+                <tr>
+                    <th>Name</th>
+                    <th>Amount</th>
+                </tr>
+                {% for subscription in subscriptions %}
+                <tr>
+                    <td>{{ subscription.Name }}</td>
+                    <td>Ft {{ subscription.Cost }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            <br>
+        </div>
+    </section>
+    <br>
+    <hr>
+    <br>
+    <section class="section-container">
+        <div class="graph-container">
+            <!-- Placeholder for graph; you'll replace this with your actual graph -->
+            <img src="data:image/png;base64,{{ savings_graph }}" alt="Savings Graph">
+        </div>
+        <div class="table-container">
+            <h2>Savings</h2>
+            <table>
+                <tr>
+                    <th>Name</th>
+                    <th>Amount</th>
+                </tr>
+                {% for saving in savings %}
+                <tr>
+                    <td>{{ saving.Name }}</td>
+                    <td>Ft {{ saving.Cost }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            <br>
+        </div>
+    </section>
+    
+{% block script %}    
+{% endblock %}
+{% endblock %}

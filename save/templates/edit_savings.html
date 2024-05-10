@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/add_subscription.css') }}">
+{% endblock %}
+{% block content %}
+    <h1>Edit Saving</h1>
+    <form method="post">
+        {{ form.csrf_token }}
+        <div>
+            {{ form.name.label }}<br>
+            {{ form.name(class="form-control") }}<br>
+            {% for error in form.name.errors %}
+                <span style="color: red;">{{ error }}</span><br>
+            {% endfor %}
+        </div>
+        <div>
+            {{ form.cost.label }}<br>
+            {{ form.cost(class="form-control") }}<br>
+            {% for error in form.cost.errors %}
+                <span style="color: red;">{{ error }}</span><br>
+            {% endfor %}
+        </div>
+        
+        
+        <button type="submit" class="btn btn-primary">Update Saving</button>
+    </form>
+{% endblock %}

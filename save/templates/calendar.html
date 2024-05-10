@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Calendar{% endblock %}
+{% block styles %}
+<meta charset="utf-8">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<link rel="stylesheet" href="{{url_for('static', filename='css/calendar.css')}}">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Google Font Link for Icons -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+<script src="{{url_for('static', filename='js/calendar.js')}}" defer></script>
+{% endblock %}
+{% block content %}
+<button style="background-color: rgb(8, 0, 53); padding: 1em; border-radius: 15%; color: white; margin-left: 10px; font-size: 1em;" type="button" id="reset-finances-btn" class="button">Reset Finance Status</button>
+<div class="calendar-layout">
+
+    <div class="wrap" data-outcome-dates="{{ all_dates }}">
+        <div class="head">
+        <p class="current-date"></p>
+        <div class="icons">
+            <span id="prev" class="material-symbols-rounded">chevron_left</span>
+            <span id="next" class="material-symbols-rounded">chevron_right</span>
+        </div>
+        </div>
+        <div class="calendar">
+        <ul class="weeks">
+            <li>Sun</li>
+            <li>Mon</li>
+            <li>Tue</li>
+            <li>Wed</li>
+            <li>Thu</li>
+            <li>Fri</li>
+            <li>Sat</li>
+        </ul>
+        <ul class="days"></ul>
+        </div>
+    </div>
+
+    <div class="outcome-details">
+        <!-- Subscription details will be injected here -->
+        <!-- {% for outcome in outcomes %} -->
+        <div class="outcome-item">
+          <span>{{ outcome.name }} - Amount: {{ outcome.amount }}</span>
+          <input type="checkbox" class="status-checkbox" id="out{{ outcome.id }}" name="out{{ outcome.id }}" {% if outcome.fulfilled %}checked{% endif %}>
+          <label for="out{{ outcome.id }}"></label>
+        </div>
+        <!-- {% endfor %} -->
+    </div>
+
+</div>
+{% endblock %}
+{% block script %}
+<script>
+    // const outcomeDates = JSON.parse(document.body.getAttribute('data-outcome-dates'));
+</script>
+{% endblock %}

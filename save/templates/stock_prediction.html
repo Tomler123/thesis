@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}WalletBuddyAI.com{% endblock %}
+{% block links %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/stock_prediction.css') }}">
+{% endblock %}
+{% block content %}
+    <h1>WalletBuddyAI.com</h1>
+    <!-- Input form for stock graph -->
+    <form action="{{ url_for('stock_prediction') }}" method="post">
+        {{ form.csrf_token }}
+        <div class="form-group">
+            {{ form.stock_name.label }}
+            {{ form.stock_name(class="form-control") }}
+            {% for error in form.stock_name.errors %}
+                <span class="text-danger">{{ error }}</span>
+            {% endfor %}
+        </div>
+        {{ form.submit(class="btn btn-primary") }}
+    </form>
+    <!-- Conditionally display the graph if it exists -->
+    {% if stock_name %}
+        <div>
+            <h2>Graph for {{ stock_name }}</h2>
+            <h3>Loss Plot</h3>
+            <img src="data:image/png;base64,{{ loss_plot_base64 }}" alt="Loss Plot">
+            <h3>Predictions Plot</h3>
+            <img src="data:image/png;base64,{{ predictions_plot_base64 }}" alt="Predictions Plot">
+            <h3>Extended Predictions</h3>
+            <img src="data:image/png;base64,{{ extended_predictions_plot_base64 }}" alt="Extended Predictions Plot">
+        </div>
+    {% endif %}
+    <br>
+    
+
+{% endblock %}

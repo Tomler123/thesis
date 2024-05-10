@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block links %}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/finances.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/transactions.css') }}">
+{% endblock %}
+{% block content %}
+<div class="section-container">
+    <div class="section-content">
+        <h1>Incomes</h1>
+        <a style="background-color: rgb(1, 40, 63); padding: 1em; border-radius: 15%; color: white;" href="{{ url_for('add_income') }}" class="btn btn-primary">Add Income</a>
+        <br><br>
+        <h2>Income Sources</h2>
+        
+        <table style="width: 80%;">
+            <tr>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Actions</th>
+            </tr>
+            {% for income in incomes %}
+            <tr>
+                <td>
+                    {{ income.Name|truncate(15, true, '...') }}
+                </td>
+                <td>
+                    Ft {{ income.Cost }}
+                </td>
+                <td>
+                    <button onclick="editIncome({{ income.ID }})" class="button-edit">Edit</button>
+                    <button onclick="deleteIncome({{ income.ID }})" class="button-remove">Remove</button>
+                </td>
+            </tr>
+                {% else %}
+                    <p><strong>Income not added</strong></p>
+                {% endfor %}
+        </table>
+        <br><br>
+        <p><strong>Total Income: Ft {{ total_incomes }}</strong></p>
+    
+    
+    </div>
+    {% if incomes_pie_chart_img %}
+    <div class="section-chart">
+        <img src="data:image/png;base64,{{ incomes_pie_chart_img }}" alt="Savings Pie Chart" style="max-width:100%;">
+    </div>
+    {% endif %}
+</div>
+<hr>
+{% block script %}
+<script>
+function deleteIncome(outcomeId) {
+    if (confirm("Are you sure you want to delete this outcome?")) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content'); // Fetch CSRF token from meta tag
+        fetch(`/delete_outcome/${outcomeId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken // Include CSRF token in the request headers
+            },
+            body: `outcome_id=${outcomeId}`
+        })
+        .then(() => {
+            // Reload the page to reflect changes
+            window.location.reload();
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+}
+function editIncome(incomeID) {
+    window.location.href = '/edit_income/' + incomeID;
+}
+</script>
+{% endblock %}
+{% endblock %}

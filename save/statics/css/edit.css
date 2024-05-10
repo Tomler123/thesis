@@ -1,0 +1,173 @@
+/* edit.css */
+
+/* Overall layout */
+.edit-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 20px;
+}
+
+/* Styling for the form side */
+.form-side {
+  flex: 1;
+  padding-right: 20px; /* Add some spacing between the columns */
+}
+
+form {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+form label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+form input[type="number"],
+form button {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+form button {
+  background-color: #0056b3;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+form button:hover {
+  background-color: #003d82;
+}
+
+/* Placeholder for the pie chart side */
+.chart-side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 12.5em;
+}
+
+.chart-placeholder {
+  width: 300px;
+  height: 300px;
+  background: #f4f4f4;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #999;
+  font-size: 1.2em;
+}
+
+/* Add any additional styling as needed */
+.total-sum{
+  position: relative;
+  left: 30%;
+}
+
+.chart-legend{
+  background-color: white;
+  width: 100%;
+  margin-top: 20px; /* Add space between the chart and legend */
+}
+.chart-legend ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.chart-legend li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.color-box {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  margin-right: 10px;
+}
+
+/* Styling for the form side */
+.expense-input {
+  display: flex;
+  align-items: center;
+}
+
+.expense-input input[type="number"] {
+  flex: 1;
+  padding: 10px;
+  margin-right: 10px; /* Add some spacing between the input field and checkbox */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.expense-input input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin-left: 5px; /* Adjust as needed */
+}
+
+/* Styling for the checkbox indicating fulfillment */
+.expense-input input[type="checkbox"]:checked {
+  background-color: green; /* Change color to green when checked */
+}
+
+.expense-input input[type="checkbox"]:not(:checked) {
+  background-color: red; /* Change color to red when not checked */
+}
+
+.expense-input input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: 2px solid #ccc;
+  border-radius: 50%;
+  outline: none;
+}
+
+.expense-input input[type="checkbox"]:checked {
+  background-color: green;
+}
+
+.expense-input input[type="checkbox"]:not(:checked) {
+  background-color: red;
+}
+
+.expense-input input[type="checkbox"]::after {
+  content: '';
+  display: block;
+  width: 10px;
+  height: 10px;
+  margin: 3px;
+  border-radius: 50%;
+  background: white;
+  transition: 0.3s;
+}
+
+.expense-input input[type="checkbox"]:checked::after {
+  background: green;
+}
+
+.expense-input input[type="checkbox"]:not(:checked)::after {
+  background: red;
+}
+
+.not-fulfilled {
+  border-color: red; /* Set border color to red */
+}
+
+.fulfilled {
+  border-color: green; /* Set border color to green */
+}

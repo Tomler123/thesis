@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/add_subscription.css') }}">
+{% endblock %}
+{% block content %}
+    <h1>Edit Transaction</h1>
+    <form method="post">
+        {{ form.csrf_token }}
+        <div>
+            {{ form.amount.label }}<br>
+            {{ form.amount(class="form-control") }}<br>
+            {% for error in form.amount.errors %}
+                <span style="color: red;">{{ error }}</span><br>
+            {% endfor %}
+        </div>
+        <div>
+            {{ form.date.label }}<br>
+            {{ form.date(class="form-control") }}<br>
+            {% for error in form.date.errors %}
+                <span style="color: red;">{{ error }}</span><br>
+            {% endfor %}
+        </div>
+        <div>
+            {{ form.category.label }}<br>
+            {{ form.category(class="form-control") }}<br>
+            {% for error in form.category.errors %}
+                <span style="color: red;">{{ error }}</span><br>
+            {% endfor %}
+        </div>
+        <div>
+            {{ form.description.label }}<br>
+            {{ form.description(class="form-control") }}<br>
+            {% for error in form.description.errors %}
+                <span style="color: red;">{{ error }}</span><br>
+            {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-primary">Update Transaction</button>
+    </form>
+{% endblock %}
