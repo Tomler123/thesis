@@ -1,6 +1,7 @@
-from flask import jsonify, redirect, render_template, url_for, session, flash, session
-# from main_app_folder.models import User  # Assuming you have the User model
-from main_app_folder.utils import helpers
+from flask import jsonify, redirect, render_template, url_for, session, flash
+from main_app_folder.models.user import User
+from main_app_folder.models.outcomes import Outcome
+
 from main_app_folder.utils import functions
 
 def init_app(app):
@@ -10,65 +11,37 @@ def init_app(app):
             flash('Please log in to view your finances.')
             return redirect(url_for('login'))
         
-        user_id = session['user_id']
-
-        # Connect to the database
-        conn = helpers.get_db_connection()
-        cursor = conn.cursor()
+        user = User.query.get(session['user_id'])
+        if not user:
+            flash('User not found.')
+            return redirect(url_for('login'))
         
-        cursor.execute("SELECT * FROM outcomes WHERE UserID = ? AND Type = 'Expense'", user_id)
-        expenses = cursor.fetchall()
-
-        cursor.execute("SELECT DISTINCT Name FROM outcomes WHERE UserID = ? AND Type = 'Expense'", user_id)
-        categories = [row.Name for row in cursor.fetchall()]
-
-        amounts = {}
-        for category in categories:
-            cursor.execute("SELECT SUM(Cost) FROM outcomes WHERE UserID = ? AND Type = 'Expense' AND Name = ?", (user_id, category))
-            amounts[category] = cursor.fetchone()[0] or 0
-
-        expenses_graph = functions.create_bar_chart(list(amounts.values()), categories)
+        expenses = Outcome.query.filter_by(UserID=user.UserID, Type='Expense').all()
+        categories = set(expense.Name for expense in expenses)
         
-        cursor.execute("SELECT * FROM outcomes WHERE UserID = ? AND Type = 'Income'", user_id)
-        incomes = cursor.fetchall()
+        expenses_data = {category: sum(exp.Cost for exp in expenses if exp.Name == category) for category in categories}
+        expenses_graph = functions.create_bar_chart(list(expenses_data.values()), list(categories))
 
-        cursor.execute("SELECT DISTINCT Name FROM outcomes WHERE UserID = ? AND Type = 'Income'", user_id)
-        categories = [row.Name for row in cursor.fetchall()]
-
-        amounts = {}
-        for category in categories:
-            cursor.execute("SELECT SUM(Cost) FROM outcomes WHERE UserID = ? AND Type = 'Income' AND Name = ?", (user_id, category))
-            amounts[category] = cursor.fetchone()[0] or 0
-
-        incomes_graph = functions.create_bar_chart(list(amounts.values()), categories)
-
-        cursor.execute("SELECT * FROM outcomes WHERE UserID = ? AND Type = 'Saving'", user_id)
-        savings = cursor.fetchall()
-
-        cursor.execute("SELECT DISTINCT Name FROM outcomes WHERE UserID = ? AND Type = 'Saving'", user_id)
-        categories = [row.Name for row in cursor.fetchall()]
-
-        amounts = {}
-        for category in categories:
-            cursor.execute("SELECT SUM(Cost) FROM outcomes WHERE UserID = ? AND Type = 'Saving' AND Name = ?", (user_id, category))
-            amounts[category] = cursor.fetchone()[0] or 0
-
-        savings_graph = functions.create_bar_chart(list(amounts.values()), categories)
-
-        cursor.execute("SELECT * FROM outcomes WHERE UserID = ? AND Type = 'Subscription'", user_id)
-        subscriptions = cursor.fetchall()
-
-        cursor.execute("SELECT DISTINCT Name FROM outcomes WHERE UserID = ? AND Type = 'Subscription'", user_id)
-        categories = [row.Name for row in cursor.fetchall()]
-
-        amounts = {}
-        for category in categories:
-            cursor.execute("SELECT SUM(Cost) FROM outcomes WHERE UserID = ? AND Type = 'Subscription' AND Name = ?", (user_id, category))
-            amounts[category] = cursor.fetchone()[0] or 0
-
-        subscriptions_graph = functions.create_bar_chart(list(amounts.values()), categories)
-
-        cursor.close()
-        conn.close()
+        incomes = Outcome.query.filter_by(UserID=user.UserID, Type='Income').all()
+        income_categories = set(income.Name for income in incomes)
         
-        return render_template('view_finances.html', expenses=expenses, expenses_graph=expenses_graph, incomes=incomes, incomes_graph=incomes_graph, savings=savings, savings_graph=savings_graph, subscriptions=subscriptions, subscriptions_graph=subscriptions_graph)
+        incomes_data = {category: sum(inc.Cost for inc in incomes if inc.Name == category) for category in income_categories}
+        incomes_graph = functions.create_bar_chart(list(incomes_data.values()), list(income_categories))
+
+        savings = Outcome.query.filter_by(UserID=user.UserID, Type='Saving').all()
+        saving_categories = set(saving.Name for saving in savings)
+        
+        savings_data = {category: sum(sav.Cost for sav in savings if sav.Name == category) for category in saving_categories}
+        savings_graph = functions.create_bar_chart(list(savings_data.values()), list(saving_categories))
+
+        subscriptions = Outcome.query.filter_by(UserID=user.UserID, Type='Subscription').all()
+        subscription_categories = set(subscription.Name for subscription in subscriptions)
+        
+        subscriptions_data = {category: sum(sub.Cost for sub in subscriptions if sub.Name == category) for category in subscription_categories}
+        subscriptions_graph = functions.create_bar_chart(list(subscriptions_data.values()), list(subscription_categories))
+
+        return render_template('view_finances.html', 
+                               expenses=expenses, expenses_graph=expenses_graph, 
+                               incomes=incomes, incomes_graph=incomes_graph, 
+                               savings=savings, savings_graph=savings_graph, 
+                               subscriptions=subscriptions, subscriptions_graph=subscriptions_graph)

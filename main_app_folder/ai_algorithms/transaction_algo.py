@@ -27,11 +27,6 @@ def GradDescnet(theta, Y, X, alpha=0.0001, num_iterations=100000, tolerance=1e-5
         # Calculate current cost function
         current_cost = CostFunction(temp, X, Y)
 
-        #Check for convergence
-        if abs(current_cost - prev_cost) < tolerance:
-            print(f"Converged at iteration {iteration + 1}")
-            break
-
         prev_cost = current_cost
 
     return temp
@@ -47,7 +42,6 @@ def main(X_inp,Y_inp):
     Theta = GradDescnet(Theta,Y,X)
     ans=np.array(X[-1]).flatten()
     ans[1] =ans[1]+1
-    print(ans)
     return hypoFunc(Theta, ans)
 
 

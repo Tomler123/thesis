@@ -1,37 +1,40 @@
-from flask import jsonify, redirect, render_template, request, url_for, session, flash, session
+from flask import jsonify, redirect, render_template, request, url_for, session, flash
 import datetime
-from main_app_folder.forms import forms  # Assuming your form is in a forms.py file
-# from main_app_folder.models import User  # Assuming you have the User model
+from main_app_folder.forms import forms  # Adjust this import if necessary
+from main_app_folder.models.user import User
+from main_app_folder.models.loans import Loan
 from main_app_folder.utils import helpers
+from main_app_folder import db
+
 from main_app_folder.utils import functions
 
 def init_app(app):
     @app.route('/loans')
     def loans():
         if 'user_id' not in session:
+            flash('Please log in to view your loans.')
             return redirect(url_for('login'))
 
-        user_id = session['user_id']
-        conn = helpers.get_db_connection()
-        cursor = conn.cursor()
+        user = User.query.get(session['user_id'])
+        if not user:
+            flash('User not found.')
+            return redirect(url_for('login'))
 
-        cursor.execute("SELECT * FROM loans WHERE UserID = ? AND IsBorrower = 1", user_id)
-        borrowed_loans = cursor.fetchall()
-        
+        borrowed_loans = Loan.query.filter_by(UserID=user.UserID, IsBorrower=True).all()
         borrowed_loans_pie_chart_img = functions.loans_pie_chart(borrowed_loans) if borrowed_loans else None
         total_borrowed_loans = sum(loan.LoanAmount for loan in borrowed_loans)
 
-        cursor.execute("SELECT * FROM loans WHERE UserID = ? AND IsBorrower = 0", user_id)
-        lent_loans = cursor.fetchall()
-
+        lent_loans = Loan.query.filter_by(UserID=user.UserID, IsBorrower=False).all()
         lent_loans_pie_chart_img = functions.loans_pie_chart(lent_loans) if lent_loans else None
         total_lent_loans = sum(loan.LoanAmount for loan in lent_loans)
 
-        cursor.close()
-        conn.close()
-
-        return render_template('loans.html', borrowed_loans=borrowed_loans, lent_loans=lent_loans, lent_loans_pie_chart_img=lent_loans_pie_chart_img, borrowed_loans_pie_chart_img=borrowed_loans_pie_chart_img, total_borrowed_loans=total_borrowed_loans, total_lent_loans=total_lent_loans)
-
+        return render_template('loans.html', 
+                               borrowed_loans=borrowed_loans, lent_loans=lent_loans, 
+                               lent_loans_pie_chart_img=lent_loans_pie_chart_img, 
+                               borrowed_loans_pie_chart_img=borrowed_loans_pie_chart_img, 
+                               total_borrowed_loans=total_borrowed_loans, 
+                               total_lent_loans=total_lent_loans)
+    
     @app.route('/add_loan', methods=['GET', 'POST'])
     def add_loan():
         if 'user_id' not in session:
@@ -40,29 +43,39 @@ def init_app(app):
 
         form = forms.AddLoanForm()
         if form.validate_on_submit():
-            # Form data is valid, proceed to add the loan
-            lender_name = form.lender_name.data
-            loan_amount = form.loan_amount.data
-            interest_rate = form.interest_rate.data
-            monthly_payment = form.monthly_payment.data
-            start_date = form.start_date.data
-            due_date = form.due_date.data
-            remaining_balance = form.remaining_balance.data
-            is_borrower = form.is_borrower.data
-            notes = form.notes.data
-            user_id = session['user_id']
+            try:
+                lender_name = form.lender_name.data
+                loan_amount = form.loan_amount.data
+                interest_rate = form.interest_rate.data
+                monthly_payment = form.monthly_payment.data
+                start_date = form.start_date.data
+                due_date = form.due_date.data
+                remaining_balance = form.remaining_balance.data
+                is_borrower = bool(int(form.is_borrower.data))  # Ensure correct boolean casting
+                notes = form.notes.data
+                user_id = session['user_id']
 
-            # Add loan to database
-            # Assuming conn is your database connection
-            query = """INSERT INTO loans (UserID, LenderName, LoanAmount, InterestRate, MonthlyPayment, StartDate, DueDate, RemainingBalance,IsBorrower, Notes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
-            with helpers.get_db_connection() as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute(query, (user_id, lender_name, loan_amount, interest_rate, monthly_payment, start_date, due_date, remaining_balance, is_borrower, notes))
-                    conn.commit()
+                # Log the form data
+                print("Validating and submitting form data:")
+                print(f"Lender Name: {lender_name}, Loan Amount: {loan_amount}, Interest Rate: {interest_rate}, Monthly Payment: {monthly_payment}")
+                print(f"Start Date: {start_date}, Due Date: {due_date}, Remaining Balance: {remaining_balance}, Is Borrower: {is_borrower}, Notes: {notes}")
 
-            flash('Loan added successfully!')
-            return redirect(url_for('loans'))  # Redirect to the loans overview page
+                # Assuming conn is your database connection
+                query = """INSERT INTO loans (UserID, LenderName, LoanAmount, InterestRate, MonthlyPayment, StartDate, DueDate, RemainingBalance, IsBorrower, Notes)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+                with helpers.get_db_connection() as conn:
+                    with conn.cursor() as cursor:
+                        cursor.execute(query, (user_id, lender_name, loan_amount, interest_rate, monthly_payment, start_date, due_date, remaining_balance, is_borrower, notes))
+                        conn.commit()
+
+                flash('Loan added successfully!')
+                return redirect(url_for('loans'))  # Redirect to the loans overview page
+            except Exception as e:
+                flash(f"An error occurred: {str(e)}")
+                print(f"An error occurred: {str(e)}")  # Log the error for debugging
+
+        else:
+            print("Form errors:", form.errors)  # Log form errors
 
         return render_template('add_loan.html', form=form)
 

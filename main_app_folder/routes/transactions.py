@@ -1,92 +1,113 @@
 from flask import jsonify, redirect, request, render_template, url_for, session, flash, session
 from main_app_folder.utils import helpers
 from main_app_folder.forms import forms
+from main_app_folder.models.transactions import Transaction
+from main_app_folder.models.outcomes import Outcome
 from main_app_folder.ai_algorithms import transaction_algo
 import datetime
 import json
+from main_app_folder import db
+from sqlalchemy import func, extract
 
 def init_app(app):
     @app.route('/transactions')
     def transactions():
         if 'user_id' not in session:
+            flash('Please log in to view your transactions.')
             return redirect(url_for('login'))
 
-        user_id = session['user_id']
-        conn = helpers.get_db_connection()
-        cursor = conn.cursor()
-
-        # Fetch transactions sorted by date
-        cursor.execute("SELECT TransactionID, Amount, Date, Category, Description FROM transactions WHERE UserID = ? ORDER BY Date DESC", user_id)
-        transactions = cursor.fetchall()
-
-        cursor.close()
-        conn.close()
-
-        return render_template('transactions.html', transactions=transactions)
+        try:
+            user_id = session['user_id']
+            transactions = Transaction.query.filter_by(UserID=user_id).order_by(Transaction.Date.desc()).all()
+            return render_template('transactions.html', transactions=transactions)
+        except Exception as e:
+            flash('An error occurred while fetching transactions.')
+            return render_template('transactions.html', transactions=[])
 
     @app.route('/add_transaction', methods=['GET', 'POST'])
     def add_transaction():
         if 'user_id' not in session:
-            flash('Please log in to add an income.')
+            flash('Please log in to add a transaction.')
             return redirect(url_for('login'))
 
         form = forms.TransactionForm()
-        # Set default values when the form is initially presented
+
         if request.method == 'GET':
             form.date.data = datetime.date.today()
             form.amount.data = 0
+
         if form.validate_on_submit():
-            conn = helpers.get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO transactions (UserID, Amount, Date, Category, Description) VALUES (?, ?, ?, ?, ?)",
-                        (session['user_id'], form.amount.data, form.date.data, form.category.data, form.description.data))
-            conn.commit()
-            cursor.close()
-            conn.close()
-            return redirect(url_for('transactions'))
+            try:
+                new_transaction = Transaction(
+                    UserID=session['user_id'],
+                    Amount=form.amount.data,
+                    Date=form.date.data,
+                    Category=form.category.data,
+                    Description=form.description.data
+                )
+                db.session.add(new_transaction)
+                db.session.commit()
+                flash('Transaction added successfully!')
+                return redirect(url_for('transactions'))
+            except Exception as e:
+                db.session.rollback()
+                flash('An error occurred while adding the transaction. Please try again.')
+                
         return render_template('add_transaction.html', form=form)
 
     @app.route('/edit_transaction/<int:transaction_id>', methods=['GET', 'POST'])
     def edit_transaction(transaction_id):
         if 'user_id' not in session:
-            flash('Please log in to add an income.')
+            flash('Please log in to edit a transaction.')
             return redirect(url_for('login'))
-        
-        conn = helpers.get_db_connection()
-        cursor = conn.cursor()
-        form = forms.TransactionForm()
-        if request.method == 'POST':
-            if form.validate_on_submit():
-                cursor.execute("UPDATE transactions SET Amount=?, Date=?, Category=?, Description=? WHERE TransactionID=? AND UserID=?",
-                            (form.amount.data, form.date.data, form.category.data, form.description.data, transaction_id, session['user_id']))
-                conn.commit()
-                cursor.close()
-                conn.close()
+
+        transaction = Transaction.query.filter_by(TransactionID=transaction_id, UserID=session['user_id']).first()
+        if not transaction:
+            flash('Transaction not found.')
+            return redirect(url_for('transactions'))
+
+        form = forms.TransactionForm(obj=transaction)
+
+        if request.method == 'POST' and form.validate_on_submit():
+            try:
+                transaction.Amount = form.amount.data
+                transaction.Date = form.date.data
+                transaction.Category = form.category.data
+                transaction.Description = form.description.data
+                db.session.commit()
+                flash('Transaction updated successfully!')
                 return redirect(url_for('transactions'))
+            except Exception as e:
+                db.session.rollback()
+                flash('An error occurred while updating the transaction. Please try again.')
         else:
-            # Fetch the current transaction details and pre-fill the form
-            cursor.execute("SELECT Amount, Date, Category, Description FROM transactions WHERE TransactionID=? AND UserID=?", (transaction_id, session['user_id']))
-            transaction = cursor.fetchone()
+            # Manually populate the form fields with the transaction data
             form.amount.data = transaction.Amount
             form.date.data = transaction.Date
             form.category.data = transaction.Category
             form.description.data = transaction.Description
-        cursor.close()
-        conn.close()
+
         return render_template('edit_transaction.html', form=form, transaction_id=transaction_id)
 
     @app.route('/delete_transaction/<int:transaction_id>', methods=['POST'])
     def delete_transaction(transaction_id):
         if 'user_id' not in session:
-            flash('Please log in to add an income.')
+            flash('Please log in to delete a transaction.')
             return redirect(url_for('login'))
 
-        conn = helpers.get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM transactions WHERE TransactionID=? AND UserID=?", (transaction_id, session['user_id']))
-        conn.commit()
-        cursor.close()
-        conn.close()
+        transaction = Transaction.query.filter_by(TransactionID=transaction_id, UserID=session['user_id']).first()
+        if not transaction:
+            flash('Transaction not found or you do not have permission to delete it.')
+            return redirect(url_for('transactions'))
+
+        try:
+            db.session.delete(transaction)
+            db.session.commit()
+            flash('Transaction deleted successfully!')
+        except Exception as e:
+            db.session.rollback()
+            flash('An error occurred while deleting the transaction. Please try again.')
+
         return redirect(url_for('transactions'))
 
     @app.route('/predict_next_month', methods=['GET'])
@@ -104,13 +125,7 @@ def init_app(app):
         if not min_date_row or not min_date_row[0]:
             return json.dumps({'success': False, 'message': 'No transactions found.'}), 404
         
-        cursor.execute("""
-                SELECT SUM(Cost) AS total_income FROM outcomes 
-                WHERE UserID = ? AND Type = 'Income'
-                """, (user_id,))
-        result = cursor.fetchone()
-        total_income = result.total_income if result.total_income else 0
-        
+        total_income = db.session.query(func.sum(Outcome.Cost)).filter(Outcome.UserID == user_id, Outcome.Type == 'Income').scalar() or 0
         # Calculate the number of months since the earliest transaction
         earliest_date = min_date_row[0]
         months_count = (datetime.date.today().year - earliest_date.year) * 12 + (datetime.date.today().month - earliest_date.month + 1)
@@ -123,11 +138,8 @@ def init_app(app):
         for i in range(months_count):
             month = (earliest_date.month - 1 + i) % 12 + 1
             year = earliest_date.year + ((earliest_date.month - 1 + i) // 12)
-            cursor.execute("SELECT SUM(Amount) FROM transactions WHERE UserID = ? AND YEAR(Date) = ? AND MONTH(Date) = ?", (user_id, year, month))
-            sum_result = cursor.fetchone()
-            if sum_result and sum_result[0] is not None:
-                sums[i] = float(sum_result[0])
-        
+            monthly_sum = db.session.query(func.sum(Transaction.Amount)).filter(Transaction.UserID == user_id, extract('year', Transaction.Date) == year, extract('month', Transaction.Date) == month).scalar()
+            sums[i] = float(monthly_sum or 0)
         cursor.close()
         conn.close()
 
