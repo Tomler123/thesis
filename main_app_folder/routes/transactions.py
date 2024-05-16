@@ -1,13 +1,14 @@
 from flask import jsonify, redirect, request, render_template, url_for, session, flash, session
+import datetime
+import json
+from sqlalchemy import func, extract
+
 from main_app_folder.utils import helpers
 from main_app_folder.forms import forms
 from main_app_folder.models.transactions import Transaction
 from main_app_folder.models.outcomes import Outcome
 from main_app_folder.ai_algorithms import transaction_algo
-import datetime
-import json
 from main_app_folder import db
-from sqlalchemy import func, extract
 
 def init_app(app):
     @app.route('/transactions')

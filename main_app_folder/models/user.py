@@ -11,10 +11,6 @@ class User(db.Model):
     ProfileImage = db.Column('ProfileImage', db.String(255), nullable=True)
 
     # Relationships
-    incomes = db.relationship('Outcome', backref='income_user', lazy=True, 
-                              primaryjoin="and_(Outcome.UserID==User.UserID, Outcome.Type=='Income')")
-    savings = db.relationship('Outcome', backref='savings_user', lazy=True, 
-                              primaryjoin="and_(Outcome.UserID==User.UserID, Outcome.Type=='Saving')")
-
+    
     def __repr__(self):
         return f'<User {self.Email}>'

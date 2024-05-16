@@ -1,4 +1,4 @@
-from flask import jsonify, redirect, request, render_template, url_for, session, flash, session
+from flask import jsonify, redirect, request, render_template, url_for, session, session
 from main_app_folder.utils import helpers
 import json
 

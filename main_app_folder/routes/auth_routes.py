@@ -1,12 +1,9 @@
-from flask import Flask, jsonify, redirect, request, render_template, url_for, session, flash, session
-from flask_wtf import FlaskForm
+from flask import redirect, request, render_template, url_for, session, flash, session
 from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash
-from main_app_folder.forms import forms  # Assuming your form is in a forms.py file
-# from main_app_folder.models import User  # Assuming you have the User model
+from main_app_folder.forms import forms
 from main_app_folder.utils import helpers 
 import secrets  
-import requests
 from werkzeug.security import check_password_hash, generate_password_hash
 from itsdangerous import URLSafeTimedSerializer as Serializer
 
@@ -33,7 +30,7 @@ def init_app(app):
         
         form = forms.SignUpForm()
         
-        if form.validate_on_submit():
+        if form.validate_on_submit() or request.method == 'POST':
             name = form.name.data
             last_name = form.last_name.data
             email = form.email.data
@@ -75,8 +72,10 @@ def init_app(app):
 
             flash('You have successfully signed up!', 'success')
             return render_template('verify_email.html')
-
+        if request.method == 'POST' and not form.validate():
+            print("Signup form errors:", form.errors)
         return render_template('signup.html', form=form)
+    
     # Define the verify_email route
     @app.route('/verify_email/<token>')
     def verify_email(token):

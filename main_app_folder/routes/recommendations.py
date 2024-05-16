@@ -1,8 +1,6 @@
 from flask import redirect, render_template, request, url_for, session, flash, session
-# from main_app_folder.models import User  # Assuming you have the User model
 from main_app_folder.forms import forms
 from main_app_folder.utils import helpers
-from main_app_folder.utils import functions
 
 def init_app(app):
     @app.route('/recommendations', methods=['GET', 'POST'])

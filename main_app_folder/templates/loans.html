@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% block links %}
-    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/finances.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/transactions.css') }}">
 {% endblock %}

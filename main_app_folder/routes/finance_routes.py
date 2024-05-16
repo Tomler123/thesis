@@ -1,14 +1,15 @@
 from flask import jsonify, redirect, render_template, request, url_for, session, flash, session
 import datetime
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+
 from main_app_folder.forms import forms  # Assuming your form is in a forms.py file
 from main_app_folder.utils import helpers
 from main_app_folder.utils import functions
 from main_app_folder.extensions import db
-from sqlalchemy import text
 from main_app_folder.models.user import User
 from main_app_folder.models.outcomes import Outcome
 
-from sqlalchemy.exc import SQLAlchemyError
 
 def init_app(app):
 
@@ -19,15 +20,7 @@ def init_app(app):
                 return redirect(url_for('login'))
 
             user_id = session['user_id']
-
-            incomes = Outcome.query.filter_by(UserID=user_id, Type='Income').all()
-            
-            total_incomes = sum(income.Cost for income in incomes if income)
-
-            # Generate pie charts if there are corresponding records
-            incomes_pie_chart_img = functions.generate_pie_chart(incomes) if incomes else None
-            
-            return render_template('incomes.html', incomes=incomes, incomes_pie_chart_img=incomes_pie_chart_img, total_incomes=total_incomes)
+            return handle_get_incomes(user_id)
         except SQLAlchemyError as e:
             return jsonify({'error': str(e)}), 500
 
@@ -48,50 +41,32 @@ def init_app(app):
                     Type='Income'
                 )
                 
-                db.session.add(new_income)
-                db.session.commit()
-
-                flash('Income added successfully!')
-            
-                return redirect(url_for('incomes'))
+                return handle_add_income(new_income)
             
             return render_template('add_income.html', form=form)
         
         except SQLAlchemyError as e:
-            
             db.session.rollback()
             flash('Error adding income.')
-            
             return render_template('add_income.html', form=form), 500
         
     @app.route('/edit_income/<int:income_id>', methods=['GET', 'POST'])
     def edit_income(income_id):
         if 'user_id' not in session:
             flash('Please log in to edit records.')
-
             return redirect(url_for('login'))
 
         income = Outcome.query.filter_by(ID=income_id, UserID=session['user_id']).first()
         if not income:
-
             flash('Income not found.')
-
             return redirect(url_for('incomes'))
 
         form = forms.EditIncomeForm(obj=income)
 
         if request.method == 'POST' and form.validate_on_submit():
-            income.Name = form.name.data
-            income.Cost = form.cost.data
-            income.Day = form.day.data
-            db.session.commit()
-
-            flash('Income updated successfully!')
-
-            return redirect(url_for('incomes'))
-
+            return handle_edit_income(income, form)
+        
         elif request.method == 'GET':
-            # Manually set form data on GET request
             form.name.data = income.Name
             form.cost.data = income.Cost
             form.day.data = income.Day
@@ -102,22 +77,12 @@ def init_app(app):
     def delete_income(income_id):
         try:
             if 'user_id' not in session:
-
                 return jsonify({'message': 'Please log in to delete incomes.'}), 401
 
             income = Outcome.query.filter_by(ID=income_id, UserID=session['user_id']).first()
-            if income:
-                db.session.delete(income)
-                db.session.commit()
-                flash('Income deleted successfully!')
-            else:
-                flash('Income not found or you do not have permission to delete it.')
-
-            return redirect(url_for('incomes'))
-
+            return handle_delete_income(income)
         except SQLAlchemyError as e:
             db.session.rollback()
-
             return jsonify({'error': str(e)}), 500
 
     @app.route('/savings')
@@ -126,108 +91,60 @@ def init_app(app):
             return redirect(url_for('login'))
 
         user_id = session['user_id']
-        conn = helpers.get_db_connection()
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT * FROM outcomes WHERE UserID = ? AND Type = 'Saving'", user_id)
-        savings = cursor.fetchall()
-        
-        total_savings = sum(saving.Cost for saving in savings)
-
-        # Generate pie charts if there are corresponding records
-        savings_pie_chart_img = functions.generate_pie_chart(savings) if savings else None
-        
-        cursor.close()
-        conn.close()
-
-        return render_template('saving.html', savings=savings, total_savings=total_savings, savings_pie_chart_img=savings_pie_chart_img)
+        return handle_get_savings(user_id)
 
     @app.route('/add_saving', methods=['GET', 'POST'])
     def add_saving():
         if 'user_id' not in session:
-            flash('Please log in to add an saving.')
+            flash('Please log in to add a saving.')
             return redirect(url_for('login'))
 
         form = forms.SavingForm()
-
         if form.validate_on_submit():
-            name = form.name.data
-            cost = form.cost.data
-            user_id = session['user_id']
-
-            # Add saving to the database
-            query = """INSERT INTO outcomes (UserID, Name, Cost, Type)
-                    VALUES (?, ?, ?, 'Saving')"""
-            with helpers.get_db_connection() as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute(query, (user_id, name, cost))
-                    conn.commit()
-
-            flash('Saving added successfully!')
-            return redirect(url_for('savings'))  # Redirect to the savings overview page
-
+            new_saving = Outcome(
+                UserID=session['user_id'],
+                Name=form.name.data,
+                Cost=form.cost.data,
+                Type='Saving'
+            )
+            
+            return handle_add_saving(new_saving)
+        
         return render_template('add_saving.html', form=form)
 
-    @app.route('/edit_savings/<int:saving_id>', methods=['GET', 'POST'])
-    def edit_savings(saving_id):
+    @app.route('/edit_saving/<int:saving_id>', methods=['GET', 'POST'])
+    def edit_saving(saving_id):
         if 'user_id' not in session:
             flash('Please log in to edit records.')
             return redirect(url_for('login'))
 
-        form = forms.SavingForm()
+        saving = Outcome.query.filter_by(ID=saving_id, UserID=session['user_id'], Type='Saving').first()
+        if not saving:
+            flash('Saving not found.')
+            return redirect(url_for('savings'))
 
-        if form.validate_on_submit():
-            name = form.name.data
-            cost = form.cost.data
-            user_id = session['user_id']
+        form = forms.EditSavingForm(obj=saving)
 
-            # Update saving in the database
-            query = """UPDATE outcomes SET Name=?, Cost=? WHERE ID=? AND UserID=? AND Type='Saving'"""
-            with helpers.get_db_connection() as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute(query, (name, cost, saving_id, user_id))
-                    conn.commit()
+        if request.method == 'POST' and form.validate_on_submit():
+            return handle_edit_saving(saving, form)
+        
+        elif request.method == 'GET':
+            form.name.data = saving.Name
+            form.cost.data = saving.Cost
 
-            flash('Saving updated successfully!')
-            return redirect(url_for('savings'))  # Redirect to the savings overview page
-
-        else:
-            # Fetch the current saving data
-            conn = helpers.get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM outcomes WHERE ID=? AND UserID=? AND Type='Saving'", (saving_id, session['user_id']))
-            saving = cursor.fetchone()
-            cursor.close()
-            conn.close()
-
-            if saving:
-                # Populate form fields with the current saving data
-                form.name.data = saving.Name
-                form.cost.data = saving.Cost
-            else:
-                flash('Saving not found.')
-                return redirect(url_for('savings'))
-
-        return render_template('edit_savings.html', form=form)
+        return render_template('edit_saving.html', form=form, saving_id=saving_id)
 
     @app.route('/delete_saving/<int:saving_id>', methods=['POST'])
     def delete_saving(saving_id):
-        if 'user_id' not in session:
-            return jsonify({'message': 'Please log in to delete savings.'}), 401
-        
         try:
-            user_id = session['user_id']
-            # Ensure that the user deleting the saving is the owner
-            conn = helpers.get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM outcomes WHERE ID = ? AND UserID = ?", (saving_id, user_id))
-            conn.commit()
-            cursor.close()
-            conn.close()
-            flash('Saving deleted successfully!')
-            return redirect(url_for('savings'))
-        except Exception as e:
-            return jsonify({'message': 'An error occurred while deleting the saving.'}), 500
+            if 'user_id' not in session:
+                return jsonify({'message': 'Please log in to delete savings.'}), 401
+
+            saving = Outcome.query.filter_by(ID=saving_id, UserID=session['user_id'], Type='Saving').first()
+            return handle_delete_saving(saving)
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
 
 
     @app.route('/outcomes')
@@ -235,22 +152,8 @@ def init_app(app):
         if 'user_id' not in session:
             return redirect(url_for('login'))
 
-        try:
-            outcomes = Outcome.query.filter_by(UserID=session['user_id']).all()
-            
-            expenses = [outcome for outcome in outcomes if outcome.Type == 'Expense']
-            subscriptions = [outcome for outcome in outcomes if outcome.Type == 'Subscription']
-            
-            total_expenses = sum(outcome.Cost for outcome in expenses)
-            total_subscriptions = sum(outcome.Cost for outcome in subscriptions)
-
-            expenses_pie_chart_img = functions.generate_pie_chart(expenses) if expenses else None
-            subscriptions_pie_chart_img = functions.generate_pie_chart(subscriptions) if subscriptions else None
-
-            return render_template('outcomes.html', outcomes=outcomes, expenses_pie_chart_img=expenses_pie_chart_img, subscriptions_pie_chart_img=subscriptions_pie_chart_img, total_expenses=total_expenses, total_subscriptions=total_subscriptions)
-        except Exception as e:
-            flash('An error occurred while fetching outcomes: ' + str(e))
-            return redirect(url_for('home'))
+        user_id = session['user_id']
+        return handle_get_outcomes(user_id)
 
     @app.route('/add_outcome', methods=['GET', 'POST'])
     def add_outcome():
@@ -271,10 +174,7 @@ def init_app(app):
                     Fulfilled=0,
                     Type=form.type.data
                 )
-                db.session.add(new_outcome)
-                db.session.commit()
-                flash('Outcome added successfully!')
-                return redirect(url_for('outcomes'))
+                return handle_add_outcome(new_outcome)
             except Exception as e:
                 flash('An error occurred while adding the outcome: ' + str(e))
                 db.session.rollback()
@@ -295,23 +195,13 @@ def init_app(app):
         form = forms.EditOutcomeForm(obj=outcome)  # Initialize form with outcome object if it's a GET request
 
         if request.method == 'POST' and form.validate_on_submit():
-            try:
-                outcome.Name = form.name.data
-                outcome.Cost = form.cost.data
-                outcome.Day = form.day.data
-                outcome.Type = form.type.data
-                db.session.commit()
-                flash('Outcome updated successfully!')
-                return redirect(url_for('outcomes'))
-            except Exception as e:
-                flash('An error occurred while updating the outcome: ' + str(e))
-                db.session.rollback()
-
-        # On GET request, or if the form validation fails, populate the form with the current outcome data
-        form.name.data = outcome.Name
-        form.cost.data = outcome.Cost
-        form.day.data = outcome.Day
-        form.type.data = outcome.Type
+            return handle_edit_outcome(outcome, form)
+        
+        elif request.method == 'GET':
+            form.name.data = outcome.Name
+            form.cost.data = outcome.Cost
+            form.day.data = outcome.Day
+            form.type.data = outcome.Type
 
         return render_template('edit_outcome.html', form=form, outcome_id=outcome_id)
     
@@ -321,15 +211,106 @@ def init_app(app):
             return jsonify({'message': 'Please log in to delete outcomes.'}), 401
 
         outcome = Outcome.query.filter_by(ID=outcome_id, UserID=session['user_id']).first()
-        if outcome:
-            try:
-                db.session.delete(outcome)
-                db.session.commit()
-                flash('Outcome deleted successfully!')
-            except Exception as e:
-                db.session.rollback()
-                return jsonify({'message': 'An error occurred while deleting the outcome: ' + str(e)}), 500
-        else:
-            flash('Outcome not found or you do not have permission to delete it.')
+        return handle_delete_outcome(outcome)
 
-        return redirect(url_for('outcomes'))
+def handle_get_incomes(user_id):
+    incomes = Outcome.query.filter_by(UserID=user_id, Type='Income').all()
+    total_incomes = sum(income.Cost for income in incomes if income)
+    incomes_pie_chart_img = functions.generate_pie_chart(incomes) if incomes else None
+    return render_template('incomes.html', incomes=incomes, incomes_pie_chart_img=incomes_pie_chart_img, total_incomes=total_incomes)
+
+def handle_add_income(new_income):
+    db.session.add(new_income)
+    db.session.commit()
+    flash('Income added successfully!')
+    return redirect(url_for('incomes'))
+
+def handle_edit_income(income, form):
+    income.Name = form.name.data
+    income.Cost = form.cost.data
+    income.Day = form.day.data
+    db.session.commit()
+    flash('Income updated successfully!')
+    return redirect(url_for('incomes'))
+
+def handle_delete_income(income):
+    if income:
+        db.session.delete(income)
+        db.session.commit()
+        flash('Income deleted successfully!')
+    else:
+        flash('Income not found or you do not have permission to delete it.')
+    return redirect(url_for('incomes'))
+
+def handle_get_savings(user_id):
+    conn = helpers.get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM outcomes WHERE UserID = ? AND Type = 'Saving'", (user_id,))
+    savings = cursor.fetchall()
+    
+    total_savings = sum(saving.Cost for saving in savings)
+
+    # Generate pie charts if there are corresponding records
+    savings_pie_chart_img = functions.generate_pie_chart(savings) if savings else None
+    
+    cursor.close()
+    conn.close()
+
+    return render_template('saving.html', savings=savings, total_savings=total_savings, savings_pie_chart_img=savings_pie_chart_img)
+
+def handle_add_saving(new_saving):
+    db.session.add(new_saving)
+    db.session.commit()
+    flash('Saving added successfully!')
+    return redirect(url_for('savings'))
+
+def handle_edit_saving(saving, form):
+    saving.Name = form.name.data
+    saving.Cost = form.cost.data
+    db.session.commit()
+    flash('Saving updated successfully!')
+    return redirect(url_for('savings'))
+
+def handle_delete_saving(saving):
+    if saving:
+        db.session.delete(saving)
+        db.session.commit()
+        flash('Saving deleted successfully!')
+    else:
+        flash('Saving not found or you do not have permission to delete it.')
+    return redirect(url_for('savings'))
+
+def handle_get_outcomes(user_id):
+    outcomes = Outcome.query.filter_by(UserID=user_id).all()
+    expenses = [outcome for outcome in outcomes if outcome.Type == 'Expense']
+    subscriptions = [outcome for outcome in outcomes if outcome.Type == 'Subscription']
+    total_expenses = sum(outcome.Cost for outcome in expenses)
+    total_subscriptions = sum(outcome.Cost for outcome in subscriptions)
+    expenses_pie_chart_img = functions.generate_pie_chart(expenses) if expenses else None
+    subscriptions_pie_chart_img = functions.generate_pie_chart(subscriptions) if subscriptions else None
+    return render_template('outcomes.html', outcomes=outcomes, expenses_pie_chart_img=expenses_pie_chart_img, subscriptions_pie_chart_img=subscriptions_pie_chart_img, total_expenses=total_expenses, total_subscriptions=total_subscriptions)
+
+def handle_add_outcome(new_outcome):
+    db.session.add(new_outcome)
+    db.session.commit()
+    flash('Outcome added successfully!')
+    return redirect(url_for('outcomes'))
+
+def handle_edit_outcome(outcome, form):
+    outcome.Name = form.name.data
+    outcome.Cost = form.cost.data
+    outcome.Day = form.day.data
+    outcome.Type = form.type.data
+    db.session.commit()
+    flash('Outcome updated successfully!')
+    return redirect(url_for('outcomes'))
+
+def handle_delete_outcome(outcome):
+    if outcome:
+        db.session.delete(outcome)
+        db.session.commit()
+        flash('Outcome deleted successfully!')
+    else:
+        flash('Outcome not found or you do not have permission to delete it.')
+    return redirect(url_for('outcomes'))

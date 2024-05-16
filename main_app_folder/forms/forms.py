@@ -90,7 +90,7 @@ class EditLoanForm(FlaskForm):
     due_date = DateField('Due Date', validators=[DataRequired()], format='%Y-%m-%d')
     remaining_balance = FloatField('Remaining Balance', validators=[DataRequired(), NumberRange(min=0)])
     is_borrower = SelectField('Are you borrower', choices=[('1', 'Yes'), ('0', 'No')], coerce=int)
-    notes = StringField('Other', validators=[DataRequired(), Length(max=255)])
+    notes = TextAreaField('Notes')
     submit = SubmitField('Update')
 
 class RecommendationsForm(FlaskForm):
