@@ -97,10 +97,15 @@ def handle_get_loans(user):
                            total_lent_loans=total_lent_loans)
 
 def handle_add_loan(new_loan):
+    if new_loan.LoanAmount < 0 or not new_loan.LenderName:
+        flash('Invalid loan data. Please check the details and try again.')
+        return render_template('add_loan.html', form=new_loan)
+
     db.session.add(new_loan)
     db.session.commit()
     flash('Loan added successfully!')
     return redirect(url_for('loans'))
+
 
 def handle_edit_loan(loan, form):
     loan.LenderName = form.lender_name.data
@@ -117,10 +122,14 @@ def handle_edit_loan(loan, form):
     return redirect(url_for('loans'))
 
 def handle_delete_loan(loan):
-    db.session.delete(loan)
-    db.session.commit()
-    flash('Loan deleted successfully!')
+    if loan:
+        db.session.delete(loan)
+        db.session.commit()
+        flash('Loan deleted successfully!')
+    else:
+        flash('Loan not found or you do not have permission to delete it.')
     return redirect(url_for('loans'))
+
 
 def populate_loan_form(loan, form):
     form.lender_name.data = loan.LenderName
