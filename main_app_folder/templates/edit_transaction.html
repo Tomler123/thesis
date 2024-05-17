@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/add_subscription.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/add_subscription.css') | timestamp }}">
 {% endblock %}
 {% block content %}
     <h1>Edit Transaction</h1>

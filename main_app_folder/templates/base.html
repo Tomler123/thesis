@@ -7,13 +7,13 @@
     <!--=============== REMIXICONS ===============-->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.2.0/fonts/remixicon.css" rel="stylesheet">
     <!--=============== CSS ===============-->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/chatbot.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="icon" type="image/icon" href="{{ url_for('static', filename='images/icon.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chatbot.css') | timestamp }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') | timestamp }}">
+    <link rel="icon" type="image/icon" href="{{ url_for('static', filename='images/icon.png') | timestamp }}">
     {% block links %}{% endblock %}
     <title>{% block title %}{% endblock %}</title>
     {% block styles %}{% endblock %}
-    <script src="{{ url_for('static', filename='js/chatbot.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/chatbot.js') | timestamp }}" defer></script>
 </head>
 <body>
 <div class="page-container">
@@ -22,7 +22,7 @@
     <nav class="nav container">
         <div class="nav__data">
             <a href="{{ url_for('home.home') }}" class="nav__logo">
-                <img src="{{ url_for('static', filename='images/icon.png') }}" alt="Icon" class="nav__icon">
+                <img src="{{ url_for('static', filename='images/icon.png') | timestamp }}" alt="Icon" class="nav__icon">
                 WalletBuddyAI
             </a>
             <div class="nav__toggle" id="nav-toggle">
@@ -136,11 +136,11 @@
     <button id="sendBtn">Send</button>
 </div>
 <div id="chatIcon" class="chat-icon" style="display: none;">
-    <img src="{{ url_for('static', filename='images/chat-icon.png') }}" alt="Chat Icon">
+    <img src="{{ url_for('static', filename='images/chat-icon.png') | timestamp }}" alt="Chat Icon">
 </div>
 </div>
     <!--=============== MAIN JS ===============-->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') | timestamp }}"></script>
     {% block script %}{% endblock %}
 </body>
 </html>

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block links %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/finances.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/transactions.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/finances.css') | timestamp }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/transactions.css') | timestamp }}">
 {% endblock %}
 {% block content %}
 <div class="section-container">

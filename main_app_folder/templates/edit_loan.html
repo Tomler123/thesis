@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/add_loan.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/add_loan.css') | timestamp }}">
 {% endblock %}
 {% block content %}
 <div class="edit-container">

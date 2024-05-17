@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}WalletBuddyAI.com{% endblock %}
 {% block links %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/account.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/account.css') | timestamp }}">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 {% endblock %}
 {% block content %}

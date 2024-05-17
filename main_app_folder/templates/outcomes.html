@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block links %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/finances.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/finances.css') | timestamp }}">
 {% endblock %}
 {% block content %}
 <h1>Outcomes</h1>

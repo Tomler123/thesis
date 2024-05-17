@@ -4,10 +4,13 @@ from .extensions import db, cors, csrf
 from dotenv import load_dotenv
 import os
 import urllib
+from .filters import timestamp_filter
 
 def create_app(config=None):
     app = Flask(__name__)
 
+    # Register the custom filter
+    app.jinja_env.filters['timestamp'] = timestamp_filter
     load_dotenv()
     
     if config:
