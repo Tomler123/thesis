@@ -1,3 +1,4 @@
 __pycache__/
 venv/
 .env
+main_app_folder/tests/

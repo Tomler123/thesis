@@ -4,7 +4,7 @@
 {% endblock %}
 {% block content %}
     <h1>Add New Income</h1>
-    <form method="post" action="{{ url_for('add_income') }}">
+    <form method="post" action="{{ url_for('finance.add_income') }}">
         {{ form.csrf_token }}
         <div>
             {{ form.name.label }}<br>

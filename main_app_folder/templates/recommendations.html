@@ -11,7 +11,7 @@
         <br>If you want to get default spending recommendations, please remove all input fields with red <strong>Remove</strong> button.
         <br>Otherwise, please input your own fields and give them priorities.
     </p>
-    <form class="form-group" action="{{ url_for('recommendations') }}" method="post">
+    <form class="form-group" action="{{ url_for('recommendations.recommendations') }}" method="post">
         {{ form.csrf_token }}
         <div id="categories">
             

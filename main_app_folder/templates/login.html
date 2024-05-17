@@ -6,14 +6,14 @@
 {% block content %}
 <div class="login-signup-container">
     <div class="form-container">
-        <form id="login-form" method="post" action="{{ url_for('login') }}">
+        <form id="login-form" method="post" action="{{ url_for('auth.login') }}">
             <h2>Log In</h2>
             <input type="email" placeholder="Email" name="email" required>
             <input type="password" placeholder="Password" name="password" required>
             {{ form.csrf_token }} <!-- Include CSRF token -->
             <button type="submit">Log In</button>
-            <p>Don't have an account? <a href="{{ url_for('signup') }}">Sign up</a></p>
-            <p>Forgot your password? <a href="{{ url_for('forgot_password') }}">Reset it here</a></p> <!-- Add this line -->
+            <p>Don't have an account? <a href="{{ url_for('auth.signup') }}">Sign up</a></p>
+            <p>Forgot your password? <a href="{{ url_for('auth.forgot_password') }}">Reset it here</a></p> <!-- Add this line -->
         </form>
     </div>
 </div>

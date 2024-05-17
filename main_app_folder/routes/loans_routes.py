@@ -1,28 +1,29 @@
-from flask import jsonify, redirect, render_template, request, url_for, session, flash
+from flask import Blueprint, jsonify, redirect, render_template, request, url_for, session, flash
 from main_app_folder.forms import forms
 from main_app_folder.models.user import User
 from main_app_folder.models.loans import Loan
 from main_app_folder.utils import helpers
-from main_app_folder import db, app
+from main_app_folder.extensions import db
 from main_app_folder.utils import functions
 
-# def init_app(app):
+loans_bp = Blueprint('loans', __name__)
 
-@app.route('/loans')
+@loans_bp.route('/loans')
 def loans():
     if 'user_id' not in session:
         flash('Please log in to view your loans.')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     user = User.query.get(session['user_id'])
     if not user:
         flash('User not found.')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     return handle_get_loans(user)
-@app.route('/add_loan', methods=['GET', 'POST'])
+
+@loans_bp.route('/add_loan', methods=['GET', 'POST'])
 def add_loan():
     if 'user_id' not in session:
         flash('Please log in to add a loan.')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     form = forms.AddLoanForm()
     if form.validate_on_submit():
         try:
@@ -42,22 +43,24 @@ def add_loan():
         except Exception as e:
             flash(f"An error occurred: {str(e)}")
     return render_template('add_loan.html', form=form)
-@app.route('/edit_loan/<int:loan_id>', methods=['GET', 'POST'])
+
+@loans_bp.route('/edit_loan/<int:loan_id>', methods=['GET', 'POST'])
 def edit_loan(loan_id):
     if 'user_id' not in session:
         flash('Please log in to edit records.')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     form = forms.EditLoanForm()
     loan = Loan.query.filter_by(LoanID=loan_id, UserID=session['user_id']).first()
     if not loan:
         flash('Loan not found.')
-        return redirect(url_for('loans'))
+        return redirect(url_for('loans_bp.loans'))
     if request.method == 'POST' and form.validate_on_submit():
         return handle_edit_loan(loan, form)
     else:
         form = populate_loan_form(loan, form)
         return render_template('edit_loan.html', form=form)
-@app.route('/delete_loan/<int:loan_id>', methods=['POST'])
+
+@loans_bp.route('/delete_loan/<int:loan_id>', methods=['POST'])
 def delete_loan(loan_id):
     if 'user_id' not in session:
         return jsonify({'message': 'Please log in to delete loans.'}), 401
@@ -65,11 +68,12 @@ def delete_loan(loan_id):
     loan = Loan.query.filter_by(LoanID=loan_id, UserID=session['user_id']).first()
     if not loan:
         flash('Loan not found or you do not have permission to delete it.')
-        return redirect(url_for('loans'))
+        return redirect(url_for('loans_bp.loans'))
     try:
         return handle_delete_loan(loan)
     except Exception as e:
         return jsonify({'message': 'An error occurred while deleting the loan.'}), 500
+
 def handle_get_loans(user):
     borrowed_loans = Loan.query.filter_by(UserID=user.UserID, IsBorrower=True).all()
     borrowed_loans_pie_chart_img = functions.loans_pie_chart(borrowed_loans) if borrowed_loans else None
@@ -94,8 +98,7 @@ def handle_add_loan(new_loan):
     db.session.add(new_loan)
     db.session.commit()
     flash('Loan added successfully!')
-    return redirect(url_for('loans'))
-
+    return redirect(url_for('loans_bp.loans'))
 
 def handle_edit_loan(loan, form):
     loan.LenderName = form.lender_name.data
@@ -109,7 +112,7 @@ def handle_edit_loan(loan, form):
     loan.Notes = form.notes.data
     db.session.commit()
     flash('Loan updated successfully!')
-    return redirect(url_for('loans'))
+    return redirect(url_for('loans_bp.loans'))
 
 def handle_delete_loan(loan):
     if loan:
@@ -118,8 +121,7 @@ def handle_delete_loan(loan):
         flash('Loan deleted successfully!')
     else:
         flash('Loan not found or you do not have permission to delete it.')
-    return redirect(url_for('loans'))
-
+    return redirect(url_for('loans_bp.loans'))
 
 def populate_loan_form(loan, form):
     form.lender_name.data = loan.LenderName

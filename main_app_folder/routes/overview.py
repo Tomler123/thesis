@@ -1,20 +1,20 @@
-from flask import jsonify, redirect, render_template, url_for, session, flash
+from flask import Blueprint, jsonify, redirect, render_template, url_for, session, flash
 from main_app_folder.models.user import User
 from main_app_folder.models.outcomes import Outcome
 from main_app_folder.utils import functions
-from main_app_folder import app
 
-# def init_app(app):
-@app.route('/view_finances')
+overview_bp = Blueprint('overview', __name__)
+
+@overview_bp.route('/view_finances')
 def view_finances():
     if 'user_id' not in session:
         flash('Please log in to view your finances.')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     
     user = User.query.get(session['user_id'])
     if not user:
         flash('User not found.')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     
     expenses = Outcome.query.filter_by(UserID=user.UserID, Type='Expense').all()
     categories = set(expense.Name for expense in expenses)

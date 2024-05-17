@@ -7,7 +7,7 @@
 <div class="section-container">
     <div class="section-content">
         <h1>Transactions</h1>
-        <a style="background-color: rgb(1, 40, 63); padding: 1em; border-radius: 15%; color: white;" href="{{ url_for('add_transaction') }}" class="btn btn-primary">Add Transaction</a>
+        <a style="background-color: rgb(1, 40, 63); padding: 1em; border-radius: 15%; color: white;" href="{{ url_for('transactions.add_transaction') }}" class="btn btn-primary">Add Transaction</a>
         <button style="background-color: green; padding: 1em; border-radius: 15%; color: white; margin-left: 10px; font-size: 1em;" onclick="predictNextMonth()" class="btn btn-success">Predict Next Month</button>
         <div id="predictionResult" style="margin-top: 20px;"></div>
         <br><br>

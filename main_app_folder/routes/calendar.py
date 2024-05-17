@@ -1,39 +1,29 @@
-from flask import jsonify, redirect, request, render_template, url_for, session, session
+from flask import Blueprint, jsonify, redirect, request, render_template, url_for, session
 from main_app_folder.utils import helpers
 import json
-from main_app_folder import app
 
-# def init_app(app):
-@app.route('/calendar')
+calendar_bp = Blueprint('calendar', __name__)
+
+@calendar_bp.route('/calendar')
 def calendar():
-    # Assuming you have the user_id from the session
     user_id = session.get('user_id')
     if not user_id:
-        return redirect(url_for('login'))
-    
-    # Connect to the database
+        return redirect(url_for('auth.login'))
     conn = helpers.get_db_connection()
     cursor = conn.cursor()
-    
-    # Fetch both outcome and expense dates
     cursor.execute("""
         SELECT Day AS date FROM outcomes WHERE UserID=?
-    """, (user_id))
-    
-    # Fetch all dates from the cursor
+    """, (user_id,))
     all_dates = [row.date for row in cursor.fetchall()]
-    
-    # Close the connection
     cursor.close()
     conn.close()
-    # Render the calendar template and pass the dates
     return render_template('calendar.html', all_dates=json.dumps(all_dates))
 
-@app.route('/get_outcomes', methods=['POST'])
+@calendar_bp.route('/get_outcomes', methods=['POST'])
 def get_outcomes():
     user_id = session.get('user_id')
     if not user_id:
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     day_clicked = request.json.get('day')
     conn = helpers.get_db_connection()
     cursor = conn.cursor()
@@ -50,7 +40,7 @@ def get_outcomes():
     conn.close()
     return jsonify(outcomes)
 
-@app.route('/update_outcome_status', methods=['POST'])
+@calendar_bp.route('/update_outcome_status', methods=['POST'])
 def update_outcome_status():
     data = request.get_json()
     out_id = data['out_id']
@@ -72,11 +62,11 @@ def update_outcome_status():
         conn.close()
     return jsonify({'success': True, 'message': 'Status updated'})
 
-@app.route('/get_outcomes_status_by_day', methods=['POST'])
+@calendar_bp.route('/get_outcomes_status_by_day', methods=['POST'])
 def get_outcomes_status_by_day():
     user_id = session.get('user_id')
     if not user_id:
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     conn = helpers.get_db_connection()
     cursor = conn.cursor()
     cursor.execute("""
@@ -87,20 +77,18 @@ def get_outcomes_status_by_day():
         GROUP BY Day
     """, (user_id,))
     day_fulfillment_status = {str(row.Day): row.AllFulfilled for row in cursor.fetchall()}
-    
     cursor.close()
     conn.close()
     return jsonify(day_fulfillment_status)
 
-@app.route('/reset_finances', methods=['POST'])
+@calendar_bp.route('/reset_finances', methods=['POST'])
 def reset_finances():
     user_id = session.get('user_id')
     if not user_id:
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     try:
         conn = helpers.get_db_connection()
         cursor = conn.cursor()
-        # Update the `Fulfilled` status for "Subscription" and "Expense"
         cursor.execute("""
             UPDATE outcomes
             SET Fulfilled = 0

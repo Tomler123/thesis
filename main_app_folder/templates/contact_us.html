@@ -15,7 +15,7 @@
 
         <!-- Contact Form -->
         <div class="contact-form">
-            <form id="contact-form" method="post" action="{{ url_for('contact') }}">
+            <form id="contact-form" method="post" action="{{ url_for('auth.contact') }}">
                 {{ form.csrf_token }}
                 <div>
                     {{ form.message.label }}<br>

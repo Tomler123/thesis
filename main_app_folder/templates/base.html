@@ -14,7 +14,6 @@
     <title>{% block title %}{% endblock %}</title>
     {% block styles %}{% endblock %}
     <script src="{{ url_for('static', filename='js/chatbot.js') }}" defer></script>
-
 </head>
 <body>
 <div class="page-container">
@@ -22,7 +21,7 @@
 <header class="header">
     <nav class="nav container">
         <div class="nav__data">
-            <a href="home" class="nav__logo">
+            <a href="{{ url_for('home.home') }}" class="nav__logo">
                 <img src="{{ url_for('static', filename='images/icon.png') }}" alt="Icon" class="nav__icon">
                 WalletBuddyAI
             </a>
@@ -34,7 +33,7 @@
         <!--=============== NAV MENU ===============-->
         <div class="nav__menu" id="nav-menu">
             <ul class="nav__list">
-            <li><a href="{{url_for('calendar')}}" class="nav__link">Calendar</a></li>
+            <li><a href="{{ url_for('calendar.calendar') }}" class="nav__link">Calendar</a></li>
             <!--=============== DROPDOWN 1 ===============-->
                 <li class="dropdown__item">
                     <div class="nav__link">
@@ -43,55 +42,55 @@
 
                     <ul class="dropdown__menu">
                         <li>
-                            <a href="{{ url_for('incomes') }}" class="dropdown__link">
+                            <a href="{{ url_for('finance.incomes') }}" class="dropdown__link">
                             <i class="ri-pie-chart-line"></i> Incomes
                             </a>
                         </li>
                     
                         <li>
-                            <a href="{{ url_for('savings') }}" class="dropdown__link">
+                            <a href="{{ url_for('finance.savings') }}" class="dropdown__link">
                             <i class="ri-pie-chart-line"></i> Savings
                             </a>
                         </li>
                     
                         <li>
-                            <a href="{{ url_for('outcomes') }}" class="dropdown__link">
+                            <a href="{{ url_for('finance.outcomes') }}" class="dropdown__link">
                             <i class="ri-pie-chart-line"></i> Outcomes
                             </a>
                         </li>
 
                         <li>
-                            <a href="{{ url_for('loans') }}" class="dropdown__link">
+                            <a href="{{ url_for('loans.loans') }}" class="dropdown__link">
                             <i class="ri-pie-chart-line"></i> Loans
                             </a>
                         </li>
                         <!-- <li>
-                            <a href="{{url_for('transactions')}}" class="dropdown__link">
+                            <a href="{{url_for('transactions.transactions')}}" class="dropdown__link">
                             <i class="ri-pie-chart-line"></i> Transactions
                             </a>
                         </li> -->
                     </ul>
                 </li>
                   
-                <li><a href="{{url_for('recommendations')}}" class="nav__link">Recommendations</a></li>
-                <li><a href="{{url_for('transactions')}}" class="nav__link">Transactions</a></li>
+                <li><a href="{{ url_for('recommendations.recommendations') }}" class="nav__link">Recommendations</a></li>
+                <li><a href="{{ url_for('transactions.transactions') }}" class="nav__link">Transactions</a></li>
                 
-                <!-- <li><a href="{{url_for('home')}}" class="nav__link">Advices</a></li> -->
+                <!-- <li><a href="{{ url_for('home.home') }}" class="nav__link">Advices</a></li> -->
                 
-                <li><a href="{{url_for('view_finances')}}" class="nav__link">Overview</a></li>
+                <li><a href="{{ url_for('overview.view_finances') }}" class="nav__link">Overview</a></li>
 
-                <li><a href="{{url_for('contact')}}" class="nav__link">Contact</a></li>
+                <li><a href="{{ url_for('auth.contact') }}" class="nav__link">Contact</a></li>
                 
                 {% if 'user_id' in session %}
                 <li>
-                    <a href="{{ url_for('logout') }}" class="nav__link">Log Out</a>
+                    <a href="{{ url_for('auth.logout') }}" class="nav__link">Log Out</a>
                 </li>
                 <li>
-                    <a href="{{url_for('account')}}" class="nav__link">Profile</a>
+                    <a href="{{ url_for('account.account') }}" class="nav__link">Profile</a>
                 </li>
                 {% else %}
                 <li>
-                    <a href="{{url_for('login')}}" class="nav__link">Log In/Sign Up</a>
+                    <a href="{{ url_for('auth.login') }}" class="nav__link">Log In/Sign Up</a>
                 </li>
                 {% endif %}
             </ul>
@@ -106,8 +105,8 @@
         <div class="footer-section quick-links">
             <h3>Quick Links</h3>
             <ul>
-                <li><a href="{{url_for('home')}}">Home</a></li>
-                <li><a href="{{url_for('contact')}}">Contact Us</a></li>
+                <li><a href="{{ url_for('home.home') }}">Home</a></li>
+                <li><a href="{{ url_for('auth.contact') }}">Contact Us</a></li>
             </ul>
         </div>
         <div class="footer-section contact-info">

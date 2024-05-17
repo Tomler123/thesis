@@ -1,15 +1,10 @@
-
-
-
-from flask import flash, redirect, render_template, request, session, url_for
-
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from main_app_folder.utils import helpers
 from main_app_folder.forms import forms
 
-from main_app_folder import app
+account_bp = Blueprint('account', __name__)
 
-# def init_app(app):
-@app.route('/update_icon', methods=['POST'])
+@account_bp.route('/update_icon', methods=['POST'])
 def update_icon():
     if 'user_id' in session:
         user_id = session['user_id']
@@ -24,11 +19,12 @@ def update_icon():
             flash('Profile image updated successfully.')
         except Exception as e:
             flash('An error occurred while updating the profile image.')
-        return redirect(url_for('account'))  # Redirect to the account page after updating
+        return redirect(url_for('account.account'))  # Redirect to the account page after updating
     else:
         flash('You must be logged in to update the profile image.')
-        return redirect(url_for('login'))
-@app.route('/account', methods=['GET','POST'])
+        return redirect(url_for('auth.login'))
+
+@account_bp.route('/account', methods=['GET','POST'])
 def account():
     if 'user_id' in session:
         user_id = session['user_id']
@@ -89,11 +85,12 @@ def account():
             cursor.close()
             conn.close()
             flash('User not found.')
-            return redirect(url_for('login'))
+            return redirect(url_for('auth.login'))
     else:
         flash('You must be logged in to view the account page')
-        return redirect(url_for('login'))
-@app.route('/logout')
+        return redirect(url_for('auth.login'))
+
+@account_bp.route('/logout')
 def logout():
     session.pop('user_id', None)  # Remove the user_id from the session
-    return redirect(url_for('home'))
+    return redirect(url_for('home.home'))

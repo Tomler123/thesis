@@ -1,9 +1,10 @@
-from flask import jsonify, request
+from flask import jsonify, request, Blueprint
 # import yaml
 # from chatterbot import ChatBot
 # from chatterbot.trainers import ListTrainer
 # import spacy
-from main_app_folder import app
+# from main_app_folder import app
+chatbot_bp = Blueprint('chatbot', __name__)
 # def init_app(app):
 # spacy.load('en_core_web_sm')
 # chatbot = ChatBot(
@@ -23,7 +24,7 @@ from main_app_folder import app
 # trainer = ListTrainer(chatbot)
 # for conversation in data['conversations']:
 #     trainer.train(conversation)
-@app.route("/get_response", methods=['POST'])
+@chatbot_bp.route("/get_response", methods=['POST'])
 def get_response():
     # # logging.debug("Received POST to /get_response")
     # data = request.get_json()

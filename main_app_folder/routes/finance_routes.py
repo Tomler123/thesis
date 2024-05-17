@@ -1,31 +1,33 @@
-from flask import jsonify, redirect, render_template, request, url_for, session, flash, session
+from flask import Blueprint, jsonify, redirect, render_template, request, url_for, session, flash
 import datetime
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
-from main_app_folder.forms import forms  # Assuming your form is in a forms.py file
+from main_app_folder.forms import forms
 from main_app_folder.utils import helpers
 from main_app_folder.utils import functions
 from main_app_folder.extensions import db
-from main_app_folder import app
 from main_app_folder.models.user import User
 from main_app_folder.models.outcomes import Outcome
 
-@app.route('/incomes')
+finance_bp = Blueprint('finance', __name__)
+
+@finance_bp.route('/incomes')
 def incomes():
     try:
         if 'user_id' not in session:
-            return redirect(url_for('login'))
+            return redirect(url_for('auth.login'))
         user_id = session['user_id']
         return handle_get_incomes(user_id)
     except SQLAlchemyError as e:
         return jsonify({'error': str(e)}), 500
-@app.route('/add_income', methods=['GET', 'POST'])
+
+@finance_bp.route('/add_income', methods=['GET', 'POST'])
 def add_income():
     try:
         if 'user_id' not in session:
             flash('Please log in to add an income.')
-            return redirect(url_for('login'))
+            return redirect(url_for('auth.login'))
         form = forms.IncomeForm()
         if form.validate_on_submit():
             new_income = Outcome(
@@ -35,35 +37,32 @@ def add_income():
                 Day=form.day.data,
                 Type='Income'
             )
-            
             return handle_add_income(new_income)
-        
         return render_template('add_income.html', form=form)
-    
     except SQLAlchemyError as e:
         db.session.rollback()
         flash('Error adding income.')
         return render_template('add_income.html', form=form), 500
-    
-@app.route('/edit_income/<int:income_id>', methods=['GET', 'POST'])
+
+@finance_bp.route('/edit_income/<int:income_id>', methods=['GET', 'POST'])
 def edit_income(income_id):
     if 'user_id' not in session:
         flash('Please log in to edit records.')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     income = Outcome.query.filter_by(ID=income_id, UserID=session['user_id']).first()
     if not income:
         flash('Income not found.')
-        return redirect(url_for('incomes'))
+        return redirect(url_for('finance.incomes'))
     form = forms.EditIncomeForm(obj=income)
     if request.method == 'POST' and form.validate_on_submit():
         return handle_edit_income(income, form)
-    
     elif request.method == 'GET':
         form.name.data = income.Name
         form.cost.data = income.Cost
         form.day.data = income.Day
     return render_template('edit_income.html', form=form, income_id=income_id)
-@app.route('/delete_income/<int:income_id>', methods=['POST'])
+
+@finance_bp.route('/delete_income/<int:income_id>', methods=['POST'])
 def delete_income(income_id):
     try:
         if 'user_id' not in session:
@@ -73,17 +72,19 @@ def delete_income(income_id):
     except SQLAlchemyError as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
-@app.route('/savings')
+
+@finance_bp.route('/savings')
 def savings():
     if 'user_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     user_id = session['user_id']
     return handle_get_savings(user_id)
-@app.route('/add_saving', methods=['GET', 'POST'])
+
+@finance_bp.route('/add_saving', methods=['GET', 'POST'])
 def add_saving():
     if 'user_id' not in session:
         flash('Please log in to add a saving.')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     form = forms.SavingForm()
     if form.validate_on_submit():
         new_saving = Outcome(
@@ -92,19 +93,18 @@ def add_saving():
             Cost=form.cost.data,
             Type='Saving'
         )
-        
         return handle_add_saving(new_saving)
-    
     return render_template('add_saving.html', form=form)
-@app.route('/edit_saving/<int:saving_id>', methods=['GET', 'POST'])
-def edit_saving(saving_id):
+
+@finance_bp.route('/edit_savings/<int:saving_id>', methods=['GET', 'POST'])
+def edit_savings(saving_id):
     if 'user_id' not in session:
         flash('Please log in to edit records.')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     saving = Outcome.query.filter_by(ID=saving_id, UserID=session['user_id'], Type='Saving').first()
     if not saving:
         flash('Saving not found.')
-        return redirect(url_for('savings'))
+        return redirect(url_for('finance.savings'))
     form = forms.EditSavingForm(obj=saving)
     if request.method == 'POST' and form.validate_on_submit():
         return handle_edit_saving(saving, form)
@@ -112,8 +112,9 @@ def edit_saving(saving_id):
     elif request.method == 'GET':
         form.name.data = saving.Name
         form.cost.data = saving.Cost
-    return render_template('edit_saving.html', form=form, saving_id=saving_id)
-@app.route('/delete_saving/<int:saving_id>', methods=['POST'])
+    return render_template('edit_savings.html', form=form, saving_id=saving_id)
+
+@finance_bp.route('/delete_saving/<int:saving_id>', methods=['POST'])
 def delete_saving(saving_id):
     try:
         if 'user_id' not in session:
@@ -123,17 +124,19 @@ def delete_saving(saving_id):
     except SQLAlchemyError as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
-@app.route('/outcomes')
+
+@finance_bp.route('/outcomes')
 def outcomes():
     if 'user_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     user_id = session['user_id']
     return handle_get_outcomes(user_id)
-@app.route('/add_outcome', methods=['GET', 'POST'])
+
+@finance_bp.route('/add_outcome', methods=['GET', 'POST'])
 def add_outcome():
     if 'user_id' not in session:
         flash('Please log in to add an outcome.')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     form = forms.OutcomeForm()
     if form.validate_on_submit():
         try:
@@ -152,19 +155,19 @@ def add_outcome():
             flash('An error occurred while adding the outcome: ' + str(e))
             db.session.rollback()
     return render_template('add_outcome.html', form=form)
-@app.route('/edit_outcome/<int:outcome_id>', methods=['GET', 'POST'])
+
+@finance_bp.route('/edit_outcome/<int:outcome_id>', methods=['GET', 'POST'])
 def edit_outcome(outcome_id):
     if 'user_id' not in session:
         flash('Please log in to edit records.')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     outcome = Outcome.query.filter_by(ID=outcome_id, UserID=session['user_id']).first()
     if not outcome:
         flash('Outcome not found.')
-        return redirect(url_for('outcomes'))
-    form = forms.EditOutcomeForm(obj=outcome)  # Initialize form with outcome object if it's a GET request
+        return redirect(url_for('finance.outcomes'))
+    form = forms.EditOutcomeForm(obj=outcome)
     if request.method == 'POST' and form.validate_on_submit():
         return handle_edit_outcome(outcome, form)
-    
     elif request.method == 'GET':
         form.name.data = outcome.Name
         form.cost.data = outcome.Cost
@@ -172,7 +175,7 @@ def edit_outcome(outcome_id):
         form.type.data = outcome.Type
     return render_template('edit_outcome.html', form=form, outcome_id=outcome_id)
 
-@app.route('/delete_outcome/<int:outcome_id>', methods=['POST'])
+@finance_bp.route('/delete_outcome/<int:outcome_id>', methods=['POST'])
 def delete_outcome(outcome_id):
     if 'user_id' not in session:
         return jsonify({'message': 'Please log in to delete outcomes.'}), 401
@@ -189,7 +192,7 @@ def handle_add_income(new_income):
     db.session.add(new_income)
     db.session.commit()
     flash('Income added successfully!')
-    return redirect(url_for('incomes'))
+    return redirect(url_for('finance.incomes'))
 
 def handle_edit_income(income, form):
     income.Name = form.name.data
@@ -197,7 +200,7 @@ def handle_edit_income(income, form):
     income.Day = form.day.data
     db.session.commit()
     flash('Income updated successfully!')
-    return redirect(url_for('incomes'))
+    return redirect(url_for('finance.incomes'))
 
 def handle_delete_income(income):
     if income:
@@ -206,37 +209,31 @@ def handle_delete_income(income):
         flash('Income deleted successfully!')
     else:
         flash('Income not found or you do not have permission to delete it.')
-    return redirect(url_for('incomes'))
+    return redirect(url_for('finance.incomes'))
 
 def handle_get_savings(user_id):
     conn = helpers.get_db_connection()
     cursor = conn.cursor()
-
     cursor.execute("SELECT * FROM outcomes WHERE UserID = ? AND Type = 'Saving'", (user_id,))
     savings = cursor.fetchall()
-    
     total_savings = sum(saving.Cost for saving in savings)
-
-    # Generate pie charts if there are corresponding records
     savings_pie_chart_img = functions.generate_pie_chart(savings) if savings else None
-    
     cursor.close()
     conn.close()
-
     return render_template('saving.html', savings=savings, total_savings=total_savings, savings_pie_chart_img=savings_pie_chart_img)
 
 def handle_add_saving(new_saving):
     db.session.add(new_saving)
     db.session.commit()
     flash('Saving added successfully!')
-    return redirect(url_for('savings'))
+    return redirect(url_for('finance.savings'))
 
 def handle_edit_saving(saving, form):
     saving.Name = form.name.data
     saving.Cost = form.cost.data
     db.session.commit()
     flash('Saving updated successfully!')
-    return redirect(url_for('savings'))
+    return redirect(url_for('finance.savings'))
 
 def handle_delete_saving(saving):
     if saving:
@@ -245,7 +242,7 @@ def handle_delete_saving(saving):
         flash('Saving deleted successfully!')
     else:
         flash('Saving not found or you do not have permission to delete it.')
-    return redirect(url_for('savings'))
+    return redirect(url_for('finance.savings'))
 
 def handle_get_outcomes(user_id):
     outcomes = Outcome.query.filter_by(UserID=user_id).all()
@@ -261,7 +258,7 @@ def handle_add_outcome(new_outcome):
     db.session.add(new_outcome)
     db.session.commit()
     flash('Outcome added successfully!')
-    return redirect(url_for('outcomes'))
+    return redirect(url_for('finance.outcomes'))
 
 def handle_edit_outcome(outcome, form):
     outcome.Name = form.name.data
@@ -270,7 +267,7 @@ def handle_edit_outcome(outcome, form):
     outcome.Type = form.type.data
     db.session.commit()
     flash('Outcome updated successfully!')
-    return redirect(url_for('outcomes'))
+    return redirect(url_for('finance.outcomes'))
 
 def handle_delete_outcome(outcome):
     if outcome:
@@ -279,4 +276,4 @@ def handle_delete_outcome(outcome):
         flash('Outcome deleted successfully!')
     else:
         flash('Outcome not found or you do not have permission to delete it.')
-    return redirect(url_for('outcomes'))
+    return redirect(url_for('finance.outcomes'))

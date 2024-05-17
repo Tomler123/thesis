@@ -24,26 +24,26 @@
             <h3>Income</h3>
             <hr class="dotted">
             <p>${{ total_income }}</p>
-            <a href="{{ url_for('incomes') }}">More</a>
+            <a href="{{ url_for('finance.incomes') }}">More</a>
         </div>
         <div class="link-item">
             <h3>Savings</h3>
             <hr class="dotted">
             <p>${{ total_saving }}</p>
-            <a href="{{ url_for('savings') }}">More</a>
+            <a href="{{ url_for('finance.savings') }}">More</a>
         </div>
         <div class="link-item">
             <h3>Expenses</h3>
             <hr class="dotted">
             <p>${{ total_expenses }}</p>
-            <a href="{{ url_for('outcomes') }}">More</a>
+            <a href="{{ url_for('finance.outcomes') }}">More</a>
         </div>
         <div class="link-item">
             <h3>Loans</h3>
             <hr class="dotted">
             <p>Lent<br>${{ total_lent }}</p>
             <p>Borrowed<br>${{ total_borrowed }}</p>
-            <a href="{{ url_for('loans') }}">More</a>
+            <a href="{{ url_for('loans.loans') }}">More</a>
         </div>
     </div>
 
@@ -72,7 +72,7 @@
     </div>
 
     <!-- Hidden form for icon selection -->
-    <form id="iconForm" action="{{ url_for('update_icon') }}" method="POST">
+    <form id="iconForm" action="{{ url_for('account.update_icon') }}" method="POST">
         {{ form.csrf_token }}
         <input type="hidden" id="selectedIcon" name="selected_icon" value="{{ user.ProfileImage }}">
     </form>

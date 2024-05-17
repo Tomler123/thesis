@@ -53,6 +53,10 @@ class SavingForm(FlaskForm):
     name = StringField('Name', validators=[InputRequired()])
     cost = FloatField('Cost', validators=[InputRequired(), NumberRange(min=0)])
 
+class EditSavingForm(FlaskForm):
+    name = StringField('Name', validators=[InputRequired()])
+    cost = FloatField('Cost', validators=[InputRequired(), NumberRange(min=0)])
+
 class EditIncomeForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
     cost = FloatField('Cost', validators=[DataRequired()])

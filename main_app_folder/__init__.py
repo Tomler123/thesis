@@ -1,13 +1,13 @@
 from flask import Flask
+from flask_session import Session
 from .extensions import db, cors, csrf
 from dotenv import load_dotenv
 import os
 import urllib
 
-app = Flask(__name__)
-
 def create_app(config=None):
-    # app = Flask(__name__)
+    app = Flask(__name__)
+
     load_dotenv()
     
     if config:
@@ -31,21 +31,32 @@ def create_app(config=None):
     db.init_app(app)
     cors.init_app(app, supports_credentials=True)
     csrf.init_app(app)
-
-    from .routes import home_routes, auth_routes, finance_routes, loans_routes, overview, account, recommendations, calendar, transactions, chatbot
     
-    # home_routes.init_app(app)
-    # calendar.init_app(app)
-    # loans_routes.init_app(app)
-    # home_routes.home
-    # calendar.calendar
-    # loans_routes.loans
-    # auth_routes.init_app(app)
-    # account.init_app(app)
-    # overview.init_app(app)
-    # finance_routes.init_app(app)
-    # recommendations.init_app(app)
-    # transactions.init_app(app)
-    # chatbot.init_app(app)
+    # Configure session
+    app.config['SESSION_TYPE'] = 'filesystem'
+    Session(app)
+
+    # Register Blueprints
+    from .routes.home_routes import home_bp
+    from .routes.auth_routes import auth_bp
+    from .routes.finance_routes import finance_bp
+    from .routes.loans_routes import loans_bp
+    from .routes.overview import overview_bp
+    from .routes.account import account_bp
+    from .routes.recommendations import recommendations_bp
+    from .routes.calendar import calendar_bp
+    from .routes.transactions import transactions_bp
+    from .routes.chatbot import chatbot_bp
+
+    app.register_blueprint(home_bp)
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(finance_bp)
+    app.register_blueprint(loans_bp)
+    app.register_blueprint(overview_bp)
+    app.register_blueprint(account_bp)
+    app.register_blueprint(recommendations_bp)
+    app.register_blueprint(calendar_bp)
+    app.register_blueprint(transactions_bp)
+    app.register_blueprint(chatbot_bp)
 
     return app

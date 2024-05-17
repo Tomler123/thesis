@@ -1,4 +1,4 @@
-from flask import jsonify, redirect, request, render_template, url_for, session, flash, session
+from flask import Blueprint, jsonify, redirect, request, render_template, url_for, session, flash
 import datetime
 import json
 from sqlalchemy import func, extract
@@ -8,25 +8,27 @@ from main_app_folder.forms import forms
 from main_app_folder.models.transactions import Transaction
 from main_app_folder.models.outcomes import Outcome
 from main_app_folder.ai_algorithms import transaction_algo
-from main_app_folder import db, app
+from main_app_folder.extensions import db
 
-# def init_app(app):
-@app.route('/transactions')
+transactions_bp = Blueprint('transactions', __name__)
+
+@transactions_bp.route('/transactions')
 def transactions():
     if 'user_id' not in session:
         flash('Please log in to view your transactions.')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     try:
         user_id = session['user_id']
         return handle_get_transactions(user_id)
     except Exception as e:
         flash('An error occurred while fetching transactions.')
         return render_template('transactions.html', transactions=[])
-@app.route('/add_transaction', methods=['GET', 'POST'])
+
+@transactions_bp.route('/add_transaction', methods=['GET', 'POST'])
 def add_transaction():
     if 'user_id' not in session:
         flash('Please log in to add a transaction.')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     form = forms.TransactionForm()
     if request.method == 'GET':
         form.date.data = datetime.date.today()
@@ -40,25 +42,34 @@ def add_transaction():
                 Category=form.category.data,
                 Description=form.description.data
             )
-            return handle_add_transaction(new_transaction)
+            db.session.add(new_transaction)
+            db.session.commit()
+            flash('Transaction added successfully!')
+            return redirect(url_for('transactions.transactions'))
         except Exception as e:
             db.session.rollback()
             flash('An error occurred while adding the transaction. Please try again.')
-            
     return render_template('add_transaction.html', form=form)
-@app.route('/edit_transaction/<int:transaction_id>', methods=['GET', 'POST'])
+
+@transactions_bp.route('/edit_transaction/<int:transaction_id>', methods=['GET', 'POST'])
 def edit_transaction(transaction_id):
     if 'user_id' not in session:
         flash('Please log in to edit a transaction.')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     transaction = Transaction.query.filter_by(TransactionID=transaction_id, UserID=session['user_id']).first()
     if not transaction:
         flash('Transaction not found.')
-        return redirect(url_for('transactions'))
+        return redirect(url_for('transactions.transactions'))
     form = forms.TransactionForm(obj=transaction)
     if request.method == 'POST' and form.validate_on_submit():
         try:
-            return handle_edit_transaction(transaction, form)
+            transaction.Amount = form.amount.data
+            transaction.Date = form.date.data
+            transaction.Category = form.category.data
+            transaction.Description = form.description.data
+            db.session.commit()
+            flash('Transaction updated successfully!')
+            return redirect(url_for('transactions.transactions'))
         except Exception as e:
             db.session.rollback()
             flash('An error occurred while updating the transaction. Please try again.')
@@ -69,22 +80,27 @@ def edit_transaction(transaction_id):
         form.category.data = transaction.Category
         form.description.data = transaction.Description
     return render_template('edit_transaction.html', form=form, transaction_id=transaction_id)
-@app.route('/delete_transaction/<int:transaction_id>', methods=['POST'])
+
+@transactions_bp.route('/delete_transaction/<int:transaction_id>', methods=['POST'])
 def delete_transaction(transaction_id):
     if 'user_id' not in session:
         flash('Please log in to delete a transaction.')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     transaction = Transaction.query.filter_by(TransactionID=transaction_id, UserID=session['user_id']).first()
     if not transaction:
         flash('Transaction not found or you do not have permission to delete it.')
-        return redirect(url_for('transactions'))
+        return redirect(url_for('transactions.transactions'))
     try:
-        return handle_delete_transaction(transaction)
+        db.session.delete(transaction)
+        db.session.commit()
+        flash('Transaction deleted successfully!')
+        return redirect(url_for('transactions.transactions'))
     except Exception as e:
         db.session.rollback()
         flash('An error occurred while deleting the transaction. Please try again.')
-    return redirect(url_for('transactions'))
-@app.route('/predict_next_month', methods=['GET'])
+        return redirect(url_for('transactions.transactions'))
+
+@transactions_bp.route('/predict_next_month', methods=['GET'])
 def predict_next_month():
     if 'user_id' not in session:
         return json.dumps({'success': False, 'message': 'User not logged in'}), 401
@@ -92,7 +108,7 @@ def predict_next_month():
     conn = helpers.get_db_connection()
     cursor = conn.cursor()
     # Get the earliest transaction date
-    cursor.execute("SELECT MIN(Date) FROM transactions WHERE UserID = ?", user_id)
+    cursor.execute("SELECT MIN(Date) FROM transactions WHERE UserID = ?", (user_id,))
     min_date_row = cursor.fetchone()
     if not min_date_row or not min_date_row[0]:
         return json.dumps({'success': False, 'message': 'No transactions found.'}), 404
@@ -127,30 +143,7 @@ def predict_next_month():
         }), 200
     except Exception as e:
         return json.dumps({'success': False, 'message': str(e)}), 500
+
 def handle_get_transactions(user_id):
     transactions = Transaction.query.filter_by(UserID=user_id).order_by(Transaction.Date.desc()).all()
     return render_template('transactions.html', transactions=transactions)
-
-def handle_add_transaction(new_transaction):
-    db.session.add(new_transaction)
-    db.session.commit()
-    flash('Transaction added successfully!')
-    return redirect(url_for('transactions'))
-
-def handle_edit_transaction(transaction, form):
-    transaction.Amount = form.amount.data
-    transaction.Date = form.date.data
-    transaction.Category = form.category.data
-    transaction.Description = form.description.data
-    db.session.commit()
-    flash('Transaction updated successfully!')
-    return redirect(url_for('transactions'))
-
-def handle_delete_transaction(transaction):
-    if transaction:
-        db.session.delete(transaction)
-        db.session.commit()
-        flash('Transaction deleted successfully!')
-    else:
-        flash('Transaction not found or you do not have permission to delete it.')
-    return redirect(url_for('transactions'))
