@@ -4,8 +4,10 @@ from dotenv import load_dotenv
 import os
 import urllib
 
+app = Flask(__name__)
+
 def create_app(config=None):
-    app = Flask(__name__)
+    # app = Flask(__name__)
     load_dotenv()
     
     if config:
@@ -32,15 +34,18 @@ def create_app(config=None):
 
     from .routes import home_routes, auth_routes, finance_routes, loans_routes, overview, account, recommendations, calendar, transactions, chatbot
     
-    home_routes.init_app(app)
-    auth_routes.init_app(app)
-    account.init_app(app)
-    overview.init_app(app)
-    finance_routes.init_app(app)
-    loans_routes.init_app(app)
-    recommendations.init_app(app)
-    calendar.init_app(app)
-    transactions.init_app(app)
-    chatbot.init_app(app)
+    # home_routes.init_app(app)
+    # calendar.init_app(app)
+    # loans_routes.init_app(app)
+    # home_routes.home
+    # calendar.calendar
+    # loans_routes.loans
+    # auth_routes.init_app(app)
+    # account.init_app(app)
+    # overview.init_app(app)
+    # finance_routes.init_app(app)
+    # recommendations.init_app(app)
+    # transactions.init_app(app)
+    # chatbot.init_app(app)
 
     return app
