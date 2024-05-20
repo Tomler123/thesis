@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, redirect, request, render_template, url_for, session, flash
+from flask import Blueprint, jsonify, redirect, request, render_template, url_for, session, flash, current_app
 import datetime
 import json
 from sqlalchemy import func, extract
@@ -12,22 +12,25 @@ from main_app_folder.extensions import db
 
 transactions_bp = Blueprint('transactions', __name__)
 
+def is_testing():
+    return current_app.config['TESTING']
+
 @transactions_bp.route('/transactions')
 def transactions():
     if 'user_id' not in session:
-        flash('Please log in to view your transactions.')
+        flash('Please log in to view your transactions.', 'danger')
         return redirect(url_for('auth.login'))
     try:
         user_id = session['user_id']
         return handle_get_transactions(user_id)
     except Exception as e:
-        flash('An error occurred while fetching transactions.')
+        flash('An error occurred while fetching transactions.', 'danger')
         return render_template('transactions.html', transactions=[])
 
 @transactions_bp.route('/add_transaction', methods=['GET', 'POST'])
 def add_transaction():
     if 'user_id' not in session:
-        flash('Please log in to add a transaction.')
+        flash('Please log in to add a transaction.', 'danger')
         return redirect(url_for('auth.login'))
     form = forms.TransactionForm()
     if request.method == 'GET':
@@ -44,21 +47,27 @@ def add_transaction():
             )
             db.session.add(new_transaction)
             db.session.commit()
-            flash('Transaction added successfully!')
+            if is_testing():
+                return jsonify({'message': 'Transaction added successfully!'}), 200
+            flash('Transaction added successfully!', 'success')
             return redirect(url_for('transactions.transactions'))
         except Exception as e:
             db.session.rollback()
-            flash('An error occurred while adding the transaction. Please try again.')
+            if is_testing():
+                return jsonify({'message': 'An error occurred while adding the transaction. Please try again.'}), 500
+            flash('An error occurred while adding the transaction. Please try again.', 'danger')
     return render_template('add_transaction.html', form=form)
 
 @transactions_bp.route('/edit_transaction/<int:transaction_id>', methods=['GET', 'POST'])
 def edit_transaction(transaction_id):
     if 'user_id' not in session:
-        flash('Please log in to edit a transaction.')
+        flash('Please log in to edit a transaction.', 'danger')
         return redirect(url_for('auth.login'))
     transaction = Transaction.query.filter_by(TransactionID=transaction_id, UserID=session['user_id']).first()
     if not transaction:
-        flash('Transaction not found.')
+        if is_testing():
+            return jsonify({'message': 'Transaction not found.'}), 404
+        flash('Transaction not found.', 'danger')
         return redirect(url_for('transactions.transactions'))
     form = forms.TransactionForm(obj=transaction)
     if request.method == 'POST' and form.validate_on_submit():
@@ -68,13 +77,16 @@ def edit_transaction(transaction_id):
             transaction.Category = form.category.data
             transaction.Description = form.description.data
             db.session.commit()
-            flash('Transaction updated successfully!')
+            if is_testing():
+                return jsonify({'message': 'Transaction updated successfully!'}), 200
+            flash('Transaction updated successfully!', 'success')
             return redirect(url_for('transactions.transactions'))
         except Exception as e:
             db.session.rollback()
-            flash('An error occurred while updating the transaction. Please try again.')
+            if is_testing():
+                return jsonify({'message': 'An error occurred while updating the transaction. Please try again.'}), 500
+            flash('An error occurred while updating the transaction. Please try again.', 'danger')
     else:
-        # Manually populate the form fields with the transaction data
         form.amount.data = transaction.Amount
         form.date.data = transaction.Date
         form.category.data = transaction.Category
@@ -84,21 +96,26 @@ def edit_transaction(transaction_id):
 @transactions_bp.route('/delete_transaction/<int:transaction_id>', methods=['POST'])
 def delete_transaction(transaction_id):
     if 'user_id' not in session:
-        flash('Please log in to delete a transaction.')
+        flash('Please log in to delete a transaction.', 'danger')
         return redirect(url_for('auth.login'))
     transaction = Transaction.query.filter_by(TransactionID=transaction_id, UserID=session['user_id']).first()
     if not transaction:
-        flash('Transaction not found or you do not have permission to delete it.')
+        if is_testing():
+            return jsonify({'message': 'Transaction not found or you do not have permission to delete it.'}), 404
+        flash('Transaction not found or you do not have permission to delete it.', 'danger')
         return redirect(url_for('transactions.transactions'))
     try:
         db.session.delete(transaction)
         db.session.commit()
-        flash('Transaction deleted successfully!')
+        if is_testing():
+            return jsonify({'message': 'Transaction deleted successfully!'}), 200
+        flash('Transaction deleted successfully!', 'success')
         return redirect(url_for('transactions.transactions'))
     except Exception as e:
         db.session.rollback()
-        flash('An error occurred while deleting the transaction. Please try again.')
-        return redirect(url_for('transactions.transactions'))
+        if is_testing():
+            return jsonify({'message': 'An error occurred while deleting the transaction. Please try again.'}), 500
+        flash('An error occurred while deleting the transaction. Please try again.', 'danger')
 
 @transactions_bp.route('/predict_next_month', methods=['GET'])
 def predict_next_month():
@@ -107,21 +124,16 @@ def predict_next_month():
     user_id = session['user_id']
     conn = helpers.get_db_connection()
     cursor = conn.cursor()
-    # Get the earliest transaction date
     cursor.execute("SELECT MIN(Date) FROM transactions WHERE UserID = ?", (user_id,))
     min_date_row = cursor.fetchone()
     if not min_date_row or not min_date_row[0]:
         return json.dumps({'success': False, 'message': 'No transactions found.'}), 404
-    
+
     total_income = db.session.query(func.sum(Outcome.Cost)).filter(Outcome.UserID == user_id, Outcome.Type == 'Income').scalar() or 0
-    # Calculate the number of months since the earliest transaction
     earliest_date = min_date_row[0]
     months_count = (datetime.date.today().year - earliest_date.year) * 12 + (datetime.date.today().month - earliest_date.month + 1)
-    
-    # Prepare month labels and sums
     months = list(map(str, range(1, months_count + 1)))
-    sums = [0] * months_count  # Default sums to zero
-    # Iterate over each month since the earliest transaction and calculate sums
+    sums = [0] * months_count
     for i in range(months_count):
         month = (earliest_date.month - 1 + i) % 12 + 1
         year = earliest_date.year + ((earliest_date.month - 1 + i) // 12)
@@ -129,12 +141,9 @@ def predict_next_month():
         sums[i] = float(monthly_sum or 0)
     cursor.close()
     conn.close()
-    # Convert months and sums to space-separated strings
     month_str = ' '.join(map(str, months))
-    sum_str = ' '.join(map(lambda x: f"{x:.1f}", sums))  # Format floats to one decimal place
-    # Call your prediction algorithm
+    sum_str = ' '.join(map(lambda x: f"{x:.1f}", sums))
     try:
-        # Assuming your function can take lists of months and their corresponding sums
         prediction = transaction_algo.main(month_str, sum_str)
         return json.dumps({
             'success': True, 

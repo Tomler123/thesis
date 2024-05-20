@@ -95,16 +95,17 @@ def login():
         password = request.form.get('password')
         conn = helpers.get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT UserID, Password FROM users WHERE Email = ?", email)
+        cursor.execute("SELECT UserID, Password FROM users WHERE Email = ?", (email,))
         user = cursor.fetchone()
         cursor.close()
         conn.close()
-        if user and check_password_hash(user.Password, password):
-            session['user_id'] = user.UserID
+        if user and check_password_hash(user[1], password):  # Adjusted to access password correctly
+            session['user_id'] = user[0]
             return redirect(url_for('account.account'))
         else:
             flash('Invalid email or password')
     return render_template('login.html', form=form)
+
 
 @auth_bp.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():

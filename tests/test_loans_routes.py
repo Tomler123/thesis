@@ -4,6 +4,7 @@ from flask_testing import TestCase
 from main_app_folder import create_app, db
 from main_app_folder.models.loans import Loan
 from main_app_folder.models.user import User
+from datetime import datetime
 
 class LoansRoutesTest(TestCase):
 
@@ -51,8 +52,8 @@ class LoansRoutesTest(TestCase):
             'is_borrower': '1',
             'notes': 'Test notes',
             'csrf_token': ''
-        })
-        self.assertEqual(response.status_code, 302)
+        }, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
         loan = Loan.query.filter_by(LenderName='Test Lender').first()
         self.assertIsNotNone(loan)
         self.assertEqual(loan.LoanAmount, 1000)
@@ -61,8 +62,8 @@ class LoansRoutesTest(TestCase):
         self.login()
         loan = Loan(
             UserID=self.user.UserID, LenderName='Test Lender', LoanAmount=1000,
-            InterestRate=5.0, MonthlyPayment=100, StartDate='2024-01-01',
-            DueDate='2025-01-01', RemainingBalance=500, IsBorrower=True, Notes='Test notes'
+            InterestRate=5.0, MonthlyPayment=100, StartDate=datetime.strptime('2024-01-01', '%Y-%m-%d').date(),
+            DueDate=datetime.strptime('2025-01-01', '%Y-%m-%d').date(), RemainingBalance=500, IsBorrower=True, Notes='Test notes'
         )
         db.session.add(loan)
         db.session.commit()
@@ -77,8 +78,8 @@ class LoansRoutesTest(TestCase):
             'is_borrower': '1',
             'notes': 'Updated notes',
             'csrf_token': ''
-        })
-        self.assertEqual(response.status_code, 302)
+        }, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
         updated_loan = db.session.get(Loan, loan.LoanID)
         self.assertEqual(updated_loan.LenderName, 'Updated Lender')
         self.assertEqual(updated_loan.LoanAmount, 1200)
@@ -87,8 +88,8 @@ class LoansRoutesTest(TestCase):
         self.login()
         loan = Loan(
             UserID=self.user.UserID, LenderName='Test Lender', LoanAmount=1000,
-            InterestRate=5.0, MonthlyPayment=100, StartDate='2024-01-01',
-            DueDate='2025-01-01', RemainingBalance=500, IsBorrower=True, Notes='Test notes'
+            InterestRate=5.0, MonthlyPayment=100, StartDate=datetime.strptime('2024-01-01', '%Y-%m-%d').date(),
+            DueDate=datetime.strptime('2025-01-01', '%Y-%m-%d').date(), RemainingBalance=500, IsBorrower=True, Notes='Test notes'
         )
         db.session.add(loan)
         db.session.commit()

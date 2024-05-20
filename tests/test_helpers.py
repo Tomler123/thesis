@@ -2,7 +2,9 @@ import unittest
 from main_app_folder.utils.functions import generate_pie_chart, loans_pie_chart, create_bar_chart
 from collections import namedtuple
 import base64
+import warnings
 
+warnings.filterwarnings("ignore")
 # Create a mock finance object
 Finance = namedtuple('Finance', ['Name', 'Cost'])
 Loan = namedtuple('Loan', ['LenderName', 'LoanAmount'])

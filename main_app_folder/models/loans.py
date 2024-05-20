@@ -1,4 +1,4 @@
-from main_app_folder import db
+from main_app_folder.extensions import db
 
 class Loan(db.Model):
     __tablename__ = 'loans'

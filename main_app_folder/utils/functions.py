@@ -3,8 +3,12 @@ matplotlib.use('Agg')  # Set the backend before importing pyplot
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
+from matplotlib.ticker import FixedLocator, FixedFormatter
 import io
 import base64
+import warnings
+
+warnings.filterwarnings("ignore")
 
 def generate_pie_chart(finances):
     labels = [finance.Name for finance in finances]
@@ -44,7 +48,13 @@ def create_bar_chart(data, categories):
     fig = Figure()
     axis = fig.add_subplot(1, 1, 1)
     axis.bar(categories, data)
+    
+    # Use FixedLocator with FixedFormatter
+    locator = FixedLocator(range(len(categories)))
+    axis.xaxis.set_major_locator(locator)
+    axis.xaxis.set_major_formatter(FixedFormatter(categories))
     axis.set_xticklabels(categories, rotation=22)  # Rotate x-axis labels to prevent overlap
+    
     buf = io.BytesIO()
     FigureCanvas(fig).print_png(buf)
     return base64.b64encode(buf.getvalue()).decode('utf-8')

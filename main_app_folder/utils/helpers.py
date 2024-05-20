@@ -1,7 +1,9 @@
+from urllib.parse import quote_plus
 import os 
 import pyodbc
-from urllib.parse import quote_plus
+import warnings
 
+warnings.filterwarnings("ignore")
 def get_db_connection():
     driver= '{ODBC Driver 17 for SQL Server}'
     server = os.getenv('SQL_SERVER')

@@ -5,7 +5,10 @@ from main_app_folder.models.loans import Loan
 from main_app_folder.utils import helpers
 from main_app_folder.extensions import db
 from main_app_folder.utils import functions
+from datetime import datetime
+import warnings
 
+warnings.filterwarnings("ignore")
 loans_bp = Blueprint('loans', __name__)
 
 @loans_bp.route('/loans')
@@ -25,23 +28,28 @@ def add_loan():
         flash('Please log in to add a loan.')
         return redirect(url_for('auth.login'))
     form = forms.AddLoanForm()
-    if form.validate_on_submit():
-        try:
-            new_loan = Loan(
-                UserID=session['user_id'],
-                LenderName=form.lender_name.data,
-                LoanAmount=form.loan_amount.data,
-                InterestRate=form.interest_rate.data,
-                MonthlyPayment=form.monthly_payment.data,
-                StartDate=form.start_date.data,
-                DueDate=form.due_date.data,
-                RemainingBalance=form.remaining_balance.data,
-                IsBorrower=bool(int(form.is_borrower.data)),
-                Notes=form.notes.data
-            )
-            return handle_add_loan(new_loan)
-        except Exception as e:
-            flash(f"An error occurred: {str(e)}")
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            try:
+                new_loan = Loan(
+                    UserID=session['user_id'],
+                    LenderName=form.lender_name.data,
+                    LoanAmount=form.loan_amount.data,
+                    InterestRate=form.interest_rate.data,
+                    MonthlyPayment=form.monthly_payment.data,
+                    StartDate=form.start_date.data,
+                    DueDate=form.due_date.data,
+                    RemainingBalance=form.remaining_balance.data,
+                    IsBorrower=bool(int(form.is_borrower.data)),
+                    Notes=form.notes.data
+                )
+                return handle_add_loan(new_loan)
+            except Exception as e:
+                print("Exception occurred:", e)
+                flash(f"An error occurred: {str(e)}")
+        else:
+            print("Form validation failed:", form.errors)
+            flash(f"Form validation failed: {form.errors}")
     return render_template('add_loan.html', form=form)
 
 @loans_bp.route('/edit_loan/<int:loan_id>', methods=['GET', 'POST'])
@@ -49,26 +57,34 @@ def edit_loan(loan_id):
     if 'user_id' not in session:
         flash('Please log in to edit records.')
         return redirect(url_for('auth.login'))
-    form = forms.EditLoanForm()
     loan = Loan.query.filter_by(LoanID=loan_id, UserID=session['user_id']).first()
     if not loan:
         flash('Loan not found.')
-        return redirect(url_for('loans_bp.loans'))
-    if request.method == 'POST' and form.validate_on_submit():
-        return handle_edit_loan(loan, form)
+        return redirect(url_for('loans.loans'))
+    form = forms.EditLoanForm(obj=loan)
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            try:
+                return handle_edit_loan(loan, form)
+            except Exception as e:
+                print("Exception occurred:", e)
+                flash('An error occurred while updating the loan. Please try again.')
+        else:
+            print("Form validation failed:", form.errors)
+            flash(f"Form validation failed: {form.errors}")
     else:
         form = populate_loan_form(loan, form)
-        return render_template('edit_loan.html', form=form)
+    return render_template('edit_loan.html', form=form)
 
 @loans_bp.route('/delete_loan/<int:loan_id>', methods=['POST'])
 def delete_loan(loan_id):
     if 'user_id' not in session:
         return jsonify({'message': 'Please log in to delete loans.'}), 401
-    
+
     loan = Loan.query.filter_by(LoanID=loan_id, UserID=session['user_id']).first()
     if not loan:
         flash('Loan not found or you do not have permission to delete it.')
-        return redirect(url_for('loans_bp.loans'))
+        return redirect(url_for('loans.loans'))
     try:
         return handle_delete_loan(loan)
     except Exception as e:
@@ -83,11 +99,11 @@ def handle_get_loans(user):
     lent_loans_pie_chart_img = functions.loans_pie_chart(lent_loans) if lent_loans else None
     total_lent_loans = sum(loan.LoanAmount for loan in lent_loans)
 
-    return render_template('loans.html', 
-                           borrowed_loans=borrowed_loans, lent_loans=lent_loans, 
-                           lent_loans_pie_chart_img=lent_loans_pie_chart_img, 
-                           borrowed_loans_pie_chart_img=borrowed_loans_pie_chart_img, 
-                           total_borrowed_loans=total_borrowed_loans, 
+    return render_template('loans.html',
+                           borrowed_loans=borrowed_loans, lent_loans=lent_loans,
+                           lent_loans_pie_chart_img=lent_loans_pie_chart_img,
+                           borrowed_loans_pie_chart_img=borrowed_loans_pie_chart_img,
+                           total_borrowed_loans=total_borrowed_loans,
                            total_lent_loans=total_lent_loans)
 
 def handle_add_loan(new_loan):
@@ -98,7 +114,7 @@ def handle_add_loan(new_loan):
     db.session.add(new_loan)
     db.session.commit()
     flash('Loan added successfully!')
-    return redirect(url_for('loans_bp.loans'))
+    return redirect(url_for('loans.loans'))
 
 def handle_edit_loan(loan, form):
     loan.LenderName = form.lender_name.data
@@ -112,7 +128,7 @@ def handle_edit_loan(loan, form):
     loan.Notes = form.notes.data
     db.session.commit()
     flash('Loan updated successfully!')
-    return redirect(url_for('loans_bp.loans'))
+    return redirect(url_for('loans.loans'))
 
 def handle_delete_loan(loan):
     if loan:
@@ -121,7 +137,7 @@ def handle_delete_loan(loan):
         flash('Loan deleted successfully!')
     else:
         flash('Loan not found or you do not have permission to delete it.')
-    return redirect(url_for('loans_bp.loans'))
+    return redirect(url_for('loans.loans'))
 
 def populate_loan_form(loan, form):
     form.lender_name.data = loan.LenderName
