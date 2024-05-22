@@ -60,8 +60,7 @@ def signup():
         mail.send(msg)
         flash('You have successfully signed up!', 'success')
         return render_template('verify_email.html')
-    if request.method == 'POST' and not form.validate():
-        print("Signup form errors:", form.errors)
+    
     return render_template('signup.html', form=form)
 
 @auth_bp.route('/verify_email/<token>')
@@ -90,22 +89,21 @@ def verify_email(token):
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     form = forms.LoginForm()
-    if request.method == 'POST' or form.validate_on_submit():
-        email = request.form.get('email')
-        password = request.form.get('password')
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
         conn = helpers.get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT UserID, Password FROM users WHERE Email = ?", (email,))
         user = cursor.fetchone()
         cursor.close()
         conn.close()
-        if user and check_password_hash(user[1], password):  # Adjusted to access password correctly
+        if user and check_password_hash(user[1], password):
             session['user_id'] = user[0]
             return redirect(url_for('account.account'))
         else:
-            flash('Invalid email or password')
+            flash('Invalid email or password', 'danger')
     return render_template('login.html', form=form)
-
 
 @auth_bp.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
@@ -113,16 +111,18 @@ def forgot_password():
     form = forms.ForgotPasswordForm()
     if form.validate_on_submit():
         email = form.email.data
-        session['reset_email'] = form.email.data
+        session['reset_email'] = email
         serializer = Serializer(current_app.config['SECRET_KEY'])
         token = serializer.dumps(email)
         conn = helpers.get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT Email from users WHERE Email = ?", email)
+        cursor.execute("SELECT Email FROM users WHERE Email = ?", (email,))
         user = cursor.fetchone()
+        cursor.close()
+        conn.close()
         if user is None:
-            flash('No account with that email address exists.', 'error')
-            return render_template('forgot_password.html', form=form)
+            flash('Email is not registered for WalletBuddyAI.', 'error')
+            return redirect(url_for('auth.forgot_password'))
         reset_link = url_for('auth.reset_password', token=token, _external=True)
         msg = Message('Password Reset Request', recipients=[email])
         msg.body = f"Click the following link to reset your password: {reset_link}"
@@ -144,7 +144,7 @@ def reset_password():
         conn = helpers.get_db_connection()
         cursor = conn.cursor()
         hashed_password = generate_password_hash(new_password, method='pbkdf2:sha256')
-        cursor.execute("UPDATE users SET Password = ? WHERE Email = ?", hashed_password, reset_email)
+        cursor.execute("UPDATE users SET Password = ? WHERE Email = ?", (hashed_password, reset_email))
         conn.commit()
         cursor.close()
         conn.close()
@@ -152,6 +152,7 @@ def reset_password():
         session.pop('reset_email', None)
         return redirect(url_for('auth.login'))
     return render_template('reset_password.html', form=form)
+
 
 @auth_bp.route('/contact', methods=['GET', 'POST'])
 def contact():

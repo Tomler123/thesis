@@ -130,7 +130,6 @@ class CalendarRoutesTest(unittest.TestCase):
         self.assertTrue(data['1'])
         self.assertFalse(data['2'])
 
-
     def test_reset_finances(self):
         user = User(
             Name='Test',
@@ -159,6 +158,103 @@ class CalendarRoutesTest(unittest.TestCase):
         reset_outcomes = Outcome.query.filter_by(UserID=user.UserID).all()
         self.assertTrue(all(outcome.Fulfilled == False for outcome in reset_outcomes))
 
+    def test_get_outcomes_for_specific_day(self):
+        # Create a test user
+        user = User(
+            Name='Test',
+            LastName='User',
+            Email='test@example.com',
+            Password=generate_password_hash('Testpass1!'),
+            Role='user',
+            ProfileImage='icon1.png'
+        )
+        db.session.add(user)
+        db.session.commit()
 
+        # Create outcomes for the user
+        outcome1 = Outcome(UserID=user.UserID, Name='Outcome 1', Cost=100, Day=1, Month=5, Year=2024, Fulfilled=False, Type='Expense')
+        outcome2 = Outcome(UserID=user.UserID, Name='Outcome 2', Cost=200, Day=1, Month=5, Year=2024, Fulfilled=True, Type='Expense')
+        db.session.add_all([outcome1, outcome2])
+        db.session.commit()
+
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = user.UserID
+
+        # Note: Ensure the date format is 'YYYY-MM-DD'
+        response = self.client.post(url_for('calendar.get_outcomes'), json={'day': 1})
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        
+        self.assertEqual(len(data), 2)
+        self.assertEqual(data[0]['name'], 'Outcome 1')
+        self.assertEqual(data[0]['amount'], 100)
+        self.assertFalse(data[0]['fulfilled'])
+        self.assertEqual(data[1]['name'], 'Outcome 2')
+        self.assertEqual(data[1]['amount'], 200)
+        self.assertTrue(data[1]['fulfilled'])
+
+    def test_unauthorized_update_outcome_status(self):
+        user = User(
+            Name='Test',
+            LastName='User',
+            Email='test@example.com',
+            Password=generate_password_hash('Testpass1!'),
+            Role='user',
+            ProfileImage='icon1.png'
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        outcome = Outcome(UserID=user.UserID, Day=1, Month=5, Year=2024, Name='Test Outcome', Cost=100, Fulfilled=False)
+        db.session.add(outcome)
+        db.session.commit()
+
+        response = self.client.post(url_for('calendar.update_outcome_status'), json={
+            'out_id': outcome.ID,
+            'status': True
+        })
+        self.assertEqual(response.status_code, 401)
+        data = json.loads(response.data)
+        self.assertEqual(data['message'], 'Unauthorized')
+
+    def test_reset_finances_with_no_outcomes(self):
+        user = User(
+            Name='Test',
+            LastName='User',
+            Email='test@example.com',
+            Password=generate_password_hash('Testpass1!'),
+            Role='user',
+            ProfileImage='icon1.png'
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = user.UserID
+
+        response = self.client.post(url_for('calendar.reset_finances'))
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        self.assertTrue(data['success'])
+
+    def test_get_outcomes_when_none_exist(self):
+        user = User(
+            Name='Test',
+            LastName='User',
+            Email='test@example.com',
+            Password=generate_password_hash('Testpass1!'),
+            Role='user',
+            ProfileImage='icon1.png'
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = user.UserID
+
+        response = self.client.post(url_for('calendar.get_outcomes'), json={'day': 1})
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        self.assertEqual(len(data), 0)
 if __name__ == '__main__':
     unittest.main()

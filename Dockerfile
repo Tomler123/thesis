@@ -36,9 +36,6 @@ RUN pip install --no-cache-dir -r requirements.txt \
     && python -m nltk.downloader stopwords \
     && python -m spacy download en_core_web_sm
 
-# Apply the manual patch for DATA_DIRECTORY in chatterbot_corpus
-RUN echo "DATA_DIRECTORY = '/usr/local/lib/python3.8/site-packages/chatterbot_corpus/data'" >> /usr/local/lib/python3.8/site-packages/chatterbot_corpus/corpus.py
-
 # Copy the rest of the application into the container at /app
 COPY . .
 

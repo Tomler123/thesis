@@ -89,5 +89,66 @@ class OverviewRoutesTest(unittest.TestCase):
         self.assertIn(b'Savings Account', response.data)
         self.assertIn(b'Netflix', response.data)
 
+    def test_view_finances_with_incorrect_user_id(self):
+        user = User(
+            Name='Test',
+            LastName='User',
+            Email='test@example.com',
+            Password=generate_password_hash('Testpass1!'),
+            Role='user',
+            ProfileImage='icon1.png'
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = 9999  # Invalid user ID
+
+        response = self.client.get(url_for('overview.view_finances'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login', response.location)
+
+    def test_unauthorized_access_view_finances(self):
+        response = self.client.get(url_for('overview.view_finances'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login', response.location)
+
+    def test_view_finances_mixed_data(self):
+        user = User(
+            Name='Test',
+            LastName='User',
+            Email='test@example.com',
+            Password=generate_password_hash('Testpass1!'),
+            Role='user',
+            ProfileImage='icon1.png'
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        outcomes = [
+            Outcome(UserID=user.UserID, Day=20240501, Name='Rent', Cost=1000, Type='Expense'),
+            Outcome(UserID=user.UserID, Day=20240501, Name='Salary', Cost=3000, Type='Income'),
+            Outcome(UserID=user.UserID, Day=20240501, Name='Savings Account', Cost=500, Type='Saving'),
+            Outcome(UserID=user.UserID, Day=20240501, Name='Netflix', Cost=15, Type='Subscription'),
+            Outcome(UserID=user.UserID, Day=20240501, Name='Bonus', Cost=200, Type='Income'),
+            Outcome(UserID=user.UserID, Day=20240501, Name='Electricity', Cost=100, Type='Expense'),
+            Outcome(UserID=user.UserID, Day=20240501, Name='Gym Membership', Cost=30, Type='Subscription')
+        ]
+        db.session.bulk_save_objects(outcomes)
+        db.session.commit()
+
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = user.UserID
+
+        response = self.client.get(url_for('overview.view_finances'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Rent', response.data)
+        self.assertIn(b'Salary', response.data)
+        self.assertIn(b'Savings Account', response.data)
+        self.assertIn(b'Netflix', response.data)
+        self.assertIn(b'Bonus', response.data)
+        self.assertIn(b'Electricity', response.data)
+        self.assertIn(b'Gym Membership', response.data)
+
 if __name__ == '__main__':
     unittest.main()

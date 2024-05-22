@@ -78,6 +78,11 @@ class FinanceRoutesTest(TestCase):
         deleted_income = db.session.get(Outcome, income.ID)
         self.assertIsNone(deleted_income)
 
+    def test_view_incomes_page_without_logging_in(self):
+        response = self.client.get(url_for('finance.incomes'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login', response.location)
+
     def test_savings_page(self):
         self.login()
         response = self.client.get(url_for('finance.savings'))
@@ -120,6 +125,11 @@ class FinanceRoutesTest(TestCase):
         self.assertEqual(response.status_code, 302)
         deleted_saving = db.session.get(Outcome, saving.ID)
         self.assertIsNone(deleted_saving)
+
+    def test_view_savings_page_without_logging_in(self):
+        response = self.client.get(url_for('finance.savings'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login', response.location)
 
     def test_outcomes_page(self):
         self.login()
@@ -168,6 +178,11 @@ class FinanceRoutesTest(TestCase):
         self.assertEqual(response.status_code, 302)
         deleted_outcome = db.session.get(Outcome, outcome.ID)
         self.assertIsNone(deleted_outcome)
+
+    def test_view_outcomes_page_without_logging_in(self):
+        response = self.client.get(url_for('finance.outcomes'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login', response.location)
 
 if __name__ == '__main__':
     unittest.main()

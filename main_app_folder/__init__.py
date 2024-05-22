@@ -49,7 +49,8 @@ def create_app(config=None):
     from .routes.recommendations import recommendations_bp
     from .routes.calendar import calendar_bp
     from .routes.transactions import transactions_bp
-    from .routes.chatbot import chatbot_bp
+    from .routes.stock_prediction import stock_prediction_bp
+    
 
     app.register_blueprint(home_bp)
     app.register_blueprint(auth_bp)
@@ -60,6 +61,6 @@ def create_app(config=None):
     app.register_blueprint(recommendations_bp)
     app.register_blueprint(calendar_bp)
     app.register_blueprint(transactions_bp)
-    app.register_blueprint(chatbot_bp)
+    app.register_blueprint(stock_prediction_bp)
 
     return app

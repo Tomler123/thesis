@@ -73,5 +73,40 @@ class TransactionsRoutesTest(unittest.TestCase):
         deleted_transaction = Transaction.query.get(transaction.TransactionID)
         self.assertIsNone(deleted_transaction)
 
+    def test_view_transactions(self):
+        # Add test data
+        transactions = [
+            Transaction(UserID=self.user.UserID, Amount=100, Date=datetime.date(2023, 5, 17), Category='Test Category', Description='Test Description'),
+            Transaction(UserID=self.user.UserID, Amount=200, Date=datetime.date(2023, 6, 17), Category='Another Category', Description='Another Description')
+        ]
+        db.session.bulk_save_objects(transactions)
+        db.session.commit()
+
+        response = self.client.get(url_for('transactions.transactions'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Test Category', response.data)
+        self.assertIn(b'Another Category', response.data)
+
+    def test_view_transactions_not_logged_in(self):
+        self.client.get(url_for('auth.logout'))  # Log out the user
+        response = self.client.get(url_for('transactions.transactions'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login', response.location)
+
+    def test_edit_non_existing_transaction(self):
+        response = self.client.post(url_for('transactions.edit_transaction', transaction_id=9999), data={
+            'amount': 200,
+            'date': '2023-06-17',
+            'category': 'Updated Category',
+            'description': 'Updated Description'
+        }, headers={'Accept': 'application/json'})
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json.get('message'), 'Transaction not found.')
+
+    def test_delete_non_existing_transaction(self):
+        response = self.client.post(url_for('transactions.delete_transaction', transaction_id=9999), headers={'Accept': 'application/json'})
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json.get('message'), 'Transaction not found or you do not have permission to delete it.')
+
 if __name__ == '__main__':
     unittest.main()

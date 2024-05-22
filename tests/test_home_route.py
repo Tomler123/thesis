@@ -1,6 +1,7 @@
 import unittest
-from flask import url_for
+from flask import url_for, session
 from main_app_folder import create_app, db
+from main_app_folder.models.user import User
 
 class HomeRoutesTest(unittest.TestCase):
 
@@ -34,8 +35,43 @@ class HomeRoutesTest(unittest.TestCase):
 
     def test_root_page_redirects_to_home(self):
         response = self.client.get('/')
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/home', response.location)
+
+    def test_home_page_css_loaded(self):
+        response = self.client.get(url_for('home.home'))
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b'Home', response.data)
+        self.assertIn(b'rel="stylesheet"', response.data)
+        self.assertIn(b'css/style.css', response.data)
+
+    def test_home_page_js_loaded(self):
+        response = self.client.get(url_for('home.home'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'script src', response.data)
+        self.assertIn(b'js/main.js', response.data)
+
+    def test_home_page_logged_in_user(self):
+        # Create a test user
+        user = User(Name='Test', LastName='User', Email='test@example.com', Password='testpass')
+        db.session.add(user)
+        db.session.commit()
+
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = user.UserID
+
+        response = self.client.get(url_for('home.home'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Welcome to WalletBuddyAI', response.data)
+
+    def test_home_page_specific_elements(self):
+        response = self.client.get(url_for('home.home'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Welcome to WalletBuddyAI', response.data)
+        self.assertIn(b'Mission', response.data)
+        self.assertIn(b'How It Works', response.data)
+        self.assertIn(b'Key Features', response.data)
+        self.assertIn(b'Personal Information', response.data)
+        self.assertIn(b'Get Started', response.data)
 
 if __name__ == '__main__':
     unittest.main()

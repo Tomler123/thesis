@@ -112,3 +112,6 @@ class TransactionForm(FlaskForm):
     description = StringField('Description', validators=[Length(min=0, max=30)])
     submit = SubmitField('Submit')
 
+class StockPredictionForm(FlaskForm):
+    stock_name = StringField('Stock Symbol', validators=[DataRequired()])
+    submit = SubmitField('Predict')

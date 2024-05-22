@@ -93,10 +93,35 @@ class LoansRoutesTest(TestCase):
         )
         db.session.add(loan)
         db.session.commit()
-        response = self.client.post(url_for('loans.delete_loan', loan_id=loan.LoanID))
-        self.assertEqual(response.status_code, 302)
+        response = self.client.post(url_for('loans.delete_loan', loan_id=loan.LoanID), follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
         deleted_loan = db.session.get(Loan, loan.LoanID)
         self.assertIsNone(deleted_loan)
+
+    def test_edit_loan_invalid_data(self):
+        self.login()
+        loan = Loan(
+            UserID=self.user.UserID, LenderName='Test Lender', LoanAmount=1000,
+            InterestRate=5.0, MonthlyPayment=100, StartDate=datetime.strptime('2024-01-01', '%Y-%m-%d').date(),
+            DueDate=datetime.strptime('2025-01-01', '%Y-%m-%d').date(), RemainingBalance=500, IsBorrower=True, Notes='Test notes'
+        )
+        db.session.add(loan)
+        db.session.commit()
+        response = self.client.post(url_for('loans.edit_loan', loan_id=loan.LoanID), data={
+            'lender_name': '',
+            'loan_amount': -1200,
+            'interest_rate': 4.5,
+            'monthly_payment': 150,
+            'start_date': '2024-02-01',
+            'due_date': '2025-02-01',
+            'remaining_balance': 700,
+            'is_borrower': '1',
+            'notes': 'Updated notes',
+            'csrf_token': ''
+        }, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'This field is required.', response.data)
+        self.assertIn(b'Number must be at least 0.', response.data)
 
 if __name__ == '__main__':
     unittest.main()

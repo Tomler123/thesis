@@ -1,132 +1,113 @@
-# import base64
-# from io import BytesIO
-# import numpy as np
-# import pandas as pd
-# import matplotlib.pyplot as plt
-# from sklearn.preprocessing import MinMaxScaler
-# from tensorflow.keras.models import Sequential
-# from tensorflow.keras.layers import LSTM, Dense, Dropout
-# import yfinance as yf
-# import sys
-# import tensorflow as tf
+# Add this import at the top
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend for matplotlib
 
-# def tensorflow_warmup():
-#     # Simple operation to initialize TensorFlow
-#     tf.constant([1, 2, 3]) + tf.constant([4, 5, 6])
-# tensorflow_warmup()
+from datetime import datetime, timedelta
+import sys
+import numpy as np
+import yfinance as yf
+import matplotlib.pyplot as plt
+import pandas as pd
 
-# def plot_to_base64(plt):
-#     buf = BytesIO()
-#     plt.savefig(buf, format='png')
-#     plt.close()
-#     return base64.b64encode(buf.getvalue()).decode('utf-8')
+# Normalize the data
+def normalize(data):
+    mean = np.mean(data, axis=0)
+    std = np.std(data, axis=0)
+    return (data - mean) / std
 
-# def main(stock, queue):
-#     # Define the stock symbol and time range
-#     start_date = '2023-01-01'
-#     end_date = '2024-01-01'
+# Split the data into training and test sets
+def train_test_split(data, target, test_size=0.2):
+    split = int(data.shape[0] * (1 - test_size))
+    return data[:split], data[split:], target[:split], target[split:]
 
-#     # Fetch stock data
-#     stock_data = fetch_stock_data(stock, start_date, end_date)
+# k-NN algorithm
+def euclidean_distance(a, b):
+    return np.sqrt(np.sum((a - b) ** 2))
 
-#     # Extend the end date by 10 days for predictions
-#     extended_end_date = pd.to_datetime(end_date) + pd.Timedelta(days=10)
+def knn_predict(X_train, y_train, X_test, k=5):
+    predictions = []
+    for test_point in X_test:
+        # Compute distances to all training points
+        distances = np.array([euclidean_distance(test_point, train_point) for train_point in X_train])
+        # Find the k nearest neighbors
+        nearest_indices = distances.argsort()[:k]
+        nearest_targets = y_train[nearest_indices]
+        # Predict the value as the mean of the nearest neighbors' targets
+        prediction = np.mean(nearest_targets)
+        predictions.append(prediction)
+    return np.array(predictions)
 
-#     # Define hyperparameters and sequence length
-#     seq_length = 30
-#     epochs = 100
-#     batch_size = 64
+# Evaluate the model
+def mean_squared_error(y_true, y_pred):
+    return np.mean((y_true - y_pred) ** 2)
 
-#     # Preprocess the data   
-#     prices = stock_data['Close'].values.reshape(-1, 1)
-#     scaler = MinMaxScaler(feature_range=(0, 1))
-#     scaled_prices = scaler.fit_transform(prices)
+# Function to predict future prices
+def predict_future_prices(X_train, y_train, last_known_point, days, k=5):
+    future_predictions = []
+    current_point = last_known_point
+    for _ in range(days):
+        distances = np.array([euclidean_distance(current_point, train_point) for train_point in X_train])
+        nearest_indices = distances.argsort()[:k]
+        nearest_targets = y_train[nearest_indices]
+        next_prediction = np.mean(nearest_targets)
+        future_predictions.append(next_prediction)
 
-#     # Create sequences and labels
-#     X, y = create_sequences(scaled_prices, seq_length)
+        # Update current_point for next day's prediction
+        current_point = np.concatenate([current_point[1:], [next_prediction]])
 
-#     # Split the data into training and testing sets
-#     split = int(0.8 * len(X))
-#     X_train, X_test = X[:split], X[split:]
-#     y_train, y_test = y[:split], y[split:]
+    return np.array(future_predictions)
 
-#     # Build the LSTM model
-#     model = Sequential([
-#         LSTM(units=50, return_sequences=True, input_shape=(seq_length, 1)),
-#         Dropout(0.2),
-#         LSTM(units=50, return_sequences=False),
-#         Dropout(0.2),
-#         Dense(units=1)
-#     ])
+def main(stock):
+    # Get the date two days before the current date
+    # end_date = (datetime.now() - timedelta(days=2)).strftime('%Y-%m-%d')
+    # Get the date one year before the end date
+    # start_date = (datetime.now() - timedelta(days=2) - timedelta(days=365)).strftime('%Y-%m-%d')
 
-#     # Compile the model
-#     model.compile(optimizer='adam', loss='mean_squared_error')
+    # data = yf.download(stock, start='2023-01-01', end='2024-01-01')
+    data = yf.download(stock, start=(datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d'), end=datetime.now().strftime('%Y-%m-%d'))
 
-#     # Train the model
-#     history = model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(X_test, y_test))
+    if data.empty:
+        raise ValueError("No data found for the given stock ticker.")
 
-#     # Predictions
-#     predictions = model.predict(X_test)
-#     predictions = scaler.inverse_transform(predictions)
-#     y_test = scaler.inverse_transform(y_test)
+    # Prepare the data
+    data['Date'] = data.index
+    data = data[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']]
+    data = data.dropna()
 
-#     plt.plot(history.history['loss'], label='Training Loss')
-#     plt.plot(history.history['val_loss'], label='Validation Loss')
-#     plt.xlabel('Epochs')
-#     plt.ylabel('Loss')
-#     plt.legend()
-#     plt.savefig('static/images/loss_plot.png') # saving in images folder
-#     plt.savefig('loss_plot.png')  # Save the plot as an image
-#     loss_plot_base64 = plot_to_base64(plt)
-#     plt.close()
+    # Select features and target
+    features = data[['Open', 'High', 'Low', 'Volume']].values
+    target = data['Close'].values
+    features_normalized = normalize(features)
+    X_train, X_test, y_train, y_test = train_test_split(features_normalized, target)
+    # Make predictions on the test set
+    k = 3
+    predictions = knn_predict(X_train, y_train, X_test, k)
+    mse = mean_squared_error(y_test, predictions)
+    rmse = np.sqrt(mse)
+    print(f'Root Mean Squared Error: {rmse:.4f}')
+    # Predict the next 10 days
+    last_known_features = features_normalized[-1]
+    future_days = 10
+    future_predictions = predict_future_prices(X_train, y_train, last_known_features, future_days, k)
+    
+    # Dates for future predictions
+    future_dates = pd.date_range(start=data['Date'].iloc[-1] + pd.Timedelta(days=1), periods=future_days)
 
-#     # Predictions
-#     plt.plot(y_test, label='Actual Prices')
-#     plt.plot(predictions, label='Predicted Prices')
-#     plt.xlabel('Time')
-#     plt.ylabel('Price')
-#     plt.legend()
-#     plt.savefig('predictions_plot.png')  # Save the plot as an image
-#     plt.savefig('static/images/predictions_plot.png') # save to images folder
-#     predictions_plot_base64 = plot_to_base64(plt)
-#     plt.close()
+    # Plot the results
+    plt.figure(figsize=(14, 7))
+    plt.plot(data.index[len(X_train):], y_test, label='Actual Prices', color='b')
+    plt.plot(data.index[len(X_train):], predictions, label='Predicted Prices', color='r', linestyle='--')
+    plt.plot(future_dates, future_predictions, label='Future Predictions', color='g', linestyle='--')
+    plt.title('Stock Price Prediction using k-NN')
+    plt.xlabel('Date')
+    plt.ylabel('Price')
+    plt.legend()
+    # plt.show()
+    plt.savefig('main_app_folder/static/images/stock_prediction.png')  # Save the plot to the specified path
+    plt.close()
 
-#     # Predict beyond the end date by 10 days
-#     last_sequence = scaled_prices[-seq_length:]
-#     extended_predictions = []
-#     for _ in range(10):
-#         prediction = model.predict(last_sequence.reshape(1, seq_length, 1))
-#         extended_predictions.append(prediction[0, 0])
-#         last_sequence = np.append(last_sequence[1:], prediction, axis=0)
+    return future_predictions[-1]
 
-#     # Inverse transform the predicted prices
-#     extended_predictions = scaler.inverse_transform(np.array(extended_predictions).reshape(-1, 1))
-
-#     # Plot the extended predictions
-#     plt.plot(extended_predictions, label='Extended Predictions')
-#     plt.xlabel('Time')
-#     plt.ylabel('Price')
-#     plt.legend()
-#     plt.savefig('static/images/extended_predictions_plot.png') # save to images folder
-#     plt.savefig('extended_predictions_plot.png')  # Save the plot as an image
-#     extended_predictions_plot_base64 = plot_to_base64(plt)
-#     plt.close()
-
-#     queue.put((loss_plot_base64, predictions_plot_base64, extended_predictions_plot_base64))
-
-# # Define function to create input sequences and labels
-# def create_sequences(data, seq_length):
-#     X, y = [], []
-#     for i in range(len(data) - seq_length):
-#         X.append(data[i:i+seq_length])
-#         y.append(data[i+seq_length])
-#     return np.array(X), np.array(y)
-
-# # Function to fetch stock data from Yahoo Finance
-# def fetch_stock_data(symbol, start_date, end_date):
-#     stock = yf.download(symbol, start=start_date, end=end_date)
-#     return stock
-
-# if __name__ == "__main__":
-#     if(len(sys.argv) == 2):
-#         main(sys.argv[1])
+if __name__ == "__main__":
+    if(len(sys.argv) == 2):
+        main(sys.argv[1])

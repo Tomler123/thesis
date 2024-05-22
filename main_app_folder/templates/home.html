@@ -4,19 +4,38 @@
 
     <h1>WalletBuddyAI.com</h1>
     <br>
-    <img style="width: 100%" src="{{url_for('static', filename='images/cover.png') | timestamp }}" alt="">
+    <img style="width: 100%" src="{{url_for('static', filename='images/cover.png') | timestamp }}" alt="WalletBuddyAI Cover Image">
     <section>
-        <h1>Welcome to WalletBuddyAI.com</h1>
-        <p>Your innovative AI-powered assistant in navigating the complex world of personal finance. Whether you're looking to manage your daily expenses or make informed investment decisions, WalletBuddyAI.com is here to guide you every step of the way.</p>
-        <h2>Our Mission</h2>
-        <p>At WalletBuddyAI.com, we believe in empowering individuals with the tools and insights they need to achieve financial stability and growth. Our cutting-edge AI technology simplifies financial management and investment processes, making them accessible to everyone.</p>
+        <h1>Welcome to WalletBuddyAI</h1>
+        <p>Your innovative AI-powered assistant in navigating the complex world of personal finance. Whether you're looking to manage your daily expenses or make investment decisions, WalletBuddyAI is here to guide you every step of the way.</p>
+
+        <h2>Mission</h2>
+        <p>
+            This web application is developed for the people who need to better visualize their financial position, such as: Incomes, Expenses, Subscriptions, Savings, Loans and Transactions.
+            Users can visualize, add, modify and delete previously mentioned finacnes. Also as an user, you can see AI calculated estimate about your spending habits. You can get personalized recommendations
+            regarding the monthly, weekly or daily spendings.
+        </p>
+
         <h2>How It Works</h2>
-        <p>Our platform offers a range of features from budget tracking and expense management to insightful investment advice. With just a few clicks, you can gain a comprehensive understanding of your financial health and receive personalized recommendations tailored to your financial goals.</p>
-        <h1>Stock and Crypto Prediction Page</h1>
-        <h2>AI-Powered Predictions at Your Fingertips</h2>
-        <p>Enter the name of any stock or cryptocurrency, and our AI will analyze current trends to predict future price movements. Get instant insights to help guide your investment decisions.</p>
-        <h2>Making Informed Decisions</h2>
-        <p>Our predictions are based on sophisticated algorithms and market analysis, giving you an edge in the ever-changing world of stocks and crypto.</p>
+        <p>This platform offers a range of features from budget tracking and expense management to stock prediction. With just a few clicks, you can gain a comprehensive understanding of your financial health and receive personalized recommendations tailored to your financial goals.</p>
+
+        <h2>Key Features</h2>
+        <ul>
+            <li><strong>Budget Tracking:</strong> Keep a close eye on your finances to ensure you stay on track with your financial goals.</li>
+            <li><strong>Expense Management:</strong> Categorize and analyze your spending habits to identify areas where you can save money.</li>
+            <li><strong>Personalized Recommendations:</strong> Receive tailored recommendations based on your financial profile and goals.</li>
+            <li><strong>Predictive Analytics:</strong> Use the AI-powered tools to forecast future spendings.</li>
+            <li><strong>Stock Prediction:</strong> Use the AI-powered tools to forecast future stock prices by entering stock name.</li>
+        </ul>
+
+        <h2>Personal Information</h2>
+        <p>
+            The key thing that makes this web application outstanding is that all the above features can be used without entering any kind of personal information, such as:
+            Bank Information, ID, Passport Information and etc. Only information user must enter is email address to signup and create account.
+        </p>
+        
+        <h2>Get Started</h2>
+        <p>Ready to take control of your finances? <strong><a href="{{ url_for('auth.signup') }}">Sign up</a></strong> today and start using WalletBuddyAI to achieve your financial goals.</p>
     </section>
 
 {% endblock %}

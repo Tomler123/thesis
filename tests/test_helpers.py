@@ -42,6 +42,28 @@ class TestFunctions(unittest.TestCase):
         except base64.binascii.Error:
             self.fail("Result is not a valid base64 encoded string")
 
+    def test_generate_pie_chart_empty(self):
+        # Test with empty data
+        finances = []
+        
+        result = generate_pie_chart(finances)
+        self.assertIsInstance(result, str)
+        try:
+            decoded_img = base64.b64decode(result)
+        except base64.binascii.Error:
+            self.fail("Result is not a valid base64 encoded string")
+
+    def test_loans_pie_chart_empty(self):
+        # Test with empty data
+        loans = []
+
+        result = loans_pie_chart(loans)
+        self.assertIsInstance(result, str)
+        try:
+            decoded_img = base64.b64decode(result)
+        except base64.binascii.Error:
+            self.fail("Result is not a valid base64 encoded string")
+
     def test_create_bar_chart(self):
         # Mock data
         data = [100, 200, 300, 400, 500]
@@ -54,6 +76,26 @@ class TestFunctions(unittest.TestCase):
             decoded_img = base64.b64decode(result)
         except base64.binascii.Error:
             self.fail("Result is not a valid base64 encoded string")
+
+    def test_create_bar_chart_empty(self):
+        # Test with empty data
+        data = []
+        categories = []
+
+        result = create_bar_chart(data, categories)
+        self.assertIsInstance(result, str)
+        try:
+            decoded_img = base64.b64decode(result)
+        except base64.binascii.Error:
+            self.fail("Result is not a valid base64 encoded string")
+
+    def test_create_bar_chart_mismatched_data_and_categories(self):
+        # Test with mismatched data and categories lengths
+        data = [100, 200, 300]
+        categories = ['Jan', 'Feb']
+
+        with self.assertRaises(ValueError):
+            create_bar_chart(data, categories)
 
 if __name__ == '__main__':
     unittest.main()

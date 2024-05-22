@@ -32,25 +32,27 @@ def get_outcomes():
 
 @calendar_bp.route('/update_outcome_status', methods=['POST'])
 def update_outcome_status():
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
     data = request.get_json()
     out_id = data['out_id']
     status = data['status']
+
     try:
-        conn = helpers.get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            UPDATE outcomes
-            SET Fulfilled = ?
-            WHERE ID = ?
-            """, (status, out_id))
-        conn.commit()
+        outcome = Outcome.query.filter_by(ID=out_id, UserID=user_id).first()
+        if outcome:
+            outcome.Fulfilled = status
+            db.session.commit()
+            return jsonify({'success': True, 'message': 'Status updated'})
+        else:
+            return jsonify({'success': False, 'message': 'Outcome not found'}), 404
     except Exception as e:
-        conn.rollback()
+        db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
-    finally:
-        cursor.close()
-        conn.close()
-    return jsonify({'success': True, 'message': 'Status updated'})
+
+
 
 @calendar_bp.route('/get_outcomes_status_by_day', methods=['POST'])
 def get_outcomes_status_by_day():

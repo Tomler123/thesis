@@ -7,13 +7,11 @@
     <!--=============== REMIXICONS ===============-->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.2.0/fonts/remixicon.css" rel="stylesheet">
     <!--=============== CSS ===============-->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/chatbot.css') | timestamp }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') | timestamp }}">
     <link rel="icon" type="image/icon" href="{{ url_for('static', filename='images/icon.png') | timestamp }}">
     {% block links %}{% endblock %}
     <title>{% block title %}{% endblock %}</title>
     {% block styles %}{% endblock %}
-    <script src="{{ url_for('static', filename='js/chatbot.js') | timestamp }}" defer></script>
 </head>
 <body>
 <div class="page-container">
@@ -64,18 +62,13 @@
                             <i class="ri-pie-chart-line"></i> Loans
                             </a>
                         </li>
-                        <!-- <li>
-                            <a href="{{url_for('transactions.transactions')}}" class="dropdown__link">
-                            <i class="ri-pie-chart-line"></i> Transactions
-                            </a>
-                        </li> -->
+                        
                     </ul>
                 </li>
                   
                 <li><a href="{{ url_for('recommendations.recommendations') }}" class="nav__link">Recommendations</a></li>
                 <li><a href="{{ url_for('transactions.transactions') }}" class="nav__link">Transactions</a></li>
-                
-                <!-- <li><a href="{{ url_for('home.home') }}" class="nav__link">Advices</a></li> -->
+                <li><a href="{{ url_for('stock_prediction.predict') }}" class="nav__link">Stock</a></li>
                 
                 <li><a href="{{ url_for('overview.view_finances') }}" class="nav__link">Overview</a></li>
 
@@ -97,9 +90,9 @@
         </div>
     </nav>
 </header>
-
+<!--=============== MAIN CONTENT ===============-->
 <div class="content-wrap">{% block content %}{% endblock %}</div>
-
+<!--=============== FOOTER ===============-->
 <div class="footer">
     <div class="footer-content">
         <div class="footer-section quick-links">
@@ -123,20 +116,6 @@
     <div class="footer-bottom">
         <p>&copy; 2024 Personal Finance Advisor | Disclaimer</p>
     </div>
-</div>
-<div class="chat-container" id="chat-widget">
-    <div class="chat-header">
-        <span>Chat with us!</span>
-        <button id="minimizeChat" class="toggle-chat-btn">-</button>
-    </div>
-    <div id="chatbox">
-        <p class="botText"><span>Loading your personal assistant...</span></p>
-    </div>
-    <input type="text" id="userInput" placeholder="Type a message..." autocomplete="off">
-    <button id="sendBtn">Send</button>
-</div>
-<div id="chatIcon" class="chat-icon" style="display: none;">
-    <img src="{{ url_for('static', filename='images/chat-icon.png') | timestamp }}" alt="Chat Icon">
 </div>
 </div>
     <!--=============== MAIN JS ===============-->

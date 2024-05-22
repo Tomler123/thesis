@@ -8,10 +8,24 @@
     <div class="form-container">
         <form id="login-form" method="post" action="{{ url_for('auth.login') }}">
             <h2>Log In</h2>
-            <input type="email" placeholder="Email" name="email" required>
-            <input type="password" placeholder="Password" name="password" required>
-            {{ form.csrf_token }} <!-- Include CSRF token -->
-            <button type="submit">Log In</button>
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                {{ form.email.label(class="form-label") }}
+                {{ form.email(class="form-control", placeholder="Email") }}
+                {% for error in form.email.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.password.label(class="form-label") }}
+                {{ form.password(class="form-control", placeholder="Password") }}
+                {% for error in form.password.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
             <p>Don't have an account? <a href="{{ url_for('auth.signup') }}">Sign up</a></p>
             <p>Forgot your password? <a href="{{ url_for('auth.forgot_password') }}">Reset it here</a></p>
         </form>

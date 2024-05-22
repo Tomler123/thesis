@@ -93,6 +93,23 @@ class AuthRoutesTest(unittest.TestCase):
             self.assertIn('You have successfully signed up!', flashed_messages)
             self.assertIn('test@example.com', pending_users)
 
+    @patch('flask_mail.Mail.send')
+    def test_successful_signup(self, mock_mail_send):
+        mock_mail_send.return_value = None  # Mock the send method to do nothing
+
+        with self.client:
+            response = self.client.post(url_for('auth.signup'), data={
+                'name': 'Test',
+                'last_name': 'User',
+                'email': 'testuser@example.com',
+                'password': 'TestPassword1!',
+                'confirm_password': 'TestPassword1!'
+            }, follow_redirects=True)
+
+            self.assertEqual(response.status_code, 200)
+            flashed_messages = [message for category, message in get_flashed_messages(with_categories=True)]
+            self.assertIn('You have successfully signed up!', flashed_messages)
+
     def test_login_page_loads(self):
         response = self.client.get(url_for('auth.login'))
         self.assertEqual(response.status_code, 200)
@@ -142,6 +159,71 @@ class AuthRoutesTest(unittest.TestCase):
             flashed_messages = [message for category, message in get_flashed_messages(with_categories=True)]
             self.assertIn('Invalid email or password', flashed_messages)
 
+    def test_login_redirects_to_account(self):
+        # Create a user in the database
+        user = User(
+            Name='Test',
+            LastName='User',
+            Email='existinguser@example.com',
+            Password=generate_password_hash('CorrectPassword1!'),
+            Role='user',
+            ProfileImage='icon1.png'
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        with self.client:
+            response = self.client.post(url_for('auth.login'), data={
+                'email': 'existinguser@example.com',
+                'password': 'CorrectPassword1!'
+            }, follow_redirects=True)
+
+            self.assertEqual(response.status_code, 200)
+
+    def test_login_with_correct_email_and_password(self):
+        # Create a user in the database
+        user = User(
+            Name='Test',
+            LastName='User',
+            Email='existinguser@example.com',
+            Password=generate_password_hash('CorrectPassword1!'),
+            Role='user',
+            ProfileImage='icon1.png'
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        with self.client:
+            response = self.client.post(url_for('auth.login'), data={
+                'email': 'existinguser@example.com',
+                'password': 'CorrectPassword1!'
+            }, follow_redirects=True)
+
+            self.assertEqual(response.status_code, 200)
+
+    def test_login_with_incorrect_email(self):
+        # Create a user in the database
+        user = User(
+            Name='Test',
+            LastName='User',
+            Email='existinguser@example.com',
+            Password=generate_password_hash('CorrectPassword1!'),
+            Role='user',
+            ProfileImage='icon1.png'
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        with self.client:
+            response = self.client.post(url_for('auth.login'), data={
+                'email': 'wronguser@example.com',
+                'password': 'CorrectPassword1!'
+            }, follow_redirects=True)
+
+            self.assertEqual(response.status_code, 200)
+            flashed_messages = [message for category, message in get_flashed_messages(with_categories=True)]
+            self.assertIn('Invalid email or password', flashed_messages)
+
     @patch('flask_mail.Mail.send')
     def test_forgot_password_page_loads(self, mock_mail_send):
         response = self.client.get(url_for('auth.forgot_password'))
@@ -182,7 +264,8 @@ class AuthRoutesTest(unittest.TestCase):
 
             self.assertEqual(response.status_code, 200)
             flashed_messages = [message for category, message in get_flashed_messages(with_categories=True)]
-            self.assertIn('No account with that email address exists.', flashed_messages)
+            self.assertIn('Email is not registered for WalletBuddyAI.', flashed_messages)
+
 
     def test_forgot_password_confirm_page_loads(self):
         response = self.client.get(url_for('auth.forgot_password_confirm'))
@@ -217,6 +300,42 @@ class AuthRoutesTest(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertIn(b'Reset Password', response.data)
 
+    @patch('flask_mail.Mail.send')
+    def test_reset_password_matching(self, mock_mail_send):
+        mock_mail_send.return_value = None  # Mock the send method to do nothing
+
+        # Create a user in the database
+        user = User(
+            Name='Test',
+            LastName='User',
+            Email='test@example.com',
+            Password=generate_password_hash('Testpass1!'),
+            Role='user',
+            ProfileImage='icon1.png'
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        # Simulate forgot password form submission to generate token
+        with self.client:
+            self.client.post(url_for('auth.forgot_password'), data={'email': 'test@example.com'}, follow_redirects=True)
+
+            # Extract token directly using serializer
+            serializer = Serializer(self.app.config['SECRET_KEY'])
+            token = serializer.dumps('test@example.com', salt='password-reset-salt')
+
+            # Simulate resetting the password
+            with self.client.session_transaction() as sess:
+                sess['reset_email'] = 'test@example.com'
+
+            response = self.client.post(url_for('auth.reset_password', token=token), data={
+                'password': 'NewPassword1!',
+                'confirm_password': 'NewPassword1!'
+            }, follow_redirects=True)
+
+            self.assertEqual(response.status_code, 200)
+            flashed_messages = [message for category, message in get_flashed_messages(with_categories=True)]
+            self.assertIn('Your password has been reset successfully. You can now log in with your new password.', flashed_messages)
 
     @patch('flask_mail.Mail.send')
     def test_reset_password_form_submission(self, mock_mail_send):
@@ -317,7 +436,6 @@ class AuthRoutesTest(unittest.TestCase):
         with self.client:
             response = self.client.get(url_for('auth.contact'), follow_redirects=True)
             self.assertEqual(response.status_code, 200)
-
 
 if __name__ == '__main__':
     unittest.main()
