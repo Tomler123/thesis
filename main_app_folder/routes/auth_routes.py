@@ -5,19 +5,23 @@ from itsdangerous import URLSafeTimedSerializer as Serializer
 from main_app_folder.forms import forms
 from main_app_folder.utils import helpers
 import secrets
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 auth_bp = Blueprint('auth', __name__)
 
 pending_users = {}
 
 def configure_mail(app, port, use_tls, use_ssl):
-    app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+    app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
     app.config['MAIL_PORT'] = port
     app.config['MAIL_USE_TLS'] = use_tls
     app.config['MAIL_USE_SSL'] = use_ssl
-    app.config['MAIL_USERNAME'] = 'walletbuddyai@gmail.com'
-    app.config['MAIL_PASSWORD'] = 'tmgq owra tjts hkfx'
-    app.config['MAIL_DEFAULT_SENDER'] = 'walletbuddyai@gmail.com'
+    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+    app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
     return Mail(app)
 
 @auth_bp.route('/signup', methods=['GET', 'POST'])

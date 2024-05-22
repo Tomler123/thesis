@@ -80,7 +80,7 @@ def main(stock):
     features_normalized = normalize(features)
     X_train, X_test, y_train, y_test = train_test_split(features_normalized, target)
     # Make predictions on the test set
-    k = 3
+    k = 5
     predictions = knn_predict(X_train, y_train, X_test, k)
     mse = mean_squared_error(y_test, predictions)
     rmse = np.sqrt(mse)
@@ -102,7 +102,7 @@ def main(stock):
     plt.xlabel('Date')
     plt.ylabel('Price')
     plt.legend()
-    # plt.show()
+    #plt.show()
     plt.savefig('main_app_folder/static/images/stock_prediction.png')  # Save the plot to the specified path
     plt.close()
 
