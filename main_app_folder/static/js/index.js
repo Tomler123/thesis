@@ -7,26 +7,26 @@ function toggleTheme() {
     }
 }
 document.addEventListener('DOMContentLoaded', function() {
-    var themeToggleButton = document.getElementById('theme-toggle-button'); // Add this button to your HTML
+    var themeToggleButton = document.getElementById('theme-toggle-button');
     if (themeToggleButton) {
         themeToggleButton.addEventListener('click', toggleTheme);
     }
-    // Get the form element
+
     const form = document.getElementById('contact-form');
-    // Listen for form submission
+    // listen for form submission
     if(form){
         form.addEventListener('submit', function(event) {
-            // Prevent the default form submission
+            // prevent the default form submission
             event.preventDefault();
-            // Collect form data
+            // collect form data
             const formData = {
                 name: form.querySelector('[name="name"]').value,
                 email: form.querySelector('[name="email"]').value,
                 message: form.querySelector('[name="message"]').value
             };
-            // Log or process the form data
+            
             console.log('Form Data:', formData);
-            // Example of sending form data to a server
+            
             fetch('/web/submit-form', {
                 method: 'POST',
                 headers: {
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch((error) => {
                 console.error('Error:', error);
             });
-            // Optionally, clear the form
+            // clearing the form
             form.reset();
         });
     };

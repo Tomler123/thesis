@@ -4,6 +4,7 @@
 {% endblock %}
 {% block content %}
     <h1>Add New Outcome</h1>
+    <!-- form to add outcomes -->
     <form method="post" action="{{ url_for('finance.add_outcome') }}">
         {{ form.csrf_token }}
         <div>

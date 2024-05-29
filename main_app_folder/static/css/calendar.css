@@ -1,5 +1,3 @@
-
-/* Import Google font - Poppins */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
 *{
   margin: 0;
@@ -18,7 +16,7 @@
 .calendar-layout {
   display: flex;
   justify-content: flex-start;
-  align-items: flex-start; /* Use 'flex-start' to align items at the top */
+  align-items: flex-start;
 }
 .wrap .head{
   display: flex;
@@ -108,18 +106,17 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  height: 40px; /* Match the height of .active::before */
-  width: 40px; /* Match the width of .active::before */
-  background: red; /* Or any color you want for highlighting */
-  border-radius: 50%; /* If you want it to be round like .active */
+  height: 40px;
+  width: 40px;
+  background: red;
+  border-radius: 50%;
   z-index: -1;
 }
 
-/* Add this so the outcome-details mirrors the calendar's style */
 .wrap,
 .outcome-details {
-  width: 450px; /* Your desired width */
-  margin: 10px; /* Add margin for spacing */
+  width: 450px;
+  margin: 10px;
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 15px 40px rgba(0,0,0,0.12);
@@ -127,7 +124,7 @@
 }
 
 .outcome-details {
-  display: none; /* It will be shown when a day is clicked */
+  display: none;
 }
 .status-checkbox {
   -webkit-appearance: none;
@@ -167,6 +164,6 @@
 }
 
 .days li.all-fulfilled::before {
-  background: green; /* Color for all fulfilled outcomes */
+  background: green;
 }
 

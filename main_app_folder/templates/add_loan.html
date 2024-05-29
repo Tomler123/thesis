@@ -4,6 +4,7 @@
 {% endblock %}
 {% block content %}
     <h1>Add New Loan</h1>
+    <!-- form to add loans -->
     <form method="post" action="{{ url_for('loans.add_loan') }}">
         {{ form.csrf_token }}
         <div>

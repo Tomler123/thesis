@@ -6,6 +6,7 @@
 {% block content %}
 <div class="login-signup-container">
     <div class="form-container">
+        <!-- login form -->
         <form id="login-form" method="post" action="{{ url_for('auth.login') }}">
             <h2>Log In</h2>
             {{ form.hidden_tag() }}

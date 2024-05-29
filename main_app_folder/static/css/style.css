@@ -1,44 +1,32 @@
-/* SEARCH FOR Default or Example WORD TO KNOW WHAT TO CHANGE */
-
-
-
-/*=============== GOOGLE FONTS ===============*/
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap");
 
-/*=============== VARIABLES CSS ===============*/
 :root {
   --header-height: 3.5rem;
 
-  /*========== Colors ==========*/
-  /*Color mode HSL(hue, saturation, lightness)*/
+
   --black-color: hsl(220, 24%, 12%);
   --black-color-light: hsl(220, 24%, 15%);
   --black-color-lighten: hsl(220, 20%, 18%);
   --white-color: #fff;
   --body-color: hsl(220, 100%, 97%);
 
-  /*========== Font and typography ==========*/
-  /*.5rem = 8px | 1rem = 16px ...*/
+
   --body-font: "Montserrat", sans-serif;
   --normal-font-size: .938rem;
 
-  /*========== Font weight ==========*/
   --font-regular: 400;
   --font-semi-bold: 600;
 
-  /*========== z index ==========*/
   --z-tooltip: 10;
   --z-fixed: 100;
 }
 
-/*========== Responsive typography ==========*/
 @media screen and (min-width: 1024px) {
   :root {
     --normal-font-size: 1rem;
 }
 }
 
-/*=============== BASE ===============*/
 * {
   box-sizing: border-box;
   padding: 0;
@@ -48,13 +36,13 @@ body, html {
     height: 100%;
     margin: 0;
     font-family: 'Montserrat', sans-serif;
-    color: #333; /* Default text color */
-    line-height: 1.6; /* Default line height */
+    color: #333;
+    line-height: 1.6;
 }
 
 body {
-  display: flex; /* Set body display to flex */
-  flex-direction: column; /* Stack children elements vertically */
+  display: flex;
+  flex-direction: column;
   font-family: var(--body-font);
   font-size: var(--normal-font-size);
   background-color: var(--body-color);
@@ -77,34 +65,28 @@ body {
 
 ul {
   list-style: none;
-  /* Color highlighting when pressed on mobile devices */
-  /*-webkit-tap-highlight-color: transparent;*/
 }
 
 a {
   text-decoration: none;
 }
 
-/* Paragraphs */
 p {
   margin-top: 0.5em;
   margin-bottom: 0.5em;
 }
 
-/* Headers */
 h1, h2, h3, h4, h5, h6 {
   margin-top: 1em;
   margin-bottom: 1em;
   color: hsl(220, 20%, 18%);
 }
 
-/*=============== REUSABLE CSS CLASSES ===============*/
 .container {
   max-width: 80%;
   margin-inline: 1.5rem;
 }
 
-/*=============== HEADER ===============*/
 .header {
   position: fixed;
   top: 0;
@@ -115,7 +97,6 @@ h1, h2, h3, h4, h5, h6 {
   z-index: var(--z-fixed);
 }
 
-/*=============== NAV ===============*/
 .nav {
   height: var(--header-height);
 }
@@ -138,15 +119,14 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   column-gap: .25rem;
   font-weight: var(--font-semi-bold);
-  /* Color highlighting when pressed on mobile devices */
-  /*-webkit-tap-highlight-color: transparent;*/
+
 }
 
 .nav__logo .nav__icon {
-  height: 40px; /* Adjust as necessary */
+  height: 40px;
   width: auto;
-  margin-right: 10px; /* Space between icon and text */
-  vertical-align: middle; /* Aligns the icon vertically with the text */
+  margin-right: 10px;
+  vertical-align: middle;
 }
 
 .nav__toggle {
@@ -171,9 +151,8 @@ h1, h2, h3, h4, h5, h6 {
   opacity: 0;
 }
 
-/* Footer Styles */
 .footer {
-    background-color: var(--black-color); /* Same as header */
+    background-color: var(--black-color);
     color: var(--white-color);
     padding: 2rem 0;
     font-size: var(--normal-font-size);
@@ -183,7 +162,7 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     justify-content: space-between;
     margin: auto;
-    max-width: 1120px; /* Same as container class */
+    max-width: 1120px;
     padding: 0 1.5rem;
 }
 
@@ -205,18 +184,17 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .footer-section ul li a:hover {
-    color: rgb(155, 155, 155); /* Lighten the link on hover */
+    color: rgb(155, 155, 155);
 }
 
 .footer-bottom {
     text-align: center;
     padding-top: 2rem;
-    border-top: 1px solid var(--black-color-light); /* A subtle top border */
+    border-top: 1px solid var(--black-color-light);
     color: var(--white-color);
-    font-size: smaller; /* Smaller font size for the copyright text */
+    font-size: smaller;
 }
 
-/* Navigation for mobile devices */
 @media screen and (max-width: 1118px) {
 .nav__menu {
     position: absolute;
@@ -266,14 +244,13 @@ h1, h2, h3, h4, h5, h6 {
   background-color: var(--black-color-light);
 }
 
-/* Show menu */
 .show-menu {
   opacity: 1;
   top: 3.5rem;
   pointer-events: initial;
 }
 
-/* Show icon */
+
 .show-icon .nav__burger {
   opacity: 0;
   transform: rotate(90deg);
@@ -283,7 +260,7 @@ h1, h2, h3, h4, h5, h6 {
   transform: rotate(90deg);
 }
 
-/*=============== DROPDOWN ===============*/
+
 .dropdown__item {
   cursor: pointer;
 }
@@ -324,19 +301,16 @@ h1, h2, h3, h4, h5, h6 {
   transition: max-height .4s ease-out;
 }
 
-/* Show dropdown menu & submenu */
 .dropdown__item:hover .dropdown__menu, 
 .dropdown__subitem:hover > .dropdown__submenu {
   max-height: 1000px;
   transition: max-height .4s ease-in;
 }
 
-/* Rotate dropdown icon */
 .dropdown__item:hover .dropdown__arrow {
   transform: rotate(180deg);
 }
 
-/*=============== DROPDOWN SUBMENU ===============*/
 .dropdown__add {
   margin-left: auto;
 }
@@ -345,8 +319,6 @@ h1, h2, h3, h4, h5, h6 {
   background-color: var(--black-color-lighten);
 }
 
-/*=============== BREAKPOINTS ===============*/
-/* For small devices */
 @media screen and (max-width: 340px) {
 .container {
     margin-inline: 1rem;
@@ -357,7 +329,6 @@ h1, h2, h3, h4, h5, h6 {
 }
 }
 
-/* For large devices */
 @media screen and (min-width: 1118px) {
 .container {
     margin-inline: auto;
@@ -418,7 +389,6 @@ h1, h2, h3, h4, h5, h6 {
     top: .5rem;
 }
 
-  /* Show dropdown menu */
 .dropdown__item:hover .dropdown__menu {
     opacity: 1;
     top: 5.5rem;
@@ -426,7 +396,6 @@ h1, h2, h3, h4, h5, h6 {
     transition: top .3s;
 }
 
-  /* Show dropdown submenu */
 .dropdown__subitem:hover > .dropdown__submenu {
     opacity: 1;
     top: 0;

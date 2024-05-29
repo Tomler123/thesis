@@ -2,17 +2,19 @@ from flask import Blueprint, jsonify, redirect, render_template, request, url_fo
 from main_app_folder.forms import forms
 from main_app_folder.models.user import User
 from main_app_folder.models.loans import Loan
-from main_app_folder.utils import helpers
 from main_app_folder.extensions import db
 from main_app_folder.utils import functions
-from datetime import datetime
 import warnings
 
 warnings.filterwarnings("ignore")
+
+# creating blueprint
 loans_bp = Blueprint('loans', __name__)
 
+# function to get loans
 @loans_bp.route('/loans')
 def loans():
+    # check if the user is logged in
     if 'user_id' not in session:
         flash('Please log in to view your loans.')
         return redirect(url_for('auth.login'))
@@ -22,6 +24,7 @@ def loans():
         flash('User not found.')
         return redirect(url_for('auth.login'))
 
+    # getting all loans and creating pie charts
     borrowed_loans = Loan.query.filter_by(UserID=user.UserID, IsBorrower=True).all()
     borrowed_loans_pie_chart_img = functions.loans_pie_chart(borrowed_loans) if borrowed_loans else None
     total_borrowed_loans = sum(loan.LoanAmount for loan in borrowed_loans)
@@ -37,8 +40,10 @@ def loans():
                            total_borrowed_loans=total_borrowed_loans,
                            total_lent_loans=total_lent_loans)
 
+# function to add loans
 @loans_bp.route('/add_loan', methods=['GET', 'POST'])
 def add_loan():
+    # check if the user is logged in
     if 'user_id' not in session:
         flash('Please log in to add a loan.')
         return redirect(url_for('auth.login'))
@@ -77,8 +82,10 @@ def add_loan():
 
     return render_template('add_loan.html', form=form)
 
+# function to edit loans
 @loans_bp.route('/edit_loan/<int:loan_id>', methods=['GET', 'POST'])
 def edit_loan(loan_id):
+    # check if the user is logged in
     if 'user_id' not in session:
         flash('Please log in to edit records.')
         return redirect(url_for('auth.login'))
@@ -110,6 +117,7 @@ def edit_loan(loan_id):
         else:
             flash(f"Form validation failed: {form.errors}")
     else:
+        # fillinf the form with values
         form.lender_name.data = loan.LenderName
         form.loan_amount.data = loan.LoanAmount
         form.interest_rate.data = loan.InterestRate
@@ -122,8 +130,10 @@ def edit_loan(loan_id):
     
     return render_template('edit_loan.html', form=form)
 
+# function to delete loans
 @loans_bp.route('/delete_loan/<int:loan_id>', methods=['POST'])
 def delete_loan(loan_id):
+    # check if the user is logged in
     if 'user_id' not in session:
         return jsonify({'message': 'Please log in to delete loans.'}), 401
 

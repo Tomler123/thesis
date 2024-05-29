@@ -1,5 +1,3 @@
-/* signup.css */
-
 .login-signup-container {
     max-width: 400px;
     margin: auto;
@@ -39,7 +37,7 @@ input[type="text"] {
     margin-top: 5px;
     border: 1px solid #ddd;
     border-radius: 4px;
-    box-sizing: border-box; /* Add the box-sizing */
+    box-sizing: border-box;
 }
 
 .form-container form div input[type="submit"] {

@@ -10,9 +10,9 @@ currMonth = date.getMonth();
 // storing full name of all months in array
 const months = ["January", "February", "March", "April", "May", "June", "July",
               "August", "September", "October", "November", "December"];
-let highlightedDates = []; // This will hold your highlighted dates after fetching from the server
+let highlightedDates = []; // this will hold highlighted dates after fetching from the server
 
-// After entering the page, colors will be displayed correctly
+// after entering the page, colors will be displayed correctly
 fetchSubscriptionStatusByDay().then(statusByDay => {
     renderCalendar(highlightedDates, statusByDay);
 });
@@ -33,7 +33,7 @@ const renderCalendar = (highlightedDates = [], statusByDay = {}) => {
         let isToday = i === date.getDate() && currMonth === new Date().getMonth() 
                      && currYear === new Date().getFullYear() ? "active" : "";
         let isHighlighted = highlightedDates.includes(i) ? "highlighted" : "";
-        // liTag += `<li class="${isToday} ${isHighlighted}">${i}</li>`;
+    
         let isAllFulfilled = statusByDay[i] ? "all-fulfilled" : "";
         liTag += `<li class="${isToday} ${isHighlighted} ${isAllFulfilled}">${i}</li>`;
     }
@@ -45,7 +45,7 @@ const renderCalendar = (highlightedDates = [], statusByDay = {}) => {
     daysTag.innerHTML = liTag;
     document.querySelectorAll('.highlighted').forEach(day => {
         day.addEventListener('click', function(event) {
-            // Stops the click from propagating to the document level
+            // stops the click from propagating to the document level
             event.stopPropagation(); 
             getSubscriptions(this.textContent).then(outcomes => {
                 updateSubscriptionDetails(outcomes);
@@ -66,8 +66,8 @@ const renderCalendar = (highlightedDates = [], statusByDay = {}) => {
     });
     document.querySelectorAll('.status-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', function() {
-            const outcomeId = this.id.replace('out', ''); // Correctly extract outcome ID
-            const isFulfilled = this.checked; // Boolean value true or false
+            const outcomeId = this.id.replace('out', ''); // extracting outcome ID
+            const isFulfilled = this.checked; // boolean value true or false (fulfilled or not fulfilled)
             fetch('/update_outcome_status', {
               method: 'POST',
               headers: {
@@ -119,7 +119,7 @@ document.addEventListener('click', function(event) {
 
 prevNextIcon.forEach(icon => { // getting prev and next icons
     icon.addEventListener("click", () => {
-        // Log to check if the event is fired
+        
         currMonth = icon.id === "prev" ? currMonth - 1 : currMonth + 1;
         if (currMonth < 0 || currMonth > 11) {
             date = new Date(currYear, currMonth);
@@ -163,7 +163,7 @@ function updateSubscriptionDetails(outcomes) {
     detailsElement.innerHTML = content;
     detailsElement.style.display = 'block';
 
-    // Now attach change event listeners to newly added checkboxes
+
     document.querySelectorAll('.status-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', handleCheckboxChange);
     });

@@ -16,7 +16,7 @@ IF ERRORLEVEL 1 (
 REM Create virtual environment if it doesn't exist
 IF NOT EXIST "venv" (
     echo Creating virtual environment...
-    python -m venv venv
+    python3.7 -m venv venv
 )
 
 REM Activate virtual environment
@@ -54,4 +54,4 @@ IF EXIST ".env" (
 
 REM Run the application
 echo Running the application...
-python main.py
+python app.py

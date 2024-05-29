@@ -1,4 +1,3 @@
-/* Style for Navbar */
 .navbar {
     overflow: hidden;
     background-color: #333;
@@ -50,7 +49,7 @@
     display: block;
 }
 
-/* Style for Footer */
+
 .footer {
     background-color: #333;
     color: white;
@@ -71,7 +70,7 @@
     margin-top: 20px;
 }
 
-/* Responsive Design */
+
 @media screen and (max-width: 600px) {
     .footer-content {
         flex-direction: column;

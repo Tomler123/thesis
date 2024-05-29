@@ -5,18 +5,20 @@ from dotenv import load_dotenv
 import os
 import urllib
 from .filters import timestamp_filter
+import secrets
 
 def create_app(config=None):
     app = Flask(__name__)
 
-    # Register the custom filter
+    # register the custom filter
     app.jinja_env.filters['timestamp'] = timestamp_filter
     load_dotenv()
     
     if config:
         app.config.update(config)
     else:
-        app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'a_default_secret_key')
+        app.config['SECRET_KEY'] = secrets.token_hex(16)
+
         app.config['WTF_CSRF_ENABLED'] = os.getenv('WTF_CSRF_ENABLED')
 
         driver = '{ODBC Driver 17 for SQL Server}'
@@ -35,11 +37,11 @@ def create_app(config=None):
     cors.init_app(app, supports_credentials=True)
     csrf.init_app(app)
     
-    # Configure session
+    # configure session
     app.config['SESSION_TYPE'] = 'filesystem'
     Session(app)
 
-    # Register Blueprints
+    # import the blueprints from every route
     from .routes.home_routes import home_bp
     from .routes.auth_routes import auth_bp
     from .routes.finance_routes import finance_bp
@@ -51,7 +53,7 @@ def create_app(config=None):
     from .routes.transactions import transactions_bp
     from .routes.stock_prediction import stock_prediction_bp
     
-
+    # register the blueprints of every route to the app
     app.register_blueprint(home_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(finance_bp)

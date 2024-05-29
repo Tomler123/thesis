@@ -10,13 +10,16 @@ from main_app_folder.models.outcomes import Outcome
 from main_app_folder.ai_algorithms import transaction_algo
 from main_app_folder.extensions import db
 
+# creating blueprint
 transactions_bp = Blueprint('transactions', __name__)
 
 def is_testing():
     return current_app.config['TESTING']
 
+# function to get transactions
 @transactions_bp.route('/transactions')
 def transactions():
+    # check if user is logged in
     if 'user_id' not in session:
         flash('Please log in to view your transactions.', 'danger')
         return redirect(url_for('auth.login'))
@@ -27,8 +30,10 @@ def transactions():
         flash('An error occurred while fetching transactions.', 'danger')
         return render_template('transactions.html', transactions=[])
 
+# function to add transactions to the database
 @transactions_bp.route('/add_transaction', methods=['GET', 'POST'])
 def add_transaction():
+    # check if user is logged in
     if 'user_id' not in session:
         flash('Please log in to add a transaction.', 'danger')
         return redirect(url_for('auth.login'))
@@ -60,6 +65,7 @@ def add_transaction():
 
 @transactions_bp.route('/edit_transaction/<int:transaction_id>', methods=['GET', 'POST'])
 def edit_transaction(transaction_id):
+    # check if user is logged in
     if 'user_id' not in session:
         flash('Please log in to edit a transaction.', 'danger')
         return redirect(url_for('auth.login'))
@@ -95,6 +101,7 @@ def edit_transaction(transaction_id):
 
 @transactions_bp.route('/delete_transaction/<int:transaction_id>', methods=['POST'])
 def delete_transaction(transaction_id):
+    # check if user is logged in
     if 'user_id' not in session:
         flash('Please log in to delete a transaction.', 'danger')
         return redirect(url_for('auth.login'))
@@ -119,6 +126,7 @@ def delete_transaction(transaction_id):
 
 @transactions_bp.route('/predict_next_month', methods=['GET'])
 def predict_next_month():
+    # check if user is logged in
     if 'user_id' not in session:
         return json.dumps({'success': False, 'message': 'User not logged in'}), 401
     user_id = session['user_id']
@@ -131,19 +139,32 @@ def predict_next_month():
 
     total_income = db.session.query(func.sum(Outcome.Cost)).filter(Outcome.UserID == user_id, Outcome.Type == 'Income').scalar() or 0
     earliest_date = min_date_row[0]
-    months_count = (datetime.date.today().year - earliest_date.year) * 12 + (datetime.date.today().month - earliest_date.month + 1)
+    
+    # calculate the total number of months from the earliest date to today
+    today = datetime.date.today()
+    months_count = (today.year - earliest_date.year) * 12 + (today.month - earliest_date.month + 1)
+    
+    # ensure we only consider the last 12 months
+    months_count = min(months_count, 12)
+    print(months_count)
+    # generate the months and sums data for the last `months_count` months
     months = list(map(str, range(1, months_count + 1)))
     sums = [0] * months_count
     for i in range(months_count):
-        month = (earliest_date.month - 1 + i) % 12 + 1
-        year = earliest_date.year + ((earliest_date.month - 1 + i) // 12)
+        month = (today.month - 1 - i) % 12 + 1
+        year = today.year - ((today.month - 1 - i) // 12)
         monthly_sum = db.session.query(func.sum(Transaction.Amount)).filter(Transaction.UserID == user_id, extract('year', Transaction.Date) == year, extract('month', Transaction.Date) == month).scalar()
-        sums[i] = float(monthly_sum or 0)
+        sums[months_count - 1 - i] = float(monthly_sum or 0)  # store sums in reverse order to match months
+    
     cursor.close()
     conn.close()
+    
+    # prepare data for prediction
     month_str = ' '.join(map(str, months))
     sum_str = ' '.join(map(lambda x: f"{x:.1f}", sums))
     try:
+        print(month_str)
+        print(sum_str)
         prediction = transaction_algo.main(month_str, sum_str)
         return json.dumps({
             'success': True, 

@@ -54,7 +54,7 @@
 {% block script %}
 <script>
     function editTransaction(transactionId) {
-        window.location.href = '/edit_transaction/' + transactionId; // Redirect to the edit page
+        window.location.href = '/edit_transaction/' + transactionId; // redirect to the edit page
     }
     
     function removeTransaction(transactionId) {
@@ -67,7 +67,7 @@
                 }
             }).then(response => {
                 if (response.ok) {
-                    window.location.reload(); // Reload the page to reflect the changes
+                    window.location.reload(); // reload the page to reflect the changes
                 } else {
                     alert('Failed to delete the transaction.');
                 }
@@ -75,7 +75,7 @@
         }
     }
     function predictNextMonth() {
-        document.getElementById('predictionResult').innerHTML = 'Calculating prediction...';
+        document.getElementById('predictionResult').innerHTML = 'Calculating prediction...<br>May take upto 60 seconds, thank you for your patience!';
         fetch('/predict_next_month', {
             method: 'GET',
             headers: {
@@ -88,9 +88,9 @@
                 const totalIncome = parseFloat(data.total_income).toFixed(2);
                 let message = `Prediction for next month: Ft ${prediction}`;
                 
-                if (prediction < 0) {
+                if (parseFloat(prediction) < 0) {
                     message = "According to the AI calculations, in next month you will spend a negative amount of money. This can be caused by insufficient data, which decreases calculation results, or you have been spending less and less each month, which means your spending habits are really good.";
-                } else if(prediction > totalIncome){
+                } else if(parseFloat(prediction) > parseFloat(totalIncome)){
                     message += `. If you continue spending like this, you will spend more than your total income, which is Ft ${totalIncome}.`;
                 }
                 document.getElementById('predictionResult').innerHTML = message;

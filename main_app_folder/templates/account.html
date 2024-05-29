@@ -9,12 +9,12 @@
 <div class="account-container">
     <div class="user-info">
         <div class="user-icon" onclick="openPopup()">
-            <!-- Display user's current profile image -->
+            
             <img src="{{ url_for('static', filename='icons/' + user.ProfileImage) | timestamp }}" alt="Profile Icon">
         </div>
         <h2 style="max-width: fit-content;">Welcome, {{ user.Name }}!</h2>
         <p style="max-width: fit-content;">Email: {{ user.Email }}</p>
-        <!-- Button to open icon selection popup -->
+
     </div>
 
     <hr class="separator">
@@ -47,16 +47,15 @@
         </div>
     </div>
 
-    <!-- Icon selection popup -->
     <div id="imagePopup" class="popup">
         <div class="popup-content">
             <div class="popup-header">
                 <span class="close" onclick="closePopup()">&times;</span>
             </div>
             <h2>Choose Icon</h2>
-            <!-- Icons grid -->
+            
             <div id="iconGrid" class="icon-grid">
-                <!-- Add icons here -->
+
                 <img src="{{ url_for('static', filename='icons/icon1.png') | timestamp }}" alt="Icon 1" onclick="selectIcon('icon1.png')">
                 <img src="{{ url_for('static', filename='icons/icon2.png') | timestamp }}" alt="Icon 2" onclick="selectIcon('icon2.png')">
                 <img src="{{ url_for('static', filename='icons/icon3.png') | timestamp }}" alt="Icon 3" onclick="selectIcon('icon3.png')">
@@ -71,7 +70,6 @@
         </div>
     </div>
 
-    <!-- Hidden form for icon selection -->
     <form id="iconForm" action="{{ url_for('account.update_icon') }}" method="POST">
         {{ form.csrf_token }}
         <input type="hidden" id="selectedIcon" name="selected_icon" value="{{ user.ProfileImage }}">
@@ -79,7 +77,6 @@
 
 </div>
 
-<!-- JavaScript for popup functionality -->
 <script>
     function openPopup() {
         var popup = document.getElementById("imagePopup");
@@ -96,12 +93,11 @@
     }
 
     function selectIcon(iconName) {
-        // Set the selected icon value in the hidden input field
         var iconInput = document.getElementById("selectedIcon");
         if (iconInput) {
             iconInput.value = iconName;
         }
-        // Submit the form
+        
         document.getElementById("iconForm").submit();
     }
 </script>

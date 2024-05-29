@@ -6,13 +6,13 @@
 {% block content %}
 <div class="c-container">
     <div class="contact-container">
-        <!-- Contact Info -->
+
         <div class="contact-info_page">
             <h2>Contact us</h2>
             <p>Need to get in touch with us? Fill out the form and click on the <strong>Submit</strong> button.</p>
         </div>
 
-        <!-- Contact Form -->
+        <!-- contact form -->
         <div class="contact-form">
             <form id="contact-form" method="post" action="{{ url_for('auth.contact') }}">
                 {{ form.csrf_token }}

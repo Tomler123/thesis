@@ -4,6 +4,7 @@
 {% endblock %}
 {% block content %}
     <h1>Add New Saving</h1>
+    <!-- form to add savings -->
     <form method="post" action="{{ url_for('finance.add_saving') }}">
         {{ form.csrf_token }}
         <div>

@@ -24,7 +24,7 @@ def GradDescnet(theta, Y, X, alpha=0.0001, num_iterations=100000, tolerance=1e-5
                 sum_ += vec[i] * ((hypoFunc(temp,vec) - Y[j]))
         
             temp[i] = temp[i] - (alpha / len(Y)) * sum_
-        # Calculate current cost function
+        
         current_cost = CostFunction(temp, X, Y)
 
         prev_cost = current_cost
@@ -43,12 +43,3 @@ def main(X_inp,Y_inp):
     ans=np.array(X[-1]).flatten()
     ans[1] =ans[1]+1
     return hypoFunc(Theta, ans)
-
-
-# if __name__ == "__main__":
-#     if len(sys.argv) == 3:
-#         c=main(np.matrix(sys.argv[1]),np.matrix(sys.argv[2]))
-#         print(c)
-#     else:
-#         print("not enough argument given") 
-              

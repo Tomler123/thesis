@@ -4,17 +4,18 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from main_app_folder.forms import forms
-from main_app_folder.utils import helpers
 from main_app_folder.utils import functions
 from main_app_folder.extensions import db
-from main_app_folder.models.user import User
 from main_app_folder.models.outcomes import Outcome
 
+# creating blueprint
 finance_bp = Blueprint('finance', __name__)
 
+# function to get income data
 @finance_bp.route('/incomes')
 def incomes():
     try:
+        # check if the user is logged in
         if 'user_id' not in session:
             return redirect(url_for('auth.login'))
         
@@ -28,9 +29,11 @@ def incomes():
     except SQLAlchemyError as e:
         return jsonify({'error': str(e)}), 500
 
+# function to add income
 @finance_bp.route('/add_income', methods=['GET', 'POST'])
 def add_income():
     try:
+        # check if the user is logged in
         if 'user_id' not in session:
             flash('Please log in to add an income.')
             return redirect(url_for('auth.login'))
@@ -57,10 +60,11 @@ def add_income():
         flash('Error adding income.')
         return render_template('add_income.html', form=form), 500
 
-
+# function to edit income
 @finance_bp.route('/edit_income/<int:income_id>', methods=['GET', 'POST'])
 def edit_income(income_id):
     try:
+        # check if the user is logged in
         if 'user_id' not in session:
             flash('Please log in to edit records.')
             return redirect(url_for('auth.login'))
@@ -92,10 +96,11 @@ def edit_income(income_id):
         flash('Error updating income.')
         return render_template('edit_income.html', form=form, income_id=income_id), 500
 
-
+# function to delete incomes
 @finance_bp.route('/delete_income/<int:income_id>', methods=['POST'])
 def delete_income(income_id):
     try:
+        # check if the user is logged in
         if 'user_id' not in session:
             return jsonify({'message': 'Please log in to delete incomes.'}), 401
 
@@ -114,8 +119,10 @@ def delete_income(income_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+# function to get savings
 @finance_bp.route('/savings')
 def savings():
+    # check if the user is logged in
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
     user_id = session['user_id']
@@ -126,8 +133,10 @@ def savings():
 
     return render_template('saving.html', savings=savings, total_savings=total_savings, savings_pie_chart_img=savings_pie_chart_img)
 
+# function to add savings
 @finance_bp.route('/add_saving', methods=['GET', 'POST'])
 def add_saving():
+    # check if the user is logged in
     if 'user_id' not in session:
         flash('Please log in to add a saving.')
         return redirect(url_for('auth.login'))
@@ -148,8 +157,10 @@ def add_saving():
     
     return render_template('add_saving.html', form=form)
 
+# function to edit savings
 @finance_bp.route('/edit_savings/<int:saving_id>', methods=['GET', 'POST'])
 def edit_savings(saving_id):
+    # check if the user is logged in
     if 'user_id' not in session:
         flash('Please log in to edit records.')
         return redirect(url_for('auth.login'))
@@ -173,9 +184,11 @@ def edit_savings(saving_id):
 
     return render_template('edit_savings.html', form=form, saving_id=saving_id)
 
+# function for deleting savings
 @finance_bp.route('/delete_saving/<int:saving_id>', methods=['POST'])
 def delete_saving(saving_id):
     try:
+        # check if the user is logged in
         if 'user_id' not in session:
             return jsonify({'message': 'Please log in to delete savings.'}), 401
 
@@ -192,18 +205,24 @@ def delete_saving(saving_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+# function to get outcomes
 @finance_bp.route('/outcomes')
 def outcomes():
+    # check if the user is logged in
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
+    
     user_id = session['user_id']
+    
     outcomes = Outcome.query.filter_by(UserID=user_id).all()
     expenses = [outcome for outcome in outcomes if outcome.Type == 'Expense']
     subscriptions = [outcome for outcome in outcomes if outcome.Type == 'Subscription']
     total_expenses = sum(outcome.Cost for outcome in expenses)
     total_subscriptions = sum(outcome.Cost for outcome in subscriptions)
+    
     expenses_pie_chart_img = functions.generate_pie_chart(expenses) if expenses else None
     subscriptions_pie_chart_img = functions.generate_pie_chart(subscriptions) if subscriptions else None
+    
     return render_template(
         'outcomes.html', 
         outcomes=outcomes, 
@@ -213,9 +232,10 @@ def outcomes():
         total_subscriptions=total_subscriptions
     )
 
-
+# function to add new outcome to the database
 @finance_bp.route('/add_outcome', methods=['GET', 'POST'])
 def add_outcome():
+    # check if the user is logged in
     if 'user_id' not in session:
         flash('Please log in to add an outcome.')
         return redirect(url_for('auth.login'))
@@ -241,9 +261,10 @@ def add_outcome():
             db.session.rollback()
     return render_template('add_outcome.html', form=form)
 
-
+# function to edit outcome
 @finance_bp.route('/edit_outcome/<int:outcome_id>', methods=['GET', 'POST'])
 def edit_outcome(outcome_id):
+    # check if the user is logged in
     if 'user_id' not in session:
         flash('Please log in to edit records.')
         return redirect(url_for('auth.login'))
@@ -271,8 +292,10 @@ def edit_outcome(outcome_id):
     
     return render_template('edit_outcome.html', form=form, outcome_id=outcome_id)
 
+# function to delete outcome
 @finance_bp.route('/delete_outcome/<int:outcome_id>', methods=['POST'])
 def delete_outcome(outcome_id):
+    # check if the user is logged in
     if 'user_id' not in session:
         return jsonify({'message': 'Please log in to delete outcomes.'}), 401
     

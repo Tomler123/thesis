@@ -5,7 +5,7 @@
 {% endblock %}
 {% block content %}
     <h1>Stock Prediction</h1>
-    <!-- Input form for stock graph -->
+    <!-- input form for stock initials -->
     <p style="width: 50%;">
         Please enter below the stock initials / symbol / ticker that you need short term predictions for.
         The given prediction is calculated by analyzing the graph with machine learning.
@@ -22,7 +22,7 @@
         </div>
         {{ form.submit(class="btn btn-primary") }}
     </form>
-    <!-- Display flash messages only if they exist and relevant to this page -->
+    <!-- display flash messages if they exist -->
     {% with messages = get_flashed_messages(with_categories=true, category_filter=['stock_prediction_error']) %}
         {% if messages %}
             <ul class="flashes">
@@ -32,7 +32,7 @@
             </ul>
         {% endif %}
     {% endwith %}
-    <!-- Conditionally display the graph if it exists -->
+    <!-- display the graph if it exists -->
     {% if graph %}
         <h2>Prediction Results</h2>
         <p>{{ prediction_text }}</p>
